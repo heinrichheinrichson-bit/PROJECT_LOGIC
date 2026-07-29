@@ -1,0 +1,61 @@
+PROJECT LOGIC v0.5.0 – TESTANLEITUNG
+
+ZIEL
+Dieses Release strukturiert den Code neu. Gameplay, Rätseldaten und
+Speicherformat bleiben unverändert.
+
+INSTALLATION
+1. App und Chrome schließen.
+2. Den Ordner `lib` im lokalen Projekt vollständig löschen.
+3. Den Ordner `lib` aus diesem Update neu kopieren.
+4. Zusätzlich kopieren beziehungsweise ersetzen:
+   - test
+   - docs
+   - pubspec.yaml
+   - CHANGELOG.md
+5. In Git Bash ausführen:
+   flutter clean && flutter pub get && flutter test
+
+ERWARTUNG
+All tests passed!
+
+TEST 1 – VERSION
+Startseite:
+Version 0.5.0 · Architecture Foundation
+
+TEST 2 – STARTSEITE UND NAVIGATION
+1. Neues Spiel öffnen.
+2. Binärpuzzle auswählen.
+3. Alle drei Schwierigkeitsstufen öffnen.
+4. Rätsel starten und wieder zurücknavigieren.
+5. Statistik und Einstellungen öffnen.
+
+TEST 3 – SPIELREGRESSION
+1. Drei Felder setzen.
+2. Rückgängig und Wiederholen testen.
+3. Glühbirnen-Hinweis anwenden.
+4. Regelfehler-Markierung umschalten.
+5. Zur Startseite zurückgehen.
+6. Spiel fortsetzen.
+7. Felder und Zeit müssen erhalten sein.
+
+TEST 4 – EINSTELLUNGEN
+1. Hell, Dunkel und System testen.
+2. Animationen, Haptik und Fehlermarkierung umschalten.
+3. Browser neu laden.
+4. Einstellungen müssen erhalten bleiben.
+
+TEST 5 – STATISTIK
+1. Rätsel per Developer-Menü lösen.
+2. Bestzeit und Abschlussmarkierung prüfen.
+3. Statistik öffnen.
+4. Fortschritt muss korrekt angezeigt werden.
+
+TEST 6 – RESPONSIVE DARSTELLUNG
+1. Chrome auf Handybreite verkleinern.
+2. Startseite, Auswahl, Spielfeld, Einstellungen und Statistik prüfen.
+3. Keine Überlaufstreifen.
+
+WICHTIG
+Da neue Unterordner hinzugekommen sind, `lib` nicht nur darüberkopieren,
+sondern vor dem Kopieren vollständig ersetzen.

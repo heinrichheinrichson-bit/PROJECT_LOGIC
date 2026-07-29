@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.5.0 – Architecture Foundation
+
+### Added
+- Feature-orientierte Ordnerstruktur für Home, Binärpuzzle, Einstellungen und Statistik
+- Eigenständige App-Schicht für Theme und MaterialApp-Konfiguration
+- Wiederverwendbarer Zeitformatierer unter `core/`
+- Architektur-Dokumentation unter `docs/ARCHITECTURE.md`
+- Unit-Tests für Zeitformatierung
+
+### Changed
+- `main.dart` ist jetzt ein kleiner Bootstrap statt einer 1.400-Zeilen-Datei
+- UI-Screens und Spielfeld-Widgets wurden in klar abgegrenzte Module verschoben
+- Gemeinsame Zeitformatierung wurde aus den Screens herausgelöst
+- Paketversion auf 0.5.0+7 erhöht
+
+### Compatibility
+- Keine Spielregeln, Rätseldaten oder Speicherformate wurden verändert
+- Bestehende lokale Spielstände bleiben kompatibel
+
 ## v0.4.1 – Stabilitäts-Patch
 
 ### Fixed
