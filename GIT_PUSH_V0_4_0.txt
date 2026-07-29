@@ -1,0 +1,1 @@
+git add . && git commit -m "feat(v0.4.0): add logical hints, persistent settings and improved gameplay feedback" && git tag -a v0.4.0 -m "Project Logic v0.4.0 - logical hint engine, themes, gameplay settings and board feedback" && git push && git push origin v0.4.0

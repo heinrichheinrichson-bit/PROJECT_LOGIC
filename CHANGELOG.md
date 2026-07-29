@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.4.1 – Stabilitäts-Patch
+
+### Fixed
+- Ungültige `const`-Mengen mit `CellPosition` in den Hinweis-Tests entfernt.
+- Die Hinweis-Tests lassen sich nun korrekt kompilieren und ausführen.
+- Versionsanzeige und Paketversion auf v0.4.1 aktualisiert.
+
+### Notes
+- Keine Gameplay-Funktionen wurden gegenüber v0.4.0 verändert.
+- Dieser Patch behebt ausschließlich den beim Teststart gefundenen Kompilierungsfehler.
+
+## v0.4.0 – Gameplay Update
+
+### Added
+- Erste regelbasierte Hinweis-Engine für Binärpuzzles
+- Hinweise erklären die verwendete Logik und können optional angewendet werden
+- Ausgewählte Zeile und Spalte werden im Spielfeld hervorgehoben
+- Hinweisfelder werden deutlich markiert
+- Vollständige Einstellungsseite
+- Farbschema: System, Hell oder Dunkel
+- Animationen ein- und ausschaltbar
+- Haptisches Feedback ein- und ausschaltbar
+- Standardwert für Regelfehlermarkierungen
+- Sicherer Dialog zum Löschen aller lokalen Spielstände und Bestzeiten
+- Tests für Hinweisregeln und rückgängig machbare Hinweiszüge
+
+### Changed
+- Zahlenwechsel verwendet eine weichere Skalierungsanimation
+- Gewinn-Dialog besitzt eine kleine Erfolgsanimation
+- Einstellungen werden dauerhaft lokal gespeichert
+- Paketversion auf 0.4.0+5 erhöht
+
 ## v0.3.1
 
 ### Fixed

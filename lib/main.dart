@@ -2,23 +2,34 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import 'app_preferences.dart';
 import 'game_logic.dart';
 import 'game_storage.dart';
+import 'hint_engine.dart';
 
-void main() {
-  runApp(const ProjectLogicApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final preferences = await AppPreferences.load();
+  runApp(ProjectLogicApp(preferences: preferences));
 }
 
 class ProjectLogicApp extends StatelessWidget {
-  const ProjectLogicApp({super.key});
+  const ProjectLogicApp({required this.preferences, super.key});
+
+  final AppPreferences preferences;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Project Logic',
-      themeMode: ThemeMode.system,
+    return PreferencesScope(
+      preferences: preferences,
+      child: AnimatedBuilder(
+        animation: preferences,
+        builder: (context, _) => MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Project Logic',
+          themeMode: preferences.themePreference.themeMode,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF365A7A),
@@ -33,7 +44,9 @@ class ProjectLogicApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+          home: const HomeScreen(),
+        ),
+      ),
     );
   }
 }
@@ -158,14 +171,23 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                     const SizedBox(height: 12),
-                    const _HomeAction(
+                    _HomeAction(
                       icon: Icons.settings_outlined,
                       title: 'Einstellungen',
-                      subtitle: 'In Vorbereitung',
+                      subtitle: 'Darstellung, Bedienung und lokale Daten',
+                      enabled: true,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const SettingsScreen(),
+                          ),
+                        );
+                        await _refresh();
+                      },
                     ),
                   ],
                   const SizedBox(height: 28),
-                  Text('Version 0.3.1 · Entwicklungsstand', textAlign: TextAlign.center,
+                  Text('Version 0.4.1 · Stabilitäts-Patch', textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
@@ -426,11 +448,14 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
   late final Timer _timer;
   int elapsedSeconds = 0;
   bool _completionRecorded = false;
+  CellPosition? _selectedCell;
+  CellPosition? _hintCell;
 
   @override
   void initState() {
     super.initState();
     puzzle = widget.definition.createPuzzle();
+    showIssues = true;
     final savedGame = widget.savedGame;
     if (savedGame != null && savedGame.puzzleId == widget.definition.id) {
       puzzle.restoreEditableValues(savedGame.values);
@@ -445,6 +470,12 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
         if (elapsedSeconds % 5 == 0) _saveGame();
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    showIssues = PreferencesScope.of(context).showRuleIssues;
   }
 
   @override
@@ -498,6 +529,11 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
               ],
             ),
           IconButton(
+            tooltip: 'Logischer Hinweis',
+            onPressed: puzzle.isSolved ? null : _showHint,
+            icon: const Icon(Icons.lightbulb_outline_rounded),
+          ),
+          IconButton(
             tooltip: 'Zurücksetzen',
             onPressed: _reset,
             icon: const Icon(Icons.restart_alt),
@@ -531,6 +567,10 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
                     child: _PuzzleBoard(
                       puzzle: puzzle,
                       issueCells: showIssues ? issueCells : const {},
+                      selectedCell: _selectedCell,
+                      hintCell: _hintCell,
+                      animationsEnabled:
+                          PreferencesScope.of(context).animationsEnabled,
                       onCellPressed: _cycleCell,
                     ),
                   ),
@@ -555,6 +595,12 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: puzzle.isSolved ? null : _showHint,
+                    icon: const Icon(Icons.lightbulb_outline_rounded),
+                    label: const Text('Logischen Hinweis anzeigen'),
+                  ),
+                  const SizedBox(height: 12),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Regelfehler markieren'),
@@ -562,7 +608,10 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
                       'Markiert direkte Widersprüche, ohne die Lösung zu verraten.',
                     ),
                     value: showIssues,
-                    onChanged: (value) => setState(() => showIssues = value),
+                    onChanged: (value) {
+                      setState(() => showIssues = value);
+                      PreferencesScope.of(context).setShowRuleIssues(value);
+                    },
                   ),
                   const SizedBox(height: 10),
                   _RulesPanel(issues: showIssues ? issues : const []),
@@ -578,12 +627,86 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
 
   void _cycleCell(int row, int column) {
     setState(() {
+      _selectedCell = CellPosition(row, column);
+      _hintCell = null;
       puzzle.cycleCell(row, column);
     });
+
+    if (PreferencesScope.of(context).hapticsEnabled) {
+      HapticFeedback.selectionClick();
+    }
     _saveGame();
 
     if (puzzle.isSolved) {
       _showSolvedDialog();
+    }
+  }
+
+  Future<void> _showHint() async {
+    final hint = findBinaryHint(puzzle);
+    if (hint == null) {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          icon: const Icon(Icons.psychology_alt_outlined),
+          title: const Text('Kein einfacher Hinweis'),
+          content: const Text(
+            'Mit den derzeit gesetzten Feldern wurde keine direkte Regel gefunden. Prüfe zuerst mögliche Fehler oder löse einen anderen Bereich.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Verstanden'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _selectedCell = hint.position;
+      _hintCell = hint.position;
+    });
+
+    final apply = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.lightbulb_outline_rounded),
+        title: Text(
+          'Hinweis für Zeile ${hint.position.row + 1}, Spalte ${hint.position.column + 1}',
+        ),
+        content: Text(
+          '${hint.reason}\n\nDort gehört eine ${hint.value.label} hin.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Nur markieren'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Hinweis anwenden'),
+          ),
+        ],
+      ),
+    );
+
+    if (apply == true && mounted) {
+      setState(() {
+        puzzle.setCell(
+          hint.position.row,
+          hint.position.column,
+          hint.value,
+        );
+        _selectedCell = hint.position;
+        _hintCell = null;
+      });
+      if (PreferencesScope.of(context).hapticsEnabled) {
+        HapticFeedback.lightImpact();
+      }
+      await _saveGame();
+      if (puzzle.isSolved) _showSolvedDialog();
     }
   }
 
@@ -626,8 +749,18 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
       if (!mounted) return;
       showDialog<void>(
         context: context,
-        builder: (context) => AlertDialog(
-          icon: const Icon(Icons.check_circle_outline),
+        builder: (context) {
+          final animations =
+              PreferencesScope.of(this.context).animationsEnabled;
+          return AlertDialog(
+          icon: TweenAnimationBuilder<double>(
+            duration: Duration(milliseconds: animations ? 550 : 0),
+            tween: Tween(begin: 0.6, end: 1),
+            curve: Curves.elasticOut,
+            builder: (context, value, child) =>
+                Transform.scale(scale: value, child: child),
+            child: const Icon(Icons.emoji_events_outlined, size: 42),
+          ),
           title: const Text('Gelöst!'),
           content: Text('Alle Regeln sind erfüllt. Zeit: ${_formatTime(elapsedSeconds)}.'),
           actions: [
@@ -652,7 +785,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
               child: const Text('Neu starten'),
             ),
           ],
-        ),
+        );
+        },
       );
     });
   }
@@ -686,6 +820,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
       puzzle.reset();
       elapsedSeconds = 0;
       _completionRecorded = false;
+      _selectedCell = null;
+      _hintCell = null;
     });
     _saveGame();
   }
@@ -742,6 +878,152 @@ class _GameInfoBar extends StatelessWidget {
   }
 }
 
+
+
+class SettingsScreen extends StatelessWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final preferences = PreferencesScope.of(context);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Einstellungen')),
+      body: Center(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: AnimatedBuilder(
+                animation: preferences,
+                builder: (context, _) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Darstellung',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: DropdownButtonFormField<AppThemePreference>(
+                          initialValue: preferences.themePreference,
+                          decoration: const InputDecoration(
+                            labelText: 'Farbschema',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: [
+                            for (final value in AppThemePreference.values)
+                              DropdownMenuItem(
+                                value: value,
+                                child: Text(value.label),
+                              ),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) preferences.setTheme(value);
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Card(
+                      child: Column(
+                        children: [
+                          SwitchListTile(
+                            title: const Text('Animationen'),
+                            subtitle: const Text(
+                              'Zahlenwechsel und Erfolgsanimationen anzeigen',
+                            ),
+                            value: preferences.animationsEnabled,
+                            onChanged: preferences.setAnimationsEnabled,
+                          ),
+                          const Divider(height: 1),
+                          SwitchListTile(
+                            title: const Text('Haptisches Feedback'),
+                            subtitle: const Text(
+                              'Kurze Rückmeldung auf unterstützten Geräten',
+                            ),
+                            value: preferences.hapticsEnabled,
+                            onChanged: preferences.setHapticsEnabled,
+                          ),
+                          const Divider(height: 1),
+                          SwitchListTile(
+                            title: const Text('Regelfehler markieren'),
+                            subtitle: const Text(
+                              'Standardwert für neu geöffnete Rätsel',
+                            ),
+                            value: preferences.showRuleIssues,
+                            onChanged: preferences.setShowRuleIssues,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Lokale Daten',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    Card(
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.delete_outline,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        title: const Text('Spielfortschritt löschen'),
+                        subtitle: const Text(
+                          'Entfernt aktives Spiel, Bestzeiten und Statistik',
+                        ),
+                        onTap: () => _confirmReset(context),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Alle Einstellungen und Spielstände werden nur lokal auf diesem Gerät beziehungsweise in diesem Browser gespeichert.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmReset(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.warning_amber_rounded),
+        title: const Text('Spielfortschritt löschen?'),
+        content: const Text(
+          'Aktives Spiel, Bestzeiten und die gesamte Statistik werden dauerhaft gelöscht. Die Einstellungen bleiben erhalten.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+    await GameStorage().clearAllProgress();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Spielfortschritt wurde gelöscht.')),
+    );
+  }
+}
 
 class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({required this.results, super.key});
@@ -863,11 +1145,17 @@ class _PuzzleBoard extends StatelessWidget {
   const _PuzzleBoard({
     required this.puzzle,
     required this.issueCells,
+    required this.selectedCell,
+    required this.hintCell,
+    required this.animationsEnabled,
     required this.onCellPressed,
   });
 
   final BinaryPuzzle puzzle;
   final Set<CellPosition> issueCells;
+  final CellPosition? selectedCell;
+  final CellPosition? hintCell;
+  final bool animationsEnabled;
   final void Function(int row, int column) onCellPressed;
 
   @override
@@ -894,10 +1182,19 @@ class _PuzzleBoard extends StatelessWidget {
             final clue = puzzle.isClue(row, column);
             final hasIssue = issueCells.contains(CellPosition(row, column));
 
+            final isSelected = selectedCell == CellPosition(row, column);
+            final isRelated = selectedCell != null &&
+                (selectedCell!.row == row || selectedCell!.column == column);
+            final isHint = hintCell == CellPosition(row, column);
+
             return _PuzzleCell(
               value: value,
               clue: clue,
               hasIssue: hasIssue,
+              isSelected: isSelected,
+              isRelated: isRelated,
+              isHint: isHint,
+              animationsEnabled: animationsEnabled,
               onPressed: clue ? null : () => onCellPressed(row, column),
             );
           },
@@ -912,12 +1209,20 @@ class _PuzzleCell extends StatelessWidget {
     required this.value,
     required this.clue,
     required this.hasIssue,
+    required this.isSelected,
+    required this.isRelated,
+    required this.isHint,
+    required this.animationsEnabled,
     required this.onPressed,
   });
 
   final CellValue? value;
   final bool clue;
   final bool hasIssue;
+  final bool isSelected;
+  final bool isRelated;
+  final bool isHint;
+  final bool animationsEnabled;
   final VoidCallback? onPressed;
 
   @override
@@ -948,27 +1253,40 @@ class _PuzzleCell extends StatelessWidget {
               ? 'Leeres Feld'
               : 'Feld ${value!.label}',
       hint: clue ? null : 'Antippen, um den Wert zu ändern',
-      child: Material(
-        color: background,
-        child: InkWell(
-          onTap: onPressed,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: colors.outlineVariant,
-                width: 0.6,
-              ),
-            ),
-            alignment: Alignment.center,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 140),
-              child: Text(
-                value?.label ?? '',
-                key: ValueKey(value),
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: foreground,
-                      fontWeight: clue ? FontWeight.w800 : FontWeight.w600,
-                    ),
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: animationsEnabled ? 160 : 0),
+        decoration: BoxDecoration(
+          color: isHint
+              ? colors.primaryContainer
+              : isRelated && value == null && !hasIssue
+                  ? colors.surfaceContainerHigh
+                  : background,
+          border: Border.all(
+            color: isSelected || isHint
+                ? colors.primary
+                : colors.outlineVariant,
+            width: isSelected || isHint ? 2.2 : 0.6,
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            child: Center(
+              child: AnimatedSwitcher(
+                duration:
+                    Duration(milliseconds: animationsEnabled ? 140 : 0),
+                transitionBuilder: (child, animation) =>
+                    ScaleTransition(scale: animation, child: child),
+                child: Text(
+                  value?.label ?? '',
+                  key: ValueKey(value),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: foreground,
+                        fontWeight:
+                            clue ? FontWeight.w800 : FontWeight.w700,
+                      ),
+                ),
               ),
             ),
           ),

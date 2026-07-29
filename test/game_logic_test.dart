@@ -137,4 +137,27 @@ void main() {
     );
   });
 
+
+
+  test('setCell records a reversible hint move', () {
+    final puzzle = binaryPuzzleCatalog.first.createPuzzle();
+    CellPosition? editable;
+
+    for (var row = 0; row < puzzle.size && editable == null; row++) {
+      for (var column = 0; column < puzzle.size; column++) {
+        if (!puzzle.isClue(row, column)) {
+          editable = CellPosition(row, column);
+          break;
+        }
+      }
+    }
+
+    puzzle.setCell(editable!.row, editable.column, CellValue.one);
+    expect(puzzle.board[editable.row][editable.column], CellValue.one);
+    expect(puzzle.canUndo, isTrue);
+
+    puzzle.undo();
+    expect(puzzle.board[editable.row][editable.column], isNull);
+  });
+
 }

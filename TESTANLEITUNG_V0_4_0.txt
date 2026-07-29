@@ -1,0 +1,142 @@
+PROJECT LOGIC v0.4.0 – EXAKTE TESTANLEITUNG
+
+INSTALLATION
+1. App und Chrome vollständig schließen.
+2. Aus dem Update über das bestehende Projekt kopieren:
+   - lib
+   - test
+   - pubspec.yaml
+   - CHANGELOG.md
+3. Vorhandene Dateien ersetzen.
+4. Git Bash im Projektordner öffnen.
+5. Ausführen:
+   flutter clean && flutter pub get && flutter test
+6. Erwartung:
+   All tests passed!
+7. App über „Project Logic starten.bat“ starten.
+
+TEST 1 – VERSION UND EINSTELLUNGEN
+1. Auf der Startseite muss stehen:
+   Version 0.4.0 · Gameplay Update
+2. „Einstellungen“ muss auswählbar sein.
+3. Einstellungen öffnen.
+4. Sichtbar sein müssen:
+   - Farbschema
+   - Animationen
+   - Haptisches Feedback
+   - Regelfehler markieren
+   - Spielfortschritt löschen
+
+TEST 2 – HELLES UND DUNKLES DESIGN
+1. Farbschema auf „Dunkel“ stellen.
+2. Die App muss sofort dunkel werden.
+3. Zur Startseite zurückgehen und Einstellungen erneut öffnen.
+4. „Dunkel“ muss weiterhin ausgewählt sein.
+5. Browser mit F5 neu laden.
+6. Das dunkle Design muss erhalten bleiben.
+7. Danach „Hell“ testen.
+8. Zum Abschluss wieder „Systemeinstellung“ wählen.
+
+TEST 3 – REGELFEHLER-STANDARD
+1. Einstellungen → „Regelfehler markieren“ ausschalten.
+2. Neues Spiel öffnen.
+3. Im Spiel muss der Schalter ebenfalls ausgeschaltet sein.
+4. Käfer-Menü → Regelfehler erzeugen.
+5. Die Fehlerfelder dürfen zunächst nicht farbig markiert sein.
+6. Schalter im Spiel einschalten.
+7. Markierungen müssen erscheinen.
+8. Zurückgehen und ein anderes Rätsel öffnen.
+9. Der Schalter muss jetzt standardmäßig eingeschaltet sein.
+
+TEST 4 – AUSWAHLHERVORHEBUNG
+1. Ein Rätsel öffnen.
+2. Ein freies Feld antippen.
+3. Erwartung:
+   - das Feld erhält einen deutlicheren Rahmen
+   - seine Zeile und Spalte werden dezent hervorgehoben
+4. Ein anderes Feld antippen.
+5. Die Hervorhebung muss zum neuen Feld wechseln.
+6. Es dürfen keine gelb-schwarzen Überlaufstreifen erscheinen.
+
+TEST 5 – EINFACHER LOGISCHER HINWEIS
+1. Leicht → Rätsel 1 öffnen.
+2. Oben auf das Glühbirnen-Symbol oder unten auf
+   „Logischen Hinweis anzeigen“ drücken.
+3. Erwartung:
+   - ein Feld wird markiert
+   - ein Dialog nennt Zeile und Spalte
+   - eine konkrete Regel wird erklärt
+   - der benötigte Wert 0 oder 1 wird genannt
+4. „Nur markieren“ wählen.
+5. Das Feld muss markiert bleiben, darf aber nicht automatisch gefüllt sein.
+6. Hinweis erneut öffnen.
+7. „Hinweis anwenden“ wählen.
+8. Das Feld muss korrekt gefüllt werden.
+9. „Rückgängig“ drücken.
+10. Der Hinweiszug muss wieder entfernt werden.
+11. „Wiederholen“ drücken.
+12. Der Hinweiszug muss wieder erscheinen.
+
+TEST 6 – KEIN ERZWUNGENER LÖSUNGS-CHEAT
+1. Ein Rätsel so verändern, dass keine direkte einfache Regel verfügbar ist,
+   oder verschiedene Rätsel am Anfang prüfen.
+2. Falls kein einfacher Zug gefunden wird, muss der Dialog
+   „Kein einfacher Hinweis“ erscheinen.
+3. Die App darf dann nicht heimlich einen Lösungswert eintragen.
+
+TEST 7 – ANIMATIONEN
+1. Einstellungen → Animationen einschalten.
+2. Im Rätsel mehrfach ein Feld antippen.
+3. Der Zahlenwechsel muss weich skaliert werden.
+4. Einstellungen → Animationen ausschalten.
+5. Zahlenwechsel erneut prüfen.
+6. Er muss nun ohne merkliche Verzögerung erfolgen.
+7. Käfer-Menü → Sofort lösen.
+8. Mit Animationen an erscheint die Trophäe animiert;
+   mit Animationen aus sofort.
+
+TEST 8 – HAPTIK
+Dieser Test ist hauptsächlich für ein Android-Gerät gedacht.
+1. Einstellungen → Haptisches Feedback einschalten.
+2. Auf einem Android-Gerät ein Feld antippen.
+3. Eine kurze Rückmeldung sollte spürbar sein.
+4. Haptik ausschalten und erneut testen.
+5. In Chrome darf die Einstellung unabhängig davon keinen Fehler verursachen.
+
+TEST 9 – SPIELFORTSCHRITT LÖSCHEN
+1. Ein Spiel beginnen und einige Felder setzen.
+2. Ein anderes Rätsel mit dem Käfer-Menü lösen.
+3. Prüfen, dass „Spiel fortsetzen“ und Statistik Daten anzeigen.
+4. Einstellungen öffnen.
+5. „Spielfortschritt löschen“ antippen.
+6. Zuerst „Abbrechen“ wählen.
+7. Es darf nichts gelöscht worden sein.
+8. Erneut öffnen und „Löschen“ bestätigen.
+9. Zur Startseite zurückgehen.
+10. Erwartung:
+    - kein „Spiel fortsetzen“
+    - Statistik zeigt 0 von 9
+    - Einstellungen wie Farbschema bleiben erhalten
+
+TEST 10 – SPEICHER-REGRESSION
+1. Ein neues Rätsel öffnen.
+2. Drei Felder setzen und einige Sekunden warten.
+3. Zur Startseite zurückgehen.
+4. „Spiel fortsetzen“ muss sofort erscheinen.
+5. Fortsetzen öffnen.
+6. Felder und Zeit müssen korrekt wiederhergestellt werden.
+7. F5 neu laden und erneut prüfen.
+
+TEST 11 – RESPONSIVES LAYOUT
+1. Chrome auf ungefähr Handybreite verkleinern.
+2. Startseite, Einstellungen, Statistik und Spielfeld prüfen.
+3. Keine gelb-schwarzen Überlaufstreifen.
+4. Alle wichtigen Schaltflächen bleiben erreichbar.
+
+BEI EINEM FEHLER
+Bitte senden:
+- Testnummer
+- Screenshot
+- erwartetes Verhalten
+- tatsächliches Verhalten
+- rote Terminalmeldung, falls vorhanden

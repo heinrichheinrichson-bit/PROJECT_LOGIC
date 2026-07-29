@@ -181,6 +181,19 @@ class BinaryPuzzle {
     );
   }
 
+  void setCell(int row, int column, CellValue value) {
+    if (isClue(row, column) || board[row][column] == value) return;
+
+    _apply(
+      CellChange(
+        position: CellPosition(row, column),
+        before: board[row][column],
+        after: value,
+      ),
+      clearRedo: true,
+    );
+  }
+
   void undo() {
     if (_undoStack.isEmpty) return;
     final change = _undoStack.removeLast();
