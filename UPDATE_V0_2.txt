@@ -1,0 +1,16 @@
+VERSION 0.2
+
+Neu:
+- Startbildschirm
+- Spielauswahl
+- Schwierigkeitsauswahl
+- Navigation zum Binärpuzzle
+- Hitori und Hashi sichtbar als in Arbeit
+- Start per Doppelklick über "Project Logic starten.bat"
+
+Installation in dein bestehendes Projekt:
+1. Den Ordner lib aus diesem Paket über deinen vorhandenen lib-Ordner kopieren.
+2. "Project Logic starten.bat" neben pubspec.yaml kopieren.
+3. In deinem bestehenden Projekt bleibt test/widget_test.dart gelöscht.
+4. Einmal flutter test ausführen.
+5. Danach per Doppelklick auf die BAT starten.
