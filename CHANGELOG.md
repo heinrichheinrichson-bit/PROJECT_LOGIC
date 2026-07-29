@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.5.1 – Solver Foundation
+
+### Added
+- UI-unabhängiger Binärpuzzle-Validator
+- Prüfung von Teilständen und vollständigen Spielfeldern
+- Backtracking-Solver mit konfigurierbarer Lösungsgrenze
+- Ergebnisobjekt für Lösbarkeit, Lösungszahl, Eindeutigkeit und untersuchte Zustände
+- Isolierte Tests mit eigenen 4×4-Testpuzzles
+- Solver-Dokumentation unter `docs/SOLVER.md`
+
+### Validated rules
+- Gleiche Anzahl von 0 und 1
+- Keine drei gleichen Zahlen in Folge
+- Keine identischen vollständigen Zeilen
+- Keine identischen vollständigen Spalten
+
+### Compatibility
+- Keine UI-, Speicher- oder Rätselkatalogänderungen
+- Bestehende Spielstände bleiben kompatibel
+
 ## v0.5.0 – Architecture Foundation
 
 ### Added

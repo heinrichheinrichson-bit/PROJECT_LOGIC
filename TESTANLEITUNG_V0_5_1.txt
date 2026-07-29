@@ -1,0 +1,42 @@
+PROJECT LOGIC v0.5.1 – SOLVER FOUNDATION
+
+ZIEL
+Dieses Release fügt den Solver ausschließlich als getestete Domain-Schicht ein.
+Die Benutzeroberfläche und das aktuelle Hinweissystem bleiben unverändert.
+
+INSTALLATION
+1. App und Chrome schließen.
+2. Aus dem Update kopieren beziehungsweise ersetzen:
+   - lib
+   - test
+   - docs
+   - pubspec.yaml
+   - CHANGELOG.md
+3. Da neue Unterordner enthalten sind, die Ordnerstruktur vollständig übernehmen.
+4. In Git Bash ausführen:
+   flutter clean && flutter pub get && flutter test
+
+ERWARTUNG
+All tests passed!
+
+NEUE TESTS
+- BinaryBoardValidator akzeptiert gültige vollständige Felder.
+- Dreierfolgen werden abgelehnt.
+- Zu viele gleiche Werte werden abgelehnt.
+- Doppelte vollständige Zeilen werden abgelehnt.
+- Ungültige Feldformen werden abgelehnt.
+- Ein eigenes 4×4-Rätsel wird eindeutig gelöst.
+- Ein widersprüchliches Rätsel ist unlösbar.
+- Die Lösungssuche stoppt an der gesetzten Grenze.
+
+APP-REGRESSION
+1. App starten.
+2. Startseite zeigt:
+   Version 0.5.1 · Solver Foundation
+3. Rätsel starten.
+4. Eingaben, Undo/Redo und bestehende Hinweise prüfen.
+5. Spiel fortsetzen, Einstellungen und Statistik prüfen.
+
+WICHTIG
+Der neue Solver ist in dieser Version noch nicht mit der Glühbirne verbunden.
+Das geschieht erst nach erfolgreichem isoliertem Test.

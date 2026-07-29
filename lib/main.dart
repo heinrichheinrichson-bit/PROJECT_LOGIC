@@ -187,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                   const SizedBox(height: 28),
-                  Text('Version 0.4.1 · Stabilitäts-Patch', textAlign: TextAlign.center,
+                  Text('Version 0.5.1 · Solver Foundation', textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
