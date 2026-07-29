@@ -1,0 +1,74 @@
+PROJECT LOGIC v0.2.0 – TESTANLEITUNG
+====================================
+
+VORBEREITUNG
+1. Den neuen lib-Ordner und test-Ordner in das Projekt kopieren.
+2. pubspec.yaml und CHANGELOG.md ebenfalls ersetzen/kopieren.
+3. Im Projektordner ausführen:
+   flutter clean
+   flutter pub get
+   flutter test
+4. Erwartung: All tests passed!
+5. App über „Project Logic starten.bat“ starten.
+
+TEST 1 – VERSION UND NAVIGATION
+1. Startseite öffnen.
+2. Unten muss „Version 0.2.0 · Entwicklungsstand“ stehen.
+3. Neues Spiel > Binärpuzzle öffnen.
+4. Leicht, Mittel und Schwer müssen alle auswählbar sein.
+5. Jede Stufe muss „3 Rätsel“ anzeigen.
+
+TEST 2 – RÄTSELAUSWAHL
+1. Leicht öffnen.
+2. Rätsel 1, Rätsel 2 und Rätsel 3 müssen sichtbar sein.
+3. Jedes Rätsel zeigt 6 × 6 und die Zahl seiner Vorgaben.
+4. Rätsel 2 öffnen.
+5. Titel muss „Leicht · Rätsel 2“ zeigen.
+6. Zurückgehen und Mittel > Rätsel 1 öffnen.
+7. Titel muss „Mittel · Rätsel 1“ zeigen.
+8. Dasselbe mit Schwer > Rätsel 3 prüfen.
+
+TEST 3 – ZEIT UND FORTSCHRITT
+1. Ein neues Rätsel öffnen.
+2. Timer muss bei 0:00 beginnen und jede Sekunde steigen.
+3. Ein leeres Feld einmal antippen.
+4. Anzeige „x / y Felder“ muss um 1 steigen.
+5. Dasselbe Feld zweimal weiter antippen, bis es wieder leer ist.
+6. Anzeige muss wieder um 1 sinken.
+7. Fortschrittsbalken muss sich entsprechend verändern.
+8. Zurücksetzen drücken.
+9. Timer und Fortschritt müssen auf den Anfang zurückgehen.
+
+TEST 4 – UNDO/REDO
+1. Zwei freie Felder setzen.
+2. Zweimal Rückgängig drücken.
+3. Beide Änderungen müssen verschwinden.
+4. Zweimal Wiederholen drücken.
+5. Beide Änderungen müssen wieder erscheinen.
+
+TEST 5 – TESTMODUS UND ABSCHLUSS
+1. Käfer-Symbol öffnen.
+2. „Bis auf 1 Feld lösen“ auswählen.
+3. Das letzte Feld korrekt setzen.
+4. Gelöst-Dialog muss erscheinen und eine Zeit anzeigen.
+5. „Nächstes Rätsel“ drücken.
+6. Das folgende Rätsel derselben Schwierigkeit muss geöffnet werden.
+7. Beim dritten Rätsel muss „Nächstes Rätsel“ deaktiviert sein.
+
+TEST 6 – FEHLERANZEIGE
+1. Käfer-Symbol > Regelfehler erzeugen.
+2. Fehlerhafte Felder müssen markiert werden.
+3. Regelfehler markieren ausschalten: Markierungen verschwinden.
+4. Wieder einschalten: Markierungen erscheinen wieder.
+5. Testzustand löschen: Raster ist wieder im Ausgangszustand.
+
+TEST 7 – SCHMALES FENSTER
+1. Browser ungefähr auf Handybreite verkleinern.
+2. Keine gelb-schwarzen Overflow-Streifen dürfen erscheinen.
+3. Timer, Fortschritt, Raster und Bedienelemente bleiben erreichbar.
+
+BEI EINEM FEHLER
+- Testnummer nennen.
+- Screenshot schicken.
+- Erwartetes und tatsächliches Verhalten beschreiben.
+- Rote Meldungen aus Git Bash vollständig kopieren.

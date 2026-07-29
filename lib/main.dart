@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -79,7 +81,7 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   const _HomeAction(icon: Icons.settings_outlined, title: 'Einstellungen', subtitle: 'In Vorbereitung'),
                   const SizedBox(height: 28),
-                  Text('Version 0.3 · Testmodus', textAlign: TextAlign.center,
+                  Text('Version 0.2.0 · Entwicklungsstand', textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
@@ -193,26 +195,38 @@ class DifficultyScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Binärpuzzle')),
       body: Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text('Schwierigkeit', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 20),
-              Card(child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                leading: const Icon(Icons.eco_outlined, size: 32),
-                title: const Text('Leicht', style: TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: const Text('6 × 6 · festes Prototyp-Rätsel'),
-                trailing: const Icon(Icons.play_arrow_rounded),
-                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const BinaryPuzzleScreen())),
-              )),
-              const SizedBox(height: 12),
-              const Card(child: ListTile(title: Text('Mittel'), subtitle: Text('Später verfügbar'), trailing: Text('BALD'))),
-              const SizedBox(height: 12),
-              const Card(child: ListTile(title: Text('Schwer'), subtitle: Text('Später verfügbar'), trailing: Text('BALD'))),
-            ]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text('Schwierigkeit', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 8),
+                Text('Jede Stufe enthält drei spielbare Rätsel.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                const SizedBox(height: 20),
+                for (final difficulty in PuzzleDifficulty.values) ...[
+                  Card(
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      leading: Icon(switch (difficulty) {
+                        PuzzleDifficulty.easy => Icons.eco_outlined,
+                        PuzzleDifficulty.medium => Icons.psychology_alt_outlined,
+                        PuzzleDifficulty.hard => Icons.local_fire_department_outlined,
+                      }, size: 32),
+                      title: Text(difficulty.label, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      subtitle: Text('${difficulty.description} · ${puzzlesFor(difficulty).length} Rätsel'),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 17),
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                        builder: (_) => PuzzleSelectionScreen(difficulty: difficulty),
+                      )),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -220,11 +234,48 @@ class DifficultyScreen extends StatelessWidget {
   }
 }
 
+class PuzzleSelectionScreen extends StatelessWidget {
+  const PuzzleSelectionScreen({required this.difficulty, super.key});
+
+  final PuzzleDifficulty difficulty;
+
+  @override
+  Widget build(BuildContext context) {
+    final puzzles = puzzlesFor(difficulty);
+    return Scaffold(
+      appBar: AppBar(title: Text('Binärpuzzle · ${difficulty.label}')),
+      body: Center(
+        child: ListView.separated(
+          padding: const EdgeInsets.all(24),
+          itemCount: puzzles.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final definition = puzzles[index];
+            return Card(
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                leading: CircleAvatar(child: Text('${definition.number}')),
+                title: Text(definition.displayName, style: const TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: Text('6 × 6 · ${definition.clueCount} Vorgaben'),
+                trailing: const Icon(Icons.play_arrow_rounded),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => BinaryPuzzleScreen(definition: definition),
+                )),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
 
 enum _DeveloperAction { almostSolved, solve, error, reset }
 
 class BinaryPuzzleScreen extends StatefulWidget {
-  const BinaryPuzzleScreen({super.key});
+  const BinaryPuzzleScreen({required this.definition, super.key});
+
+  final BinaryPuzzleDefinition definition;
 
   @override
   State<BinaryPuzzleScreen> createState() => _BinaryPuzzleScreenState();
@@ -233,11 +284,22 @@ class BinaryPuzzleScreen extends StatefulWidget {
 class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
   late BinaryPuzzle puzzle;
   bool showIssues = true;
+  late final Timer _timer;
+  int elapsedSeconds = 0;
 
   @override
   void initState() {
     super.initState();
-    puzzle = createPrototypePuzzle();
+    puzzle = widget.definition.createPuzzle();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && !puzzle.isSolved) setState(() => elapsedSeconds++);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
   }
 
   @override
@@ -249,7 +311,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Binärpuzzle · Leicht'),
+        title: Text('${widget.definition.difficulty.label} · ${widget.definition.displayName}'),
         actions: [
           if (kDebugMode)
             PopupMenuButton<_DeveloperAction>(
@@ -291,6 +353,13 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  _GameInfoBar(
+                    elapsedSeconds: elapsedSeconds,
+                    filled: puzzle.filledEditableCellCount,
+                    total: puzzle.editableCellCount,
+                    progress: puzzle.progress,
+                  ),
+                  const SizedBox(height: 12),
                   _StatusCard(
                     isSolved: puzzle.isSolved,
                     isComplete: puzzle.isComplete,
@@ -387,13 +456,20 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
         builder: (context) => AlertDialog(
           icon: const Icon(Icons.check_circle_outline),
           title: const Text('Gelöst!'),
-          content: const Text(
-            'Alle Regeln sind erfüllt. Der Abschlussablauf funktioniert.',
-          ),
+          content: Text('Alle Regeln sind erfüllt. Zeit: ${_formatTime(elapsedSeconds)}.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Weiter ansehen'),
+            ),
+            FilledButton.tonal(
+              onPressed: _hasNextPuzzle ? () {
+                Navigator.of(context).pop();
+                Navigator.of(this.context).pushReplacement(MaterialPageRoute<void>(
+                  builder: (_) => BinaryPuzzleScreen(definition: _nextPuzzle!),
+                ));
+              } : null,
+              child: const Text('Nächstes Rätsel'),
             ),
             FilledButton(
               onPressed: () {
@@ -412,8 +488,65 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
 
   void _redo() => setState(puzzle.redo);
 
+  bool get _hasNextPuzzle => _nextPuzzle != null;
+
+  BinaryPuzzleDefinition? get _nextPuzzle {
+    final list = puzzlesFor(widget.definition.difficulty);
+    final index = list.indexWhere((item) => item.id == widget.definition.id);
+    return index >= 0 && index + 1 < list.length ? list[index + 1] : null;
+  }
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final rest = seconds % 60;
+    return '$minutes:${rest.toString().padLeft(2, '0')}';
+  }
+
   void _reset() {
-    setState(puzzle.reset);
+    setState(() {
+      puzzle.reset();
+      elapsedSeconds = 0;
+    });
+  }
+}
+
+class _GameInfoBar extends StatelessWidget {
+  const _GameInfoBar({
+    required this.elapsedSeconds,
+    required this.filled,
+    required this.total,
+    required this.progress,
+  });
+
+  final int elapsedSeconds;
+  final int filled;
+  final int total;
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final minutes = elapsedSeconds ~/ 60;
+    final seconds = elapsedSeconds % 60;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.timer_outlined, size: 20),
+                const SizedBox(width: 7),
+                Text('$minutes:${seconds.toString().padLeft(2, '0')}'),
+                const Spacer(),
+                Text('$filled / $total Felder'),
+              ],
+            ),
+            const SizedBox(height: 10),
+            LinearProgressIndicator(value: progress),
+          ],
+        ),
+      ),
+    );
   }
 }
 

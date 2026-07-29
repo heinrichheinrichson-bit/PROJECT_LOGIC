@@ -1,0 +1,1 @@
+git add . && git commit -m "feat(v0.2.0): add puzzle catalog, difficulties, timer and progress" && git tag -a v0.2.0 -m "Project Logic v0.2.0 - nine binary puzzles, three difficulty levels, timer and progress" && git push && git push origin v0.2.0
