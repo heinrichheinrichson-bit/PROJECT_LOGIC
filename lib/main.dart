@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'game_logic.dart';
+import 'game_storage.dart';
 
 void main() {
   runApp(const ProjectLogicApp());
@@ -37,8 +38,44 @@ class ProjectLogicApp extends StatelessWidget {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final GameStorage _storage = GameStorage();
+  SavedGame? _savedGame;
+  Map<String, PuzzleResult> _results = const {};
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final savedGame = await _storage.loadActiveGame();
+    final results = await _storage.loadResults();
+    if (!mounted) return;
+    setState(() {
+      _savedGame = savedGame;
+      _results = results;
+      _loading = false;
+    });
+  }
+
+  BinaryPuzzleDefinition? get _savedDefinition {
+    final game = _savedGame;
+    if (game == null) return null;
+    for (final definition in binaryPuzzleCatalog) {
+      if (definition.id == game.puzzleId) return definition;
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,22 +103,69 @@ class HomeScreen extends StatelessWidget {
                       style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurfaceVariant)),
                   const SizedBox(height: 40),
-                  _HomeAction(
-                    icon: Icons.play_arrow_rounded,
-                    title: 'Neues Spiel',
-                    subtitle: 'Spiel und Schwierigkeit auswählen',
-                    enabled: true,
-                    onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                        builder: (_) => const GameSelectionScreen())),
-                  ),
-                  const SizedBox(height: 12),
-                  const _HomeAction(icon: Icons.calendar_today_outlined, title: 'Tagesrätsel', subtitle: 'Kommt mit dem Generator'),
-                  const SizedBox(height: 12),
-                  const _HomeAction(icon: Icons.bar_chart_rounded, title: 'Statistik', subtitle: 'Kommt mit der Speicherung'),
-                  const SizedBox(height: 12),
-                  const _HomeAction(icon: Icons.settings_outlined, title: 'Einstellungen', subtitle: 'In Vorbereitung'),
+                  if (_loading)
+                    const Center(child: CircularProgressIndicator())
+                  else ...[
+                    if (_savedGame != null && _savedDefinition != null) ...[
+                      _HomeAction(
+                        icon: Icons.play_circle_outline_rounded,
+                        title: 'Spiel fortsetzen',
+                        subtitle:
+                            '${_savedDefinition!.difficulty.label} · ${_savedDefinition!.displayName} · ${_formatHomeTime(_savedGame!.elapsedSeconds)}',
+                        enabled: true,
+                        onTap: () async {
+                          await Navigator.of(context).push(MaterialPageRoute<void>(
+                            builder: (_) => BinaryPuzzleScreen(
+                              definition: _savedDefinition!,
+                              savedGame: _savedGame,
+                            ),
+                          ));
+                          await _refresh();
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    _HomeAction(
+                      icon: Icons.play_arrow_rounded,
+                      title: 'Neues Spiel',
+                      subtitle: 'Spiel und Schwierigkeit auswählen',
+                      enabled: true,
+                      onTap: () async {
+                        await Navigator.of(context).push(MaterialPageRoute<void>(
+                          builder: (_) => const GameSelectionScreen(),
+                        ));
+                        await _refresh();
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    const _HomeAction(
+                      icon: Icons.calendar_today_outlined,
+                      title: 'Tagesrätsel',
+                      subtitle: 'Kommt mit dem Generator',
+                    ),
+                    const SizedBox(height: 12),
+                    _HomeAction(
+                      icon: Icons.bar_chart_rounded,
+                      title: 'Statistik',
+                      subtitle:
+                          '${_results.length} von ${binaryPuzzleCatalog.length} Rätseln gelöst',
+                      enabled: true,
+                      onTap: () async {
+                        await Navigator.of(context).push(MaterialPageRoute<void>(
+                          builder: (_) => StatisticsScreen(results: _results),
+                        ));
+                        await _refresh();
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    const _HomeAction(
+                      icon: Icons.settings_outlined,
+                      title: 'Einstellungen',
+                      subtitle: 'In Vorbereitung',
+                    ),
+                  ],
                   const SizedBox(height: 28),
-                  Text('Version 0.2.0 · Entwicklungsstand', textAlign: TextAlign.center,
+                  Text('Version 0.3.1 · Entwicklungsstand', textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
@@ -91,6 +175,13 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+
+String _formatHomeTime(int seconds) {
+  final minutes = seconds ~/ 60;
+  final rest = seconds % 60;
+  return '$minutes:${rest.toString().padLeft(2, '0')}';
 }
 
 class _HomeAction extends StatelessWidget {
@@ -234,16 +325,37 @@ class DifficultyScreen extends StatelessWidget {
   }
 }
 
-class PuzzleSelectionScreen extends StatelessWidget {
+class PuzzleSelectionScreen extends StatefulWidget {
   const PuzzleSelectionScreen({required this.difficulty, super.key});
 
   final PuzzleDifficulty difficulty;
 
   @override
+  State<PuzzleSelectionScreen> createState() => _PuzzleSelectionScreenState();
+}
+
+class _PuzzleSelectionScreenState extends State<PuzzleSelectionScreen> {
+  final GameStorage _storage = GameStorage();
+  Map<String, PuzzleResult> _results = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadResults();
+  }
+
+  Future<void> _loadResults() async {
+    final results = await _storage.loadResults();
+    if (mounted) setState(() => _results = results);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final puzzles = puzzlesFor(difficulty);
+    final puzzles = puzzlesFor(widget.difficulty);
     return Scaffold(
-      appBar: AppBar(title: Text('Binärpuzzle · ${difficulty.label}')),
+      appBar: AppBar(
+        title: Text('Binärpuzzle · ${widget.difficulty.label}'),
+      ),
       body: Center(
         child: ListView.separated(
           padding: const EdgeInsets.all(24),
@@ -251,16 +363,37 @@ class PuzzleSelectionScreen extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final definition = puzzles[index];
+            final result = _results[definition.id];
             return Card(
               child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                leading: CircleAvatar(child: Text('${definition.number}')),
-                title: Text(definition.displayName, style: const TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: Text('6 × 6 · ${definition.clueCount} Vorgaben'),
-                trailing: const Icon(Icons.play_arrow_rounded),
-                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                  builder: (_) => BinaryPuzzleScreen(definition: definition),
-                )),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                leading: CircleAvatar(
+                  child: result == null
+                      ? Text('${definition.number}')
+                      : const Icon(Icons.check_rounded),
+                ),
+                title: Text(
+                  definition.displayName,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: Text(
+                  result == null
+                      ? '6 × 6 · ${definition.clueCount} Vorgaben'
+                      : 'Bestzeit ${_formatHomeTime(result.bestSeconds)} · ${definition.clueCount} Vorgaben',
+                ),
+                trailing: Icon(
+                  result == null
+                      ? Icons.play_arrow_rounded
+                      : Icons.replay_rounded,
+                ),
+                onTap: () async {
+                  await Navigator.of(context).push(MaterialPageRoute<void>(
+                    builder: (_) =>
+                        BinaryPuzzleScreen(definition: definition),
+                  ));
+                  await _loadResults();
+                },
               ),
             );
           },
@@ -273,26 +406,44 @@ class PuzzleSelectionScreen extends StatelessWidget {
 enum _DeveloperAction { almostSolved, solve, error, reset }
 
 class BinaryPuzzleScreen extends StatefulWidget {
-  const BinaryPuzzleScreen({required this.definition, super.key});
+  const BinaryPuzzleScreen({
+    required this.definition,
+    this.savedGame,
+    super.key,
+  });
 
   final BinaryPuzzleDefinition definition;
+  final SavedGame? savedGame;
 
   @override
   State<BinaryPuzzleScreen> createState() => _BinaryPuzzleScreenState();
 }
 
 class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
+  final GameStorage _storage = GameStorage();
   late BinaryPuzzle puzzle;
   bool showIssues = true;
   late final Timer _timer;
   int elapsedSeconds = 0;
+  bool _completionRecorded = false;
 
   @override
   void initState() {
     super.initState();
     puzzle = widget.definition.createPuzzle();
+    final savedGame = widget.savedGame;
+    if (savedGame != null && savedGame.puzzleId == widget.definition.id) {
+      puzzle.restoreEditableValues(savedGame.values);
+      elapsedSeconds = savedGame.elapsedSeconds;
+    } else {
+      _saveGame();
+    }
+
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && !puzzle.isSolved) setState(() => elapsedSeconds++);
+      if (mounted && !puzzle.isSolved) {
+        setState(() => elapsedSeconds++);
+        if (elapsedSeconds % 5 == 0) _saveGame();
+      }
     });
   }
 
@@ -309,9 +460,18 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
       for (final issue in issues) ...issue.cells,
     };
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.definition.difficulty.label} · ${widget.definition.displayName}'),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _saveGame();
+        if (context.mounted) {
+          Navigator.of(context).pop(result);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('${widget.definition.difficulty.label} · ${widget.definition.displayName}'),
         actions: [
           if (kDebugMode)
             PopupMenuButton<_DeveloperAction>(
@@ -411,6 +571,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
             ),
           ),
         ),
+        ),
       ),
     );
   }
@@ -419,6 +580,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
     setState(() {
       puzzle.cycleCell(row, column);
     });
+    _saveGame();
 
     if (puzzle.isSolved) {
       _showSolvedDialog();
@@ -445,10 +607,21 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
 
     if (action == _DeveloperAction.solve) {
       _showSolvedDialog();
+    } else {
+      _saveGame();
     }
   }
 
   void _showSolvedDialog() {
+    if (!_completionRecorded) {
+      _completionRecorded = true;
+      _storage.recordCompletion(
+        puzzleId: widget.definition.id,
+        elapsedSeconds: elapsedSeconds,
+      );
+      _storage.clearActiveGame();
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       showDialog<void>(
@@ -484,9 +657,15 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
     });
   }
 
-  void _undo() => setState(puzzle.undo);
+  void _undo() {
+    setState(puzzle.undo);
+    _saveGame();
+  }
 
-  void _redo() => setState(puzzle.redo);
+  void _redo() {
+    setState(puzzle.redo);
+    _saveGame();
+  }
 
   bool get _hasNextPuzzle => _nextPuzzle != null;
 
@@ -506,7 +685,20 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
     setState(() {
       puzzle.reset();
       elapsedSeconds = 0;
+      _completionRecorded = false;
     });
+    _saveGame();
+  }
+
+  Future<void> _saveGame() {
+    return _storage.saveActiveGame(
+      SavedGame(
+        puzzleId: widget.definition.id,
+        elapsedSeconds: elapsedSeconds,
+        values: puzzle.exportEditableValues(),
+        savedAt: DateTime.now(),
+      ),
+    );
   }
 }
 
@@ -538,13 +730,130 @@ class _GameInfoBar extends StatelessWidget {
                 const SizedBox(width: 7),
                 Text('$minutes:${seconds.toString().padLeft(2, '0')}'),
                 const Spacer(),
-                Text('$filled / $total Felder'),
+                Text('$filled von $total Feldern gelöst'),
               ],
             ),
             const SizedBox(height: 10),
             LinearProgressIndicator(value: progress),
           ],
         ),
+      ),
+    );
+  }
+}
+
+
+class StatisticsScreen extends StatelessWidget {
+  const StatisticsScreen({required this.results, super.key});
+
+  final Map<String, PuzzleResult> results;
+
+  @override
+  Widget build(BuildContext context) {
+    final completed = results.length;
+    final total = binaryPuzzleCatalog.length;
+    final totalBestSeconds = results.values.fold<int>(
+      0,
+      (sum, result) => sum + result.bestSeconds,
+    );
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Statistik')),
+      body: Center(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          Text(
+                            '$completed / $total',
+                            style: Theme.of(context)
+                                .textTheme
+                                .displaySmall
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text('Rätsel abgeschlossen'),
+                          const SizedBox(height: 14),
+                          LinearProgressIndicator(
+                            value: total == 0 ? 0 : completed / total,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.timer_outlined),
+                      title: const Text('Summe deiner Bestzeiten'),
+                      subtitle: Text(_formatLongTime(totalBestSeconds)),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Nach Schwierigkeit',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 10),
+                  for (final difficulty in PuzzleDifficulty.values)
+                    _DifficultyStatistic(
+                      difficulty: difficulty,
+                      results: results,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static String _formatLongTime(int seconds) {
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    final rest = seconds % 60;
+    if (hours > 0) {
+      return '$hours:${minutes.toString().padLeft(2, '0')}:${rest.toString().padLeft(2, '0')}';
+    }
+    return '$minutes:${rest.toString().padLeft(2, '0')}';
+  }
+}
+
+class _DifficultyStatistic extends StatelessWidget {
+  const _DifficultyStatistic({
+    required this.difficulty,
+    required this.results,
+  });
+
+  final PuzzleDifficulty difficulty;
+  final Map<String, PuzzleResult> results;
+
+  @override
+  Widget build(BuildContext context) {
+    final puzzles = puzzlesFor(difficulty);
+    final completed =
+        puzzles.where((puzzle) => results.containsKey(puzzle.id)).length;
+
+    return Card(
+      child: ListTile(
+        leading: Icon(switch (difficulty) {
+          PuzzleDifficulty.easy => Icons.eco_outlined,
+          PuzzleDifficulty.medium => Icons.psychology_alt_outlined,
+          PuzzleDifficulty.hard => Icons.local_fire_department_outlined,
+        }),
+        title: Text(difficulty.label),
+        subtitle: Text('$completed von ${puzzles.length} gelöst'),
+        trailing: Text('${((completed / puzzles.length) * 100).round()} %'),
       ),
     );
   }

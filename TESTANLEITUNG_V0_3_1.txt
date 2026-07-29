@@ -1,0 +1,68 @@
+PROJECT LOGIC v0.3.1 – TESTANLEITUNG FÜR DEN SPEICHER-FIX
+
+INSTALLATION
+1. App und Chrome schließen.
+2. Aus diesem Update über das bestehende Projekt kopieren:
+   - lib
+   - test
+   - pubspec.yaml
+   - CHANGELOG.md
+3. Vorhandene Dateien ersetzen.
+4. Im Projektordner in Git Bash ausführen:
+   flutter clean && flutter pub get && flutter test
+5. Erwartung:
+   All tests passed!
+6. App über „Project Logic starten.bat“ starten.
+
+TEST 1 – SOFORTIGES FORTSETZEN NACH ZURÜCK
+1. Neues Spiel → Binärpuzzle → Mittel → Rätsel 2.
+2. Drei freie Felder ausfüllen.
+3. Merke dir die sichtbare Zeit, beispielsweise 0:12.
+4. Mit den Zurück-Pfeilen vollständig zur Startseite zurückgehen.
+5. Die Seite NICHT mit F5 neu laden.
+6. Erwartung: „Spiel fortsetzen“ ist sofort sichtbar.
+7. Der Untertitel nennt „Mittel · Rätsel 2“ und ungefähr die gemerkte Zeit.
+8. „Spiel fortsetzen“ öffnen.
+9. Erwartung:
+   - dieselben drei Felder sind gesetzt
+   - der Fortschrittswert stimmt
+   - der Timer läuft ungefähr ab der gemerkten Zeit weiter
+
+TEST 2 – SCHNELLES VERLASSEN
+1. Ein neues Rätsel öffnen.
+2. Sofort ein Feld setzen.
+3. Direkt danach zurück zur Startseite gehen, ohne fünf Sekunden zu warten.
+4. Erwartung: „Spiel fortsetzen“ erscheint sofort.
+5. Beim Fortsetzen ist das gesetzte Feld vorhanden.
+
+TEST 3 – ZEIT OHNE FÜNF-SEKUNDEN-GRENZE
+1. Ein Rätsel öffnen und bis etwa 0:03 warten.
+2. Zur Startseite zurückgehen.
+3. Erwartung: Der Fortsetzen-Eintrag zeigt ungefähr 0:03 und nicht 0:00.
+4. Fortsetzen und prüfen, dass der Timer dort weiterläuft.
+
+TEST 4 – BROWSER-ZURÜCK
+1. In einem Rätsel zwei Felder setzen.
+2. Den Zurück-Pfeil des Browsers verwenden.
+3. Danach vollständig zur Startseite navigieren.
+4. Erwartung: Der Spielstand ist sofort als „Spiel fortsetzen“ verfügbar.
+
+TEST 5 – NEU LADEN BLEIBT FUNKTIONSFÄHIG
+1. Auf der Startseite F5 drücken.
+2. Erwartung: „Spiel fortsetzen“ bleibt sichtbar.
+3. Fortsetzen und Spielstand prüfen.
+
+TEST 6 – STATISTIK-REGRESSION
+1. Ein Rätsel über das Käfer-Menü sofort lösen.
+2. Zur Startseite zurückgehen.
+3. Erwartung:
+   - Das gelöste Spiel wird nicht mehr als aktives Spiel angeboten.
+   - Statistik und Bestzeit funktionieren weiterhin.
+
+BEI EINEM FEHLER
+Bitte senden:
+- Testnummer
+- Screenshot
+- erwartetes Verhalten
+- tatsächliches Verhalten
+- rote Terminalmeldung, falls vorhanden

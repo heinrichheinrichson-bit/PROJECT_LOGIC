@@ -1,0 +1,1 @@
+git add . && git commit -m "feat(v0.3.0): add persistent game progress, best times and statistics" && git tag -a v0.3.0 -m "Project Logic v0.3.0 - autosave, continue game, completion tracking and statistics" && git push && git push origin v0.3.0

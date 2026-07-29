@@ -125,6 +125,47 @@ class BinaryPuzzle {
       ? 1
       : filledEditableCellCount / editableCellCount;
 
+
+  List<int?> exportEditableValues() {
+    final values = <int?>[];
+    for (var row = 0; row < size; row++) {
+      for (var column = 0; column < size; column++) {
+        if (!isClue(row, column)) {
+          values.add(switch (board[row][column]) {
+            CellValue.zero => 0,
+            CellValue.one => 1,
+            null => null,
+          });
+        }
+      }
+    }
+    return values;
+  }
+
+  void restoreEditableValues(List<int?> values) {
+    if (values.length != editableCellCount) {
+      throw ArgumentError(
+        'Expected $editableCellCount editable values, got ${values.length}.',
+      );
+    }
+
+    var index = 0;
+    for (var row = 0; row < size; row++) {
+      for (var column = 0; column < size; column++) {
+        if (!isClue(row, column)) {
+          board[row][column] = switch (values[index]) {
+            0 => CellValue.zero,
+            1 => CellValue.one,
+            _ => null,
+          };
+          index++;
+        }
+      }
+    }
+    _undoStack.clear();
+    _redoStack.clear();
+  }
+
   void cycleCell(int row, int column) {
     if (isClue(row, column)) return;
 

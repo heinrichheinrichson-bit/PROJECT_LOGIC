@@ -1,23 +1,35 @@
 # Changelog
 
-## [0.2.0] - 2026-07-29
+## v0.3.1
+
+### Fixed
+- Der aktive Spielstand wird vor dem Zurücknavigieren vollständig gespeichert.
+- Die Startseite erkennt „Spiel fortsetzen“ sofort, ohne dass der Browser neu geladen werden muss.
+- Die zuletzt sichtbare Spielzeit wird beim Verlassen zuverlässig übernommen.
+- Eine mögliche Race Condition zwischen Speichern und Aktualisieren der Startseite wurde entfernt.
+
+## v0.3.0
 
 ### Added
-- Drei spielbare Schwierigkeitsstufen für das Binärpuzzle.
-- Neun eingebaute Rätsel: je drei für Leicht, Mittel und Schwer.
-- Eigene Rätselauswahl mit Puzzle-Nummer und Anzahl der Vorgaben.
-- Laufende Spielzeit im Spielfeld.
-- Fortschrittsanzeige für ausgefüllte Felder.
-- Schaltfläche „Nächstes Rätsel“ nach einem erfolgreichen Abschluss.
-- Developer-Werkzeuge bleiben in Debug-Builds verfügbar.
+- Automatisches lokales Speichern des aktuellen Binärpuzzles
+- Schaltfläche „Spiel fortsetzen“ auf der Startseite
+- Wiederherstellung von Spielfeld und verstrichener Zeit
+- Dauerhafte Bestzeiten pro Rätsel
+- Abschlussmarkierungen in der Rätselauswahl
+- Erste Statistikseite mit Gesamt- und Schwierigkeitsfortschritt
+- Speichertests und zusätzliche Logiktests
 
 ### Changed
-- Versionsanzeige und Paketversion auf 0.2.0 aktualisiert.
-- Schwierigkeitsauswahl ist vollständig bedienbar.
+- Fortschrittsanzeige lautet jetzt verständlicher „X von Y Feldern gelöst“
+- Startseite zeigt die Anzahl abgeschlossener Rätsel
+- Paketversion auf 0.3.0+3 erhöht
 
-## [0.1.0]
+## v0.2.0
 
 ### Added
-- Erstes spielbares 6×6-Binärpuzzle.
-- Startbildschirm, Navigation und Regelprüfung.
-- Undo, Redo und Testwerkzeuge.
+- Neun spielbare Binärpuzzles
+- Drei Schwierigkeitsstufen
+- Rätselauswahl
+- Timer und Fortschrittsanzeige
+- Nächstes Rätsel nach erfolgreichem Abschluss
+- Developer-Testwerkzeuge

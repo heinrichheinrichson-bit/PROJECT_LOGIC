@@ -103,4 +103,38 @@ void main() {
       expect(ids.length, binaryPuzzleCatalog.length);
     });
   });
+
+
+  test('editable values can be exported and restored', () {
+    final definition = binaryPuzzleCatalog.first;
+    final first = definition.createPuzzle();
+
+    for (var row = 0; row < first.size; row++) {
+      for (var column = 0; column < first.size; column++) {
+        if (!first.isClue(row, column)) {
+          first.cycleCell(row, column);
+          break;
+        }
+      }
+      if (first.filledEditableCellCount > 0) break;
+    }
+
+    final saved = first.exportEditableValues();
+    final second = definition.createPuzzle();
+    second.restoreEditableValues(saved);
+
+    expect(second.exportEditableValues(), saved);
+    expect(second.filledEditableCellCount, 1);
+    expect(second.canUndo, isFalse);
+  });
+
+  test('restore rejects data for another puzzle shape', () {
+    final puzzle = binaryPuzzleCatalog.first.createPuzzle();
+
+    expect(
+      () => puzzle.restoreEditableValues([0, 1]),
+      throwsArgumentError,
+    );
+  });
+
 }
