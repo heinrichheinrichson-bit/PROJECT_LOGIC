@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.5.2 – Solver Integration
+
+### Added
+- Priorisierte, erklärbare Hinweistypen für Dreier-Regel, Anzahl und eindeutige Linien
+- Solver-Fallback für eindeutig lösbare aktuelle Spielstände
+- Regeltyp und Koordinate im Hinweisdialog
+- Tests für Priorisierung, Eindeutigkeit, Solver-Fallback und unsichere Spielstände
+
+### Safety
+- Keine geratenen Solver-Hinweise bei mehreren Lösungen
+- Keine Solver-Hinweise bei widersprüchlichen Spielständen
+- Bestehende Speicherstände und Bedienabläufe bleiben kompatibel
+
 ## v0.5.1 – Solver Foundation
 
 ### Added

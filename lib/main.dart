@@ -187,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                   const SizedBox(height: 28),
-                  Text('Version 0.5.1 · Solver Foundation', textAlign: TextAlign.center,
+                  Text('Version 0.5.2 · Solver Integration', textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
@@ -649,9 +649,9 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
         context: context,
         builder: (context) => AlertDialog(
           icon: const Icon(Icons.psychology_alt_outlined),
-          title: const Text('Kein einfacher Hinweis'),
+          title: const Text('Kein sicherer Hinweis'),
           content: const Text(
-            'Mit den derzeit gesetzten Feldern wurde keine direkte Regel gefunden. Prüfe zuerst mögliche Fehler oder löse einen anderen Bereich.',
+            'Aus dem aktuellen Spielstand lässt sich kein garantiert richtiger Wert ableiten. Prüfe mögliche Fehler oder löse zunächst einen anderen Bereich.',
           ),
           actions: [
             FilledButton(
@@ -674,7 +674,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.lightbulb_outline_rounded),
         title: Text(
-          'Hinweis für Zeile ${hint.position.row + 1}, Spalte ${hint.position.column + 1}',
+          '${hint.title}: Zeile ${hint.position.row + 1}, Spalte ${hint.position.column + 1}',
         ),
         content: Text(
           '${hint.reason}\n\nDort gehört eine ${hint.value.label} hin.',
