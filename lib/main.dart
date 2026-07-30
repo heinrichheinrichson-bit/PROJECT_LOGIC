@@ -153,22 +153,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 12),
                     _HomeAction(
-                      icon: Icons.science_outlined,
-                      title: 'Generator-Test',
-                      subtitle: 'Neues 4 × 4 Binärpuzzle direkt ausprobieren',
+                      icon: Icons.auto_awesome_rounded,
+                      title: 'Rätsel generieren',
+                      subtitle: 'Größe und Schwierigkeit selbst auswählen',
                       enabled: true,
                       onTap: () async {
-                        final generated = const BinaryPuzzleGenerator().generate(
-                          size: 4,
-                          seed: DateTime.now().microsecondsSinceEpoch,
-                        );
                         await Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => BinaryPuzzleScreen(
-                              definition: generated.definition,
-                              saveProgress: false,
-                              titleOverride: 'Generator-Test · 4 × 4',
-                            ),
+                            builder: (_) => const GeneratedPuzzleSetupScreen(),
                           ),
                         );
                         await _refresh();
@@ -211,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                   const SizedBox(height: 28),
-                  Text('Version 0.6.1-dev.2 · Generator-Test', textAlign: TextAlign.center,
+                  Text('Version 0.6.2 · Generator-UI', textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
@@ -443,6 +435,174 @@ class _PuzzleSelectionScreenState extends State<PuzzleSelectionScreen> {
               ),
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+
+class GeneratedPuzzleSetupScreen extends StatefulWidget {
+  const GeneratedPuzzleSetupScreen({super.key});
+
+  @override
+  State<GeneratedPuzzleSetupScreen> createState() =>
+      _GeneratedPuzzleSetupScreenState();
+}
+
+class _GeneratedPuzzleSetupScreenState
+    extends State<GeneratedPuzzleSetupScreen> {
+  BinaryPuzzleSize _size = BinaryPuzzleSize.small;
+  PuzzleDifficulty _difficulty = PuzzleDifficulty.easy;
+  bool _isGenerating = false;
+  String? _errorMessage;
+
+  Future<void> _generatePuzzle() async {
+    if (_isGenerating) return;
+
+    setState(() {
+      _isGenerating = true;
+      _errorMessage = null;
+    });
+
+    // Give Flutter one frame to display the progress indicator before the
+    // synchronous generator starts its work.
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    try {
+      final generated = const BinaryPuzzleGenerator().generate(
+        size: _size.value,
+        difficulty: _difficulty,
+        seed: DateTime.now().microsecondsSinceEpoch,
+      );
+
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => BinaryPuzzleScreen(
+            definition: generated.definition,
+            saveProgress: false,
+            titleOverride:
+                '${_difficulty.label} · Generiert ${_size.label}',
+          ),
+        ),
+      );
+    } on Object catch (error) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Das Rätsel konnte nicht erzeugt werden: $error';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGenerating = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Rätsel generieren')),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Neues Binärpuzzle',
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Das Rätsel wird vollständig offline erzeugt und vor dem Start auf eine eindeutige Lösung geprüft.',
+                  style: TextStyle(color: colors.onSurfaceVariant),
+                ),
+                const SizedBox(height: 24),
+                Text('Brettgröße',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        )),
+                const SizedBox(height: 10),
+                SegmentedButton<BinaryPuzzleSize>(
+                  segments: [
+                    for (final size in BinaryPuzzleSize.values)
+                      ButtonSegment<BinaryPuzzleSize>(
+                        value: size,
+                        label: Text(size.label),
+                      ),
+                  ],
+                  selected: {_size},
+                  onSelectionChanged: _isGenerating
+                      ? null
+                      : (selection) =>
+                          setState(() => _size = selection.first),
+                ),
+                const SizedBox(height: 24),
+                Text('Schwierigkeit',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        )),
+                const SizedBox(height: 10),
+                for (final difficulty in PuzzleDifficulty.values) ...[
+                  RadioListTile<PuzzleDifficulty>(
+                    value: difficulty,
+                    groupValue: _difficulty,
+                    onChanged: _isGenerating
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              setState(() => _difficulty = value);
+                            }
+                          },
+                    title: Text(difficulty.label),
+                    subtitle: Text(difficulty.description),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ],
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Material(
+                    color: colors.errorContainer,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Text(
+                        _errorMessage!,
+                        style: TextStyle(color: colors.onErrorContainer),
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: _isGenerating ? null : _generatePuzzle,
+                  icon: _isGenerating
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.auto_awesome_rounded),
+                  label: Text(
+                    _isGenerating ? 'Rätsel wird erzeugt …' : 'Rätsel starten',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Hinweis: Generierte Rätsel werden in v0.6.2 noch nicht als dauerhaftes Spiel gespeichert.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

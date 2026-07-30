@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.2 - Generator-UI
+
+- Der Puzzle-Generator ist jetzt als reguläre Funktion auf der Startseite erreichbar.
+- Neue Auswahl für Brettgrößen 4 × 4, 6 × 6 und 8 × 8.
+- Neue Auswahl für die Schwierigkeitsgrade Leicht, Mittel und Schwer.
+- Ladezustand und Fehleranzeige während der lokalen Generierung ergänzt.
+- Generierte Rätsel öffnen direkt im bestehenden Spielbildschirm.
+- Der temporäre Menüpunkt „Generator-Test“ wurde entfernt.
+- Ausführliche manuelle Testanleitung für v0.6.2 ergänzt.
+
 ## v0.6.1-dev.3 – Unique Clue Removal
 
 ### Added
