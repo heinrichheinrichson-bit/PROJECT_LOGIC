@@ -72,4 +72,80 @@ void main() {
     expect(restored.bestSeconds, 125);
     expect(restored.completedAt, original.completedAt);
   });
+
+  test('SavedGame writes the current schema version', () {
+    final game = SavedGame(
+      puzzleId: 'easy-01',
+      elapsedSeconds: 0,
+      values: const [null],
+      savedAt: DateTime(2026, 7, 30),
+    );
+
+    expect(game.toJson()['schemaVersion'], SavedGame.currentSchemaVersion);
+  });
+
+  test('legacy SavedGame without schema version remains readable', () {
+    final restored = SavedGame.fromJson({
+      'puzzleId': 'easy-01',
+      'elapsedSeconds': 7,
+      'values': [null, 0, 1],
+      'savedAt': '2026-07-30T12:00:00.000',
+    });
+
+    expect(restored.puzzleId, 'easy-01');
+    expect(restored.elapsedSeconds, 7);
+    expect(restored.values, [null, 0, 1]);
+  });
+
+  test('SavedGame rejects unsupported future schemas', () {
+    expect(
+      () => SavedGame.fromJson({
+        'schemaVersion': SavedGame.currentSchemaVersion + 1,
+        'puzzleId': 'easy-01',
+        'elapsedSeconds': 0,
+        'values': <int?>[],
+      }),
+      throwsFormatException,
+    );
+  });
+
+  test('SavedGame rejects invalid cell values', () {
+    expect(
+      () => SavedGame.fromJson({
+        'puzzleId': 'easy-01',
+        'elapsedSeconds': 0,
+        'values': [0, 2, null],
+      }),
+      throwsFormatException,
+    );
+  });
+
+  test('generated SavedGame rejects mismatching editable values', () {
+    final definition = BinaryPuzzleDefinition(
+      id: 'binary-4-easy-test',
+      number: 1,
+      difficulty: PuzzleDifficulty.easy,
+      solution: const [
+        [CellValue.zero, CellValue.zero, CellValue.one, CellValue.one],
+        [CellValue.zero, CellValue.one, CellValue.zero, CellValue.one],
+        [CellValue.one, CellValue.zero, CellValue.one, CellValue.zero],
+        [CellValue.one, CellValue.one, CellValue.zero, CellValue.zero],
+      ],
+      clues: {
+        const CellPosition(0, 0),
+        const CellPosition(1, 1),
+      },
+    );
+    final json = SavedGame(
+      puzzleId: definition.id,
+      elapsedSeconds: 0,
+      values: List<int?>.filled(14, null),
+      savedAt: DateTime(2026, 7, 30),
+      definition: definition,
+    ).toJson();
+    json['values'] = [null];
+
+    expect(() => SavedGame.fromJson(json), throwsFormatException);
+  });
+
 }

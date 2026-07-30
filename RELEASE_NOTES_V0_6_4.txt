@@ -1,0 +1,19 @@
+PROJECT LOGIC v0.6.4 – STABILITÄT & MODERNISIERUNG
+===================================================
+
+Diese Version ist ein Qualitätsrelease ohne bewusste Änderung der Spielregeln.
+
+NEU UND VERBESSERT
+------------------
+- Moderne Segment-Auswahl für den Schwierigkeitsgrad.
+- Entfernung der drei zuletzt bekannten Flutter-Deprecation-Hinweise.
+- Savegames tragen nun eine explizite Schema-Version.
+- Alte Spielstände bleiben kompatibel.
+- Zukünftige, beschädigte oder widersprüchliche Spielstände werden nicht geladen.
+- Generator-Spielstände werden auf passende ID, Brettform, Vorgaben und Anzahl
+  gespeicherter Spielerwerte geprüft.
+- Fünf zusätzliche Savegame-Regressionstests.
+
+VERSION
+-------
+0.6.4+18

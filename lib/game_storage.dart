@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'game_logic.dart';
 
 class SavedGame {
+  static const int currentSchemaVersion = 2;
+
   const SavedGame({
     required this.puzzleId,
     required this.elapsedSeconds,
@@ -27,6 +29,7 @@ class SavedGame {
   bool get isGenerated => definition != null;
 
   Map<String, Object?> toJson() => {
+        'schemaVersion': currentSchemaVersion,
         'puzzleId': puzzleId,
         'elapsedSeconds': elapsedSeconds,
         'values': values,
@@ -36,20 +39,83 @@ class SavedGame {
       };
 
   factory SavedGame.fromJson(Map<String, Object?> json) {
+    final schemaVersion = _readInt(json, 'schemaVersion', fallback: 1);
+    if (schemaVersion < 1 || schemaVersion > currentSchemaVersion) {
+      throw const FormatException('Unsupported saved-game schema version.');
+    }
+
+    final puzzleId = _readRequiredString(json, 'puzzleId');
+    final elapsedSeconds = _readInt(json, 'elapsedSeconds', fallback: 0);
+    if (elapsedSeconds < 0) {
+      throw const FormatException('Elapsed time cannot be negative.');
+    }
+
+    final rawValues = json['values'];
+    if (rawValues is! List) {
+      throw const FormatException('Saved values must be a list.');
+    }
+    final values = rawValues.map<int?>((value) {
+      if (value == null) return null;
+      if (value is num && (value.toInt() == 0 || value.toInt() == 1)) {
+        return value.toInt();
+      }
+      throw const FormatException('Saved cell values must be 0, 1 or null.');
+    }).toList(growable: false);
+
     final rawDefinition = json['definition'];
+    final definition = rawDefinition is Map
+        ? _definitionFromJson(Map<String, Object?>.from(rawDefinition))
+        : null;
+    if (definition != null) {
+      final editableCellCount =
+          definition.size * definition.size - definition.clues.length;
+      if (values.length != editableCellCount) {
+        throw const FormatException(
+          'Saved values do not match the generated puzzle definition.',
+        );
+      }
+      if (definition.id != puzzleId) {
+        throw const FormatException(
+          'Saved puzzle id does not match its generated definition.',
+        );
+      }
+    }
+
+    final rawTitle = json['titleOverride'];
+    if (rawTitle != null && rawTitle is! String) {
+      throw const FormatException('Saved title must be text.');
+    }
+
     return SavedGame(
-      puzzleId: json['puzzleId'] as String,
-      elapsedSeconds: json['elapsedSeconds'] as int? ?? 0,
-      values: (json['values'] as List<dynamic>)
-          .map((value) => value as int?)
-          .toList(),
+      puzzleId: puzzleId,
+      elapsedSeconds: elapsedSeconds,
+      values: values,
       savedAt: DateTime.tryParse(json['savedAt'] as String? ?? '') ??
           DateTime.now(),
-      definition: rawDefinition is Map
-          ? _definitionFromJson(Map<String, Object?>.from(rawDefinition))
-          : null,
-      titleOverride: json['titleOverride'] as String?,
+      definition: definition,
+      titleOverride: rawTitle as String?,
     );
+  }
+
+  static String _readRequiredString(
+    Map<String, Object?> json,
+    String key,
+  ) {
+    final value = json[key];
+    if (value is String && value.trim().isNotEmpty) return value;
+    throw FormatException('Missing or invalid $key.');
+  }
+
+  static int _readInt(
+    Map<String, Object?> json,
+    String key, {
+    required int fallback,
+  }) {
+    final value = json[key];
+    if (value == null) return fallback;
+    if (value is int) return value;
+    if (value is num && value == value.toInt()) return value.toInt();
+    throw FormatException('Invalid integer value for $key.');
   }
 
   static Map<String, Object?> _definitionToJson(
@@ -72,31 +138,54 @@ class SavedGame {
   static BinaryPuzzleDefinition _definitionFromJson(
     Map<String, Object?> json,
   ) {
+    final id = _readRequiredString(json, 'id');
     final difficultyName = json['difficulty'] as String? ?? 'easy';
     final difficulty = PuzzleDifficulty.values.firstWhere(
       (value) => value.name == difficultyName,
       orElse: () => PuzzleDifficulty.easy,
     );
-    final solution = (json['solution'] as List<dynamic>)
-        .map(
-          (row) => (row as List<dynamic>)
-              .map((value) => value == 0 ? CellValue.zero : CellValue.one)
-              .toList(),
-        )
-        .toList();
-    final clues = (json['clues'] as List<dynamic>)
-        .map((item) => Map<String, Object?>.from(item as Map))
-        .map(
-          (item) => CellPosition(
-            item['row'] as int,
-            item['column'] as int,
-          ),
-        )
-        .toSet();
+    final rawSolution = json['solution'];
+    if (rawSolution is! List || rawSolution.isEmpty) {
+      throw const FormatException('Puzzle solution must be a non-empty list.');
+    }
+    final solution = rawSolution.map<List<CellValue>>((rawRow) {
+      if (rawRow is! List) {
+        throw const FormatException('Every solution row must be a list.');
+      }
+      return rawRow.map<CellValue>((value) {
+        if (value == 0) return CellValue.zero;
+        if (value == 1) return CellValue.one;
+        throw const FormatException('Solution values must be 0 or 1.');
+      }).toList(growable: false);
+    }).toList(growable: false);
+
+    final size = solution.length;
+    if (size.isOdd || solution.any((row) => row.length != size)) {
+      throw const FormatException(
+        'Puzzle solution must be an even-sized square.',
+      );
+    }
+
+    final rawClues = json['clues'];
+    if (rawClues is! List) {
+      throw const FormatException('Puzzle clues must be a list.');
+    }
+    final clues = rawClues.map<CellPosition>((rawItem) {
+      if (rawItem is! Map) {
+        throw const FormatException('Every clue must be an object.');
+      }
+      final item = Map<String, Object?>.from(rawItem);
+      final row = _readInt(item, 'row', fallback: -1);
+      final column = _readInt(item, 'column', fallback: -1);
+      if (row < 0 || row >= size || column < 0 || column >= size) {
+        throw const FormatException('Puzzle clue is outside the board.');
+      }
+      return CellPosition(row, column);
+    }).toSet();
 
     return BinaryPuzzleDefinition(
-      id: json['id'] as String,
-      number: json['number'] as int? ?? 1,
+      id: id,
+      number: _readInt(json, 'number', fallback: 1),
       difficulty: difficulty,
       solution: solution,
       clues: clues,

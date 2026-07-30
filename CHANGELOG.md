@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.6.4 - Stabilität & Modernisierung
+
+### Added
+- Versionierte Savegame-Struktur mit `schemaVersion: 2`.
+- Zusätzliche Tests für alte, zukünftige, beschädigte und inkonsistente Spielstände.
+
+### Changed
+- Schwierigkeitsauswahl auf eine moderne Segment-Auswahl umgestellt.
+- Veraltete `withOpacity`-Nutzung durch `withValues` ersetzt.
+- Generator-Spielstände werden vor der Wiederherstellung strenger validiert.
+- Paketversion auf 0.6.4+18 erhöht.
+
+### Compatibility
+- Bestehende v1-Spielstände ohne Schema-Feld bleiben lesbar.
+- Nicht unterstützte zukünftige Savegame-Versionen werden sicher verworfen.
+
 
 ## 0.6.3 - Generator-Persistenz
 
@@ -220,4 +236,3 @@
 - Timer und Fortschrittsanzeige
 - Nächstes Rätsel nach erfolgreichem Abschluss
 - Developer-Testwerkzeuge
-

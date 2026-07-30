@@ -206,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                   const SizedBox(height: 28),
-                  Text('Version 0.6.3 · Generator-Persistenz', textAlign: TextAlign.center,
+                  Text('Version 0.6.4 · Stabilität & Modernisierung', textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
@@ -554,22 +554,26 @@ class _GeneratedPuzzleSetupScreenState
                           fontWeight: FontWeight.w700,
                         )),
                 const SizedBox(height: 10),
-                for (final difficulty in PuzzleDifficulty.values) ...[
-                  RadioListTile<PuzzleDifficulty>(
-                    value: difficulty,
-                    groupValue: _difficulty,
-                    onChanged: _isGenerating
-                        ? null
-                        : (value) {
-                            if (value != null) {
-                              setState(() => _difficulty = value);
-                            }
-                          },
-                    title: Text(difficulty.label),
-                    subtitle: Text(difficulty.description),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ],
+                SegmentedButton<PuzzleDifficulty>(
+                  segments: [
+                    for (final difficulty in PuzzleDifficulty.values)
+                      ButtonSegment<PuzzleDifficulty>(
+                        value: difficulty,
+                        label: Text(difficulty.label),
+                        tooltip: difficulty.description,
+                      ),
+                  ],
+                  selected: {_difficulty},
+                  onSelectionChanged: _isGenerating
+                      ? null
+                      : (selection) =>
+                          setState(() => _difficulty = selection.first),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _difficulty.description,
+                  style: TextStyle(color: colors.onSurfaceVariant),
+                ),
                 if (_errorMessage != null) ...[
                   const SizedBox(height: 12),
                   Material(
@@ -1513,7 +1517,7 @@ class _PuzzleCell extends StatelessWidget {
           color: isHint
               ? colors.primaryContainer
               : isHintRelated && !hasIssue
-                  ? colors.secondaryContainer.withOpacity(0.55)
+                  ? colors.secondaryContainer.withValues(alpha: 0.55)
                   : isRelated && value == null && !hasIssue
                   ? colors.surfaceContainerHigh
                   : background,
