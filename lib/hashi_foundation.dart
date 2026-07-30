@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 @immutable
@@ -24,34 +26,29 @@ class HashiBridge {
   final int from;
   final int to;
   final int count;
+
+  HashiBridge copyWith({int? count}) => HashiBridge(
+        from: from,
+        to: to,
+        count: count ?? this.count,
+      );
 }
 
 @immutable
-class HashiPreviewPuzzle {
-  const HashiPreviewPuzzle({
+class HashiPuzzle {
+  const HashiPuzzle({
     required this.title,
     required this.size,
     required this.islands,
-    required this.bridges,
   });
 
   final String title;
   final int size;
   final List<HashiIsland> islands;
-  final List<HashiBridge> bridges;
-
-  bool get hasValidReferences => bridges.every(
-        (bridge) =>
-            bridge.from >= 0 &&
-            bridge.from < islands.length &&
-            bridge.to >= 0 &&
-            bridge.to < islands.length &&
-            bridge.from != bridge.to,
-      );
 }
 
-const hashiPreviewPuzzle = HashiPreviewPuzzle(
-  title: 'Eine kleine Inselwelt',
+const hashiTutorialPuzzle = HashiPuzzle(
+  title: 'Erste Brücken',
   size: 7,
   islands: [
     HashiIsland(row: 0, column: 1, bridges: 2),
@@ -62,17 +59,157 @@ const hashiPreviewPuzzle = HashiPreviewPuzzle(
     HashiIsland(row: 6, column: 1, bridges: 2),
     HashiIsland(row: 6, column: 5, bridges: 2),
   ],
-  bridges: [
-    HashiBridge(from: 0, to: 1),
-    HashiBridge(from: 0, to: 2),
-    HashiBridge(from: 1, to: 4),
-    HashiBridge(from: 2, to: 3),
-    HashiBridge(from: 2, to: 5),
-    HashiBridge(from: 3, to: 4),
-    HashiBridge(from: 4, to: 6),
-    HashiBridge(from: 5, to: 6),
-  ],
 );
+
+const hashiPreviewBridges = [
+  HashiBridge(from: 0, to: 1),
+  HashiBridge(from: 0, to: 2),
+  HashiBridge(from: 1, to: 4),
+  HashiBridge(from: 2, to: 3),
+  HashiBridge(from: 2, to: 5),
+  HashiBridge(from: 3, to: 4),
+  HashiBridge(from: 4, to: 6),
+  HashiBridge(from: 5, to: 6),
+];
+
+class HashiGameState {
+  HashiGameState({required this.puzzle, List<HashiBridge>? bridges})
+      : bridges = List<HashiBridge>.unmodifiable(bridges ?? const []);
+
+  final HashiPuzzle puzzle;
+  final List<HashiBridge> bridges;
+
+  int bridgeCountAt(int islandIndex) {
+    return bridges
+        .where((bridge) =>
+            bridge.from == islandIndex || bridge.to == islandIndex)
+        .fold(0, (total, bridge) => total + bridge.count);
+  }
+
+  int bridgeCountBetween(int first, int second) {
+    for (final bridge in bridges) {
+      if (_sameConnection(bridge, first, second)) return bridge.count;
+    }
+    return 0;
+  }
+
+  bool canConnect(int first, int second) {
+    if (first == second ||
+        first < 0 ||
+        second < 0 ||
+        first >= puzzle.islands.length ||
+        second >= puzzle.islands.length) {
+      return false;
+    }
+
+    final a = puzzle.islands[first];
+    final b = puzzle.islands[second];
+    final aligned = a.row == b.row || a.column == b.column;
+    if (!aligned || _islandBetween(first, second)) return false;
+
+    return !bridges.any(
+      (bridge) =>
+          !_sameConnection(bridge, first, second) &&
+          _connectionsCross(first, second, bridge.from, bridge.to),
+    );
+  }
+
+  HashiGameState cycleConnection(int first, int second) {
+    if (!canConnect(first, second)) return this;
+
+    final current = bridgeCountBetween(first, second);
+    final next = (current + 1) % 3;
+    final updated = bridges
+        .where((bridge) => !_sameConnection(bridge, first, second))
+        .toList();
+    if (next > 0) {
+      updated.add(HashiBridge(from: first, to: second, count: next));
+    }
+    return HashiGameState(puzzle: puzzle, bridges: updated);
+  }
+
+  bool get numbersAreSatisfied {
+    for (var index = 0; index < puzzle.islands.length; index++) {
+      if (bridgeCountAt(index) != puzzle.islands[index].bridges) return false;
+    }
+    return true;
+  }
+
+  bool get allIslandsConnected {
+    if (puzzle.islands.isEmpty) return true;
+    final visited = <int>{0};
+    final pending = <int>[0];
+    while (pending.isNotEmpty) {
+      final current = pending.removeLast();
+      for (final bridge in bridges) {
+        final neighbor = bridge.from == current
+            ? bridge.to
+            : bridge.to == current
+                ? bridge.from
+                : null;
+        if (neighbor != null && visited.add(neighbor)) pending.add(neighbor);
+      }
+    }
+    return visited.length == puzzle.islands.length;
+  }
+
+  bool get isSolved => numbersAreSatisfied && allIslandsConnected;
+
+  bool _islandBetween(int first, int second) {
+    final a = puzzle.islands[first];
+    final b = puzzle.islands[second];
+    for (var index = 0; index < puzzle.islands.length; index++) {
+      if (index == first || index == second) continue;
+      final candidate = puzzle.islands[index];
+      if (a.row == b.row &&
+          candidate.row == a.row &&
+          _strictlyBetween(candidate.column, a.column, b.column)) {
+        return true;
+      }
+      if (a.column == b.column &&
+          candidate.column == a.column &&
+          _strictlyBetween(candidate.row, a.row, b.row)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool _connectionsCross(int aIndex, int bIndex, int cIndex, int dIndex) {
+    final a = puzzle.islands[aIndex];
+    final b = puzzle.islands[bIndex];
+    final c = puzzle.islands[cIndex];
+    final d = puzzle.islands[dIndex];
+    final firstHorizontal = a.row == b.row;
+    final secondHorizontal = c.row == d.row;
+    if (firstHorizontal == secondHorizontal) return false;
+
+    final horizontalA = firstHorizontal ? a : c;
+    final horizontalB = firstHorizontal ? b : d;
+    final verticalA = firstHorizontal ? c : a;
+    final verticalB = firstHorizontal ? d : b;
+
+    return _strictlyBetween(
+          verticalA.column,
+          horizontalA.column,
+          horizontalB.column,
+        ) &&
+        _strictlyBetween(
+          horizontalA.row,
+          verticalA.row,
+          verticalB.row,
+        );
+  }
+
+  static bool _sameConnection(HashiBridge bridge, int first, int second) {
+    return (bridge.from == first && bridge.to == second) ||
+        (bridge.from == second && bridge.to == first);
+  }
+
+  static bool _strictlyBetween(int value, int edgeA, int edgeB) {
+    return value > math.min(edgeA, edgeB) && value < math.max(edgeA, edgeB);
+  }
+}
 
 class HashiHubScreen extends StatelessWidget {
   const HashiHubScreen({super.key});
@@ -105,7 +242,7 @@ class HashiHubScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 14),
                       Text(
-                        'Verbinde die Inseln',
+                        'Baue ein gemeinsames Brückennetz',
                         textAlign: TextAlign.center,
                         style: Theme.of(context)
                             .textTheme
@@ -114,7 +251,7 @@ class HashiHubScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Brücken dürfen nur gerade verlaufen, sich nicht kreuzen und müssen am Ende alle Inseln zu einem Netz verbinden.',
+                        'Verbinde alle Inseln, erfülle ihre Zahlen und lasse keine Brücke eine andere kreuzen.',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
@@ -130,7 +267,7 @@ class HashiHubScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          hashiPreviewPuzzle.title,
+                          'Eine kleine Inselwelt',
                           style: Theme.of(context)
                               .textTheme
                               .titleLarge
@@ -144,35 +281,27 @@ class HashiHubScreen extends StatelessWidget {
                         const SizedBox(height: 16),
                         const AspectRatio(
                           aspectRatio: 1,
-                          child: HashiPreviewBoard(puzzle: hashiPreviewPuzzle),
+                          child: HashiBoard(
+                            puzzle: hashiTutorialPuzzle,
+                            bridges: hashiPreviewBridges,
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                const _HashiInfoCard(
-                  icon: Icons.looks_one_rounded,
-                  title: 'Die Zahl ist das Ziel',
-                  text:
-                      'Jede Insel zeigt, wie viele Brücken sie insgesamt berühren müssen.',
-                ),
-                const SizedBox(height: 10),
-                const _HashiInfoCard(
-                  icon: Icons.horizontal_rule_rounded,
-                  title: 'Einfach oder doppelt',
-                  text:
-                      'Zwischen zwei Inseln sind höchstens zwei parallele Brücken erlaubt.',
-                ),
-                const SizedBox(height: 10),
-                const _HashiInfoCard(
-                  icon: Icons.share_rounded,
-                  title: 'Alles gehört zusammen',
-                  text:
-                      'Die Lösung ist erst vollständig, wenn jede Insel vom gemeinsamen Netz erreichbar ist.',
-                ),
                 const SizedBox(height: 20),
                 FilledButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const HashiTutorialScreen(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: const Text('Erste Herausforderung'),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => const HashiRulesScreen(),
@@ -181,27 +310,163 @@ class HashiHubScreen extends StatelessWidget {
                   icon: const Icon(Icons.menu_book_rounded),
                   label: const Text('Regeln ansehen'),
                 ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () => showDialog<void>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Der nächste Schritt'),
-                      content: const Text(
-                        'Das Fundament steht. Als Nächstes kommen ein echtes Spielfeld, das Setzen von Brücken und die erste spielbare Einführung.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Alles klar'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class HashiTutorialScreen extends StatefulWidget {
+  const HashiTutorialScreen({super.key});
+
+  @override
+  State<HashiTutorialScreen> createState() => _HashiTutorialScreenState();
+}
+
+class _HashiTutorialScreenState extends State<HashiTutorialScreen> {
+  late HashiGameState _game;
+  final List<HashiGameState> _history = [];
+  int? _selectedIsland;
+  bool _completionShown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _game = HashiGameState(puzzle: hashiTutorialPuzzle);
+  }
+
+  void _handleIslandTap(int index) {
+    if (_selectedIsland == null) {
+      setState(() => _selectedIsland = index);
+      return;
+    }
+    if (_selectedIsland == index) {
+      setState(() => _selectedIsland = null);
+      return;
+    }
+
+    final previous = _game;
+    final next = previous.cycleConnection(_selectedIsland!, index);
+    setState(() {
+      if (!identical(previous, next)) {
+        _history.add(previous);
+        _game = next;
+      }
+      _selectedIsland = null;
+    });
+
+    if (_game.isSolved && !_completionShown) {
+      _completionShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            icon: const Icon(Icons.celebration_rounded),
+            title: const Text('Brückennetz vollendet!'),
+            content: const Text(
+              'Alle Zahlen stimmen und jede Insel gehört zum selben Netz. Dein erstes Hashi ist gelöst.',
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Geschafft'),
+              ),
+            ],
+          ),
+        );
+      });
+    }
+  }
+
+  void _undo() {
+    if (_history.isEmpty) return;
+    setState(() {
+      _game = _history.removeLast();
+      _selectedIsland = null;
+      _completionShown = false;
+    });
+  }
+
+  void _restart() {
+    setState(() {
+      _game = HashiGameState(puzzle: hashiTutorialPuzzle);
+      _history.clear();
+      _selectedIsland = null;
+      _completionShown = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Erste Brücken'),
+        actions: [
+          IconButton(
+            tooltip: 'Rückgängig',
+            onPressed: _history.isEmpty ? null : _undo,
+            icon: const Icon(Icons.undo_rounded),
+          ),
+          IconButton(
+            tooltip: 'Neu starten',
+            onPressed: _restart,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 680),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              child: Column(
+                children: [
+                  Text(
+                    _selectedIsland == null
+                        ? 'Tippe zwei sichtbare Inseln nacheinander an.'
+                        : 'Wähle jetzt die zweite Insel.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Erneutes Verbinden: eine → zwei → keine Brücke',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: colors.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: Center(
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: HashiBoard(
+                          puzzle: _game.puzzle,
+                          bridges: _game.bridges,
+                          selectedIsland: _selectedIsland,
+                          bridgeCounts: List<int>.generate(
+                            _game.puzzle.islands.length,
+                            _game.bridgeCountAt,
+                          ),
+                          onIslandTap: _handleIslandTap,
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                  icon: const Icon(Icons.construction_rounded),
-                  label: const Text('Spielbare Einführung folgt'),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  Text(
+                    'Ziel: Alle Zahlen erfüllen und alle Inseln zu einem Netz verbinden.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -242,7 +507,7 @@ class HashiRulesScreen extends StatelessWidget {
                     number: '3',
                     title: 'Keine Kreuzungen',
                     text:
-                        'Brücken verlaufen waagerecht oder senkrecht. Sie dürfen weder andere Inseln durchqueren noch andere Brücken kreuzen.',
+                        'Brücken verlaufen waagerecht oder senkrecht. Sie dürfen weder Inseln durchqueren noch andere Brücken kreuzen.',
                   ),
                   _RuleSection(
                     number: '4',
@@ -260,29 +525,86 @@ class HashiRulesScreen extends StatelessWidget {
   }
 }
 
-class HashiPreviewBoard extends StatelessWidget {
-  const HashiPreviewBoard({required this.puzzle, super.key});
+class HashiBoard extends StatelessWidget {
+  const HashiBoard({
+    required this.puzzle,
+    required this.bridges,
+    this.selectedIsland,
+    this.bridgeCounts,
+    this.onIslandTap,
+    super.key,
+  });
 
-  final HashiPreviewPuzzle puzzle;
+  final HashiPuzzle puzzle;
+  final List<HashiBridge> bridges;
+  final int? selectedIsland;
+  final List<int>? bridgeCounts;
+  final ValueChanged<int>? onIslandTap;
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _HashiPreviewPainter(
-        puzzle: puzzle,
-        colorScheme: Theme.of(context).colorScheme,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final side = math.min(constraints.maxWidth, constraints.maxHeight);
+        return SizedBox.square(
+          dimension: side,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _HashiBoardPainter(
+                    puzzle: puzzle,
+                    bridges: bridges,
+                    selectedIsland: selectedIsland,
+                    bridgeCounts: bridgeCounts,
+                    colorScheme: Theme.of(context).colorScheme,
+                  ),
+                ),
+              ),
+              if (onIslandTap != null)
+                ...List.generate(puzzle.islands.length, (index) {
+                  final island = puzzle.islands[index];
+                  final cell = side / puzzle.size;
+                  final diameter = cell * 0.72;
+                  return Positioned(
+                    left: (island.column + 0.5) * cell - diameter / 2,
+                    top: (island.row + 0.5) * cell - diameter / 2,
+                    width: diameter,
+                    height: diameter,
+                    child: Semantics(
+                      button: true,
+                      label: 'Insel ${island.bridges}',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: () => onIslandTap!(index),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
-class _HashiPreviewPainter extends CustomPainter {
-  const _HashiPreviewPainter({
+class _HashiBoardPainter extends CustomPainter {
+  const _HashiBoardPainter({
     required this.puzzle,
+    required this.bridges,
+    required this.selectedIsland,
+    required this.bridgeCounts,
     required this.colorScheme,
   });
 
-  final HashiPreviewPuzzle puzzle;
+  final HashiPuzzle puzzle;
+  final List<HashiBridge> bridges;
+  final int? selectedIsland;
+  final List<int>? bridgeCounts;
   final ColorScheme colorScheme;
 
   @override
@@ -301,13 +623,13 @@ class _HashiPreviewPainter extends CustomPainter {
       ..strokeWidth = (cell * 0.07).clamp(2.0, 5.0).toDouble()
       ..strokeCap = StrokeCap.round;
 
-    for (final bridge in puzzle.bridges) {
+    for (final bridge in bridges) {
       final start = point(puzzle.islands[bridge.from]);
       final end = point(puzzle.islands[bridge.to]);
       if (bridge.count == 1) {
         canvas.drawLine(start, end, bridgePaint);
       } else {
-        final horizontal = start.dy == end.dy;
+        final horizontal = (start.dy - end.dy).abs() < 0.01;
         final shift = cell * 0.08;
         final delta = horizontal ? Offset(0, shift) : Offset(shift, 0);
         canvas.drawLine(start - delta, end - delta, bridgePaint);
@@ -315,15 +637,32 @@ class _HashiPreviewPainter extends CustomPainter {
       }
     }
 
-    final islandPaint = Paint()..color = colorScheme.secondaryContainer;
-    final outlinePaint = Paint()
-      ..color = colorScheme.secondary
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = (cell * 0.05).clamp(1.5, 4.0).toDouble();
-
-    for (final island in puzzle.islands) {
+    for (var index = 0; index < puzzle.islands.length; index++) {
+      final island = puzzle.islands[index];
       final center = point(island);
-      final radius = cell * 0.29;
+      final current = bridgeCounts?[index];
+      final fulfilled = current == island.bridges;
+      final exceeded = current != null && current > island.bridges;
+      final selected = selectedIsland == index;
+      final radius = cell * 0.31;
+
+      final islandPaint = Paint()
+        ..color = exceeded
+            ? colorScheme.errorContainer
+            : fulfilled
+                ? colorScheme.primaryContainer
+                : colorScheme.secondaryContainer;
+      final outlinePaint = Paint()
+        ..color = selected
+            ? colorScheme.primary
+            : exceeded
+                ? colorScheme.error
+                : fulfilled
+                    ? colorScheme.primary
+                    : colorScheme.secondary
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = selected ? cell * 0.09 : cell * 0.05;
+
       canvas.drawCircle(center, radius, islandPaint);
       canvas.drawCircle(center, radius, outlinePaint);
 
@@ -331,8 +670,12 @@ class _HashiPreviewPainter extends CustomPainter {
         text: TextSpan(
           text: '${island.bridges}',
           style: TextStyle(
-            color: colorScheme.onSecondaryContainer,
-            fontSize: cell * 0.3,
+            color: exceeded
+                ? colorScheme.onErrorContainer
+                : fulfilled
+                    ? colorScheme.onPrimaryContainer
+                    : colorScheme.onSecondaryContainer,
+            fontSize: cell * 0.32,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -346,30 +689,12 @@ class _HashiPreviewPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _HashiPreviewPainter oldDelegate) =>
-      oldDelegate.puzzle != puzzle || oldDelegate.colorScheme != colorScheme;
-}
-
-class _HashiInfoCard extends StatelessWidget {
-  const _HashiInfoCard({
-    required this.icon,
-    required this.title,
-    required this.text,
-  });
-
-  final IconData icon;
-  final String title;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: Text(text),
-      ),
-    );
+  bool shouldRepaint(covariant _HashiBoardPainter oldDelegate) {
+    return oldDelegate.puzzle != puzzle ||
+        oldDelegate.bridges != bridges ||
+        oldDelegate.selectedIsland != selectedIsland ||
+        oldDelegate.bridgeCounts != bridgeCounts ||
+        oldDelegate.colorScheme != colorScheme;
   }
 }
 

@@ -1,0 +1,20 @@
+PROJECT LOGIC v0.8.1 – ERSTES SPIELBARES HASHI
+
+Neu:
+- Ein vollständiges, handgebautes Hashi-Einstiegsrätsel
+- Inseln durch zwei aufeinanderfolgende Berührungen verbinden
+- Verbindungen wechseln zwischen keiner, einer und zwei Brücken
+- Ungültige Verbindungen durch Inseln werden verhindert
+- Sich kreuzende Brücken werden verhindert
+- Inseln zeigen visuell erfüllte und überschrittene Zahlen
+- Siegprüfung kontrolliert Zahlen und ein gemeinsames Netz
+- Rückgängig und Neustart
+- Abschlussdialog nach erfolgreicher Lösung
+- Erweiterte Modelltests für Hashi
+
+Bewusst noch nicht enthalten:
+- Speicherung
+- Katalog
+- Generator
+- Tagesrätsel
+- Hinweise

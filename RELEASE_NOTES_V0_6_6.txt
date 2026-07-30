@@ -1,0 +1,34 @@
+PROJECT LOGIC v0.6.6 – Binärpuzzle-Hub
+======================================
+
+Version
+-------
+0.6.6+20
+
+Neu
+---
+- Die Startseite ist jetzt als Einstieg in eine zukünftige Logikspiel-Sammlung aufgebaut.
+- Binärpuzzle besitzt einen eigenen Hub.
+- Im Binärpuzzle-Hub befinden sich:
+  - Spiel fortsetzen
+  - Neues Katalogrätsel
+  - Zufallsrätsel generieren
+  - Tagesrätsel (weiterhin als Vorschau)
+  - Binärpuzzle-Statistik
+- Generator-Rätsel bieten nach dem Lösen den neuen Button „Neues Rätsel“.
+- „Neues Rätsel“ erzeugt direkt ein weiteres Rätsel mit derselben Größe und Schwierigkeit.
+- Während der neuen Generierung wird ein Ladehinweis angezeigt.
+- Die bisherige Funktion „Neu starten“ bleibt erhalten und startet weiterhin dasselbe Rätsel neu.
+- Ein Widget-Test sichert die neue Navigation ab.
+
+Architektur
+-----------
+Die globale Startseite enthält jetzt nur noch Spielbereiche sowie globale Funktionen.
+Spielbezogene Aktionen liegen im jeweiligen Spiel-Hub. Dieses Muster kann für spätere
+Spiele wie Hitori oder Hashi wiederverwendet werden.
+
+Kompatibilität
+--------------
+- Keine Änderung am Savegame-Schema.
+- Bestehende Spielstände bleiben kompatibel.
+- Keine Änderung an Solver, Generator-Regeln oder Katalogrätseln.

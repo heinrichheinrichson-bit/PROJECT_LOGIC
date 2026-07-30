@@ -35,9 +35,9 @@ void main() {
     await tester.tap(find.text('Hashi'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Verbinde die Inseln'), findsOneWidget);
+    expect(find.text('Baue ein gemeinsames Brückennetz'), findsOneWidget);
     expect(find.text('Regeln ansehen'), findsOneWidget);
-    expect(find.text('Spielbare Einführung folgt'), findsOneWidget);
+    expect(find.text('Erste Herausforderung'), findsOneWidget);
   });
 
 }

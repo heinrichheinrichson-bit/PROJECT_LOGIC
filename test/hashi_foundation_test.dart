@@ -2,12 +2,58 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/hashi_foundation.dart';
 
 void main() {
-  test('Hashi preview puzzle only references existing islands', () {
-    expect(hashiPreviewPuzzle.hasValidReferences, isTrue);
+  test('tutorial puzzle starts empty', () {
+    final game = HashiGameState(puzzle: hashiTutorialPuzzle);
+
+    expect(game.bridges, isEmpty);
+    expect(game.isSolved, isFalse);
   });
 
-  test('Hashi bridge count supports one or two bridges', () {
-    expect(const HashiBridge(from: 0, to: 1).count, 1);
-    expect(const HashiBridge(from: 0, to: 1, count: 2).count, 2);
+  test('connection cycles from none to one, two and none', () {
+    var game = HashiGameState(puzzle: hashiTutorialPuzzle);
+
+    game = game.cycleConnection(0, 1);
+    expect(game.bridgeCountBetween(0, 1), 1);
+
+    game = game.cycleConnection(0, 1);
+    expect(game.bridgeCountBetween(0, 1), 2);
+
+    game = game.cycleConnection(0, 1);
+    expect(game.bridgeCountBetween(0, 1), 0);
+  });
+
+  test('islands cannot connect through another island', () {
+    final game = HashiGameState(puzzle: hashiTutorialPuzzle);
+
+    expect(game.canConnect(2, 4), isFalse);
+    expect(game.canConnect(2, 3), isTrue);
+  });
+
+  test('crossing bridges are rejected', () {
+    const puzzle = HashiPuzzle(
+      title: 'Kreuzung',
+      size: 5,
+      islands: [
+        HashiIsland(row: 2, column: 0, bridges: 1),
+        HashiIsland(row: 2, column: 4, bridges: 1),
+        HashiIsland(row: 0, column: 2, bridges: 1),
+        HashiIsland(row: 4, column: 2, bridges: 1),
+      ],
+    );
+    var game = HashiGameState(puzzle: puzzle);
+    game = game.cycleConnection(0, 1);
+
+    expect(game.canConnect(2, 3), isFalse);
+  });
+
+  test('tutorial solution satisfies numbers and connectivity', () {
+    final game = HashiGameState(
+      puzzle: hashiTutorialPuzzle,
+      bridges: hashiPreviewBridges,
+    );
+
+    expect(game.numbersAreSatisfied, isTrue);
+    expect(game.allIslandsConnected, isTrue);
+    expect(game.isSolved, isTrue);
   });
 }
