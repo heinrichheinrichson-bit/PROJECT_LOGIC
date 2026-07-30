@@ -271,4 +271,52 @@ void main() {
     expect(progress.completedDays, hasLength(1));
   });
 
+
+  // v0.6.9 daily challenge persistence regression tests.
+test('daily SavedGame preserves its puzzle source', () {
+  final definition = BinaryPuzzleDefinition(
+    id: 'daily-binary-2026-07-30',
+    number: 1,
+    difficulty: PuzzleDifficulty.medium,
+    solution: const [
+      [CellValue.zero, CellValue.zero, CellValue.one, CellValue.one],
+      [CellValue.zero, CellValue.one, CellValue.zero, CellValue.one],
+      [CellValue.one, CellValue.zero, CellValue.one, CellValue.zero],
+      [CellValue.one, CellValue.one, CellValue.zero, CellValue.zero],
+    ],
+    clues: {
+      const CellPosition(0, 0),
+      const CellPosition(1, 1),
+      const CellPosition(2, 2),
+      const CellPosition(3, 3),
+    },
+  );
+  final game = SavedGame(
+    puzzleId: definition.id,
+    elapsedSeconds: 12,
+    values: List<int?>.filled(12, null),
+    savedAt: DateTime(2026, 7, 30),
+    definition: definition,
+    source: PuzzleSource.daily,
+  );
+
+  final restored = SavedGame.fromJson(game.toJson());
+
+  expect(restored.source, PuzzleSource.daily);
+  expect(restored.definition?.id, definition.id);
+});
+
+test('explicit daily result is not classified as generated', () {
+  final result = PuzzleResult(
+    puzzleId: 'daily-binary-2026-07-30',
+    bestSeconds: 90,
+    completedAt: DateTime(2026, 7, 30),
+    source: PuzzleSource.daily,
+    difficulty: PuzzleDifficulty.medium,
+    boardSize: 6,
+  );
+
+  expect(result.effectiveSource, PuzzleSource.daily);
+});
+
 }

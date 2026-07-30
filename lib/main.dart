@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_preferences.dart';
+import 'daily_challenge.dart';
 import 'game_logic.dart';
 import 'game_storage.dart';
 import 'hint_engine.dart';
@@ -185,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                   const SizedBox(height: 28),
                   Text(
-                    'Version 0.6.8 · Spielserie',
+                    'Version 0.6.9 · Tagesrätsel',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -211,6 +212,7 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
   SavedGame? _savedGame;
   Map<String, PuzzleResult> _results = const {};
   PlayerProgress _progress = const PlayerProgress.empty();
+  DailyBinaryChallenge? _dailyChallenge;
   bool _loading = true;
 
   @override
@@ -223,11 +225,13 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
     final savedGame = await _storage.loadActiveGame();
     final results = await _storage.loadResults();
     final progress = await _storage.loadPlayerProgress();
+    final dailyChallenge = const DailyChallengeService().today();
     if (!mounted) return;
     setState(() {
       _savedGame = savedGame;
       _results = results;
       _progress = progress;
+      _dailyChallenge = dailyChallenge;
       _loading = false;
     });
   }
@@ -287,6 +291,7 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                               savedGame: _savedGame,
                               titleOverride: _savedGame!.titleOverride,
                               storeDefinition: _savedGame!.isGenerated,
+                              source: _savedGame!.source,
                             ),
                           ),
                         );
@@ -325,10 +330,27 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                     },
                   ),
                   const SizedBox(height: 12),
-                  const _HomeAction(
+                  _HomeAction(
                     icon: Icons.calendar_today_outlined,
                     title: 'Tagesrätsel',
-                    subtitle: 'Ein gemeinsames Rätsel pro Tag',
+                    subtitle: _results.containsKey(_dailyChallenge!.puzzleId)
+                        ? 'Heute gelöst · ${_dailyChallenge!.difficulty.label} · ${_dailyChallenge!.size} × ${_dailyChallenge!.size}'
+                        : 'Heute wartet · ${_dailyChallenge!.difficulty.label} · ${_dailyChallenge!.size} × ${_dailyChallenge!.size}',
+                    enabled: true,
+                    onTap: () async {
+                      final challenge = _dailyChallenge!;
+                      await Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => BinaryPuzzleScreen(
+                            definition: challenge.definition,
+                            storeDefinition: true,
+                            source: PuzzleSource.daily,
+                            titleOverride: challenge.title,
+                          ),
+                        ),
+                      );
+                      await _refresh();
+                    },
                   ),
                   const SizedBox(height: 12),
                   _HomeAction(
@@ -663,6 +685,7 @@ class _GeneratedPuzzleSetupScreenState
           builder: (_) => BinaryPuzzleScreen(
             definition: generated.definition,
             storeDefinition: true,
+            source: PuzzleSource.generated,
             titleOverride:
                 '${_difficulty.label} · Generiert ${_size.label}',
           ),
@@ -802,6 +825,7 @@ class BinaryPuzzleScreen extends StatefulWidget {
     this.savedGame,
     this.saveProgress = true,
     this.storeDefinition = false,
+    this.source = PuzzleSource.catalog,
     this.titleOverride,
     super.key,
   });
@@ -810,6 +834,7 @@ class BinaryPuzzleScreen extends StatefulWidget {
   final SavedGame? savedGame;
   final bool saveProgress;
   final bool storeDefinition;
+  final PuzzleSource source;
   final String? titleOverride;
 
   @override
@@ -1157,9 +1182,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
         _storage.recordCompletion(
           puzzleId: widget.definition.id,
           elapsedSeconds: elapsedSeconds,
-          source: widget.storeDefinition
-              ? PuzzleSource.generated
-              : PuzzleSource.catalog,
+          source: widget.source,
           difficulty: widget.definition.difficulty,
           boardSize: widget.definition.size,
         );
@@ -1183,14 +1206,18 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                 Transform.scale(scale: value, child: child),
             child: const Icon(Icons.emoji_events_outlined, size: 42),
           ),
-          title: const Text('Gelöst!'),
-          content: Text('Alle Regeln sind erfüllt. Zeit: ${_formatTime(elapsedSeconds)}.'),
+          title: Text(widget.source == PuzzleSource.daily
+              ? 'Tagesrätsel geschafft!'
+              : 'Gelöst!'),
+          content: Text(widget.source == PuzzleSource.daily
+              ? 'Deine Zeit: ${_formatTime(elapsedSeconds)}. Die Spielserie ist für heute gesichert. Morgen wartet ein neues Rätsel.'
+              : 'Alle Regeln sind erfüllt. Zeit: ${_formatTime(elapsedSeconds)}.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Weiter ansehen'),
             ),
-            if (widget.storeDefinition)
+            if (widget.source == PuzzleSource.generated)
               FilledButton.tonalIcon(
                 onPressed: () {
                   Navigator.of(context).pop();
@@ -1199,7 +1226,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                 icon: const Icon(Icons.auto_awesome_rounded),
                 label: const Text('Neues Rätsel'),
               )
-            else
+            else if (widget.source == PuzzleSource.catalog)
               FilledButton.tonal(
                 onPressed: _hasNextPuzzle
                     ? () {
@@ -1230,7 +1257,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   }
 
   Future<void> _startNextGeneratedPuzzle() async {
-    if (!widget.storeDefinition) return;
+    if (widget.source != PuzzleSource.generated) return;
 
     showDialog<void>(
       context: context,
@@ -1267,6 +1294,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
           builder: (_) => BinaryPuzzleScreen(
             definition: generated.definition,
             storeDefinition: true,
+            source: PuzzleSource.generated,
             titleOverride:
                 '${difficulty.label} · Generiert $size × $size',
           ),
@@ -1342,6 +1370,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
         savedAt: DateTime.now(),
         definition: widget.storeDefinition ? widget.definition : null,
         titleOverride: widget.titleOverride,
+        source: widget.source,
       ),
     );
   }
@@ -1534,6 +1563,31 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
+int _dailyStreak(List<PuzzleResult> results, {DateTime? now}) {
+  if (results.isEmpty) return 0;
+  final days = results
+      .map((result) => DateTime(
+            result.completedAt.year,
+            result.completedAt.month,
+            result.completedAt.day,
+          ))
+      .toSet()
+      .toList()
+    ..sort();
+  final todayValue = now ?? DateTime.now();
+  final today = DateTime(todayValue.year, todayValue.month, todayValue.day);
+  if (today.difference(days.last).inDays > 1) return 0;
+  var streak = 1;
+  for (var index = days.length - 1; index > 0; index--) {
+    if (days[index].difference(days[index - 1]).inDays == 1) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
 class StatisticsScreen extends StatelessWidget {
   const StatisticsScreen({
     required this.results,
@@ -1552,9 +1606,10 @@ class StatisticsScreen extends StatelessWidget {
         if (catalogIds.contains(entry.key)) entry.key: entry.value,
     };
     final generatedResults = results.values
-        .where((result) =>
-            result.effectiveSource == PuzzleSource.generated ||
-            !catalogIds.contains(result.puzzleId))
+        .where((result) => result.effectiveSource == PuzzleSource.generated)
+        .toList(growable: false);
+    final dailyResults = results.values
+        .where((result) => result.effectiveSource == PuzzleSource.daily)
         .toList(growable: false);
     final catalogCompleted = catalogResults.length;
     final catalogTotal = binaryPuzzleCatalog.length;
@@ -1562,6 +1617,10 @@ class StatisticsScreen extends StatelessWidget {
       0,
       (sum, result) => sum + result.completionCount,
     );
+    final dailyCompleted = dailyResults.length;
+    final todayDailyId = const DailyChallengeService().today().puzzleId;
+    final dailyCompletedToday = results.containsKey(todayDailyId);
+    final dailyStreak = _dailyStreak(dailyResults);
     final resultCompletionCount = results.values.fold<int>(
       0,
       (sum, result) => sum + result.completionCount,
@@ -1621,6 +1680,18 @@ class StatisticsScreen extends StatelessWidget {
                       leading: const Icon(Icons.auto_awesome_rounded),
                       title: const Text('Generierte Rätsel'),
                       subtitle: Text('$generatedCompleted abgeschlossen'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.calendar_today_outlined),
+                      title: const Text('Tagesrätsel'),
+                      subtitle: Text(
+                        dailyCompletedToday
+                            ? 'Heute gelöst · $dailyCompleted insgesamt'
+                            : 'Heute noch offen · $dailyCompleted insgesamt',
+                      ),
+                      trailing: Text('$dailyStreak Tage'),
                     ),
                   ),
                   const SizedBox(height: 12),

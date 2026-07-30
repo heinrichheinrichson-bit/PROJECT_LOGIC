@@ -1,0 +1,29 @@
+PROJECT LOGIC v0.6.9 – TAGESRÄTSEL
+=================================
+
+Neu
+---
+- Echtes tägliches Binärpuzzle mit stabiler Identität pro Kalendertag.
+- Datum bestimmt Seed, Brettgröße und Schwierigkeit deterministisch.
+- Alle Spieler erhalten für dasselbe Kalenderdatum dasselbe Rätsel.
+- Tagesrätsel ist im Binärpuzzle-Hub direkt spielbar.
+- Status zeigt „Heute wartet“ oder „Heute gelöst“.
+- Tagesrätsel können unterbrochen und über „Spiel fortsetzen“ wiederhergestellt werden.
+- Eigener Abschlussdialog für Tagesrätsel.
+- Eigene Tagesrätsel-Statistik mit heutiger Erledigung, Gesamtzahl und Serie.
+- Tagesrätsel zählen gleichzeitig für die allgemeine Spielserie.
+
+Technik
+-------
+- Neuer DailyChallengeService.
+- Savegame-Schema 3 speichert die Rätselquelle.
+- Katalog-, Generator- und Tagesrätsel bleiben bei Wiederherstellung getrennt.
+- Tagesrätsel werden nicht mehr fälschlich als Generatorrätsel gezählt.
+- Deterministische Tagesrätsel werden pro App-Lauf gecacht.
+- Version 0.6.9+23.
+
+Bewusst später
+--------------
+- Benachrichtigungen und frei wählbare Reminder-Zeiten.
+- Tagesmissionen und XP.
+- Online-Ranglisten und globale Vergleichswerte.

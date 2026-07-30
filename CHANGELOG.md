@@ -298,3 +298,13 @@
 - Anzahl-Regel liefert weiterhin einen sicheren Hinweis, wenn an anderer Stelle bereits ein Widerspruch besteht.
 - Statistik trennt Katalogrätsel und generierte Rätsel eindeutig.
 - „Nächstes Rätsel“ funktioniert über Schwierigkeitsgrenzen hinweg und bleibt auch nach dem letzten Katalogrätsel nutzbar.
+
+## 0.6.9 – Tagesrätsel
+
+- Deterministisches tägliches Binärpuzzle auf Basis des Kalenderdatums.
+- Eigener Tagesrätsel-Status im Binärpuzzle-Hub.
+- Tagesrätsel-Savegames und korrekte Wiederherstellung der Rätselquelle.
+- Eigener Abschlussdialog und eigener Statistikbereich.
+- Tagesrätsel-Serie vorbereitet und sichtbar gemacht.
+- Savegame-Schema auf Version 3 erweitert.
+- Version auf 0.6.9+23 erhöht.

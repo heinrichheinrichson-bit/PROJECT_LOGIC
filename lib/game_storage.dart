@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'game_logic.dart';
 
 class SavedGame {
-  static const int currentSchemaVersion = 2;
+  static const int currentSchemaVersion = 3;
 
   const SavedGame({
     required this.puzzleId,
@@ -14,6 +14,7 @@ class SavedGame {
     required this.savedAt,
     this.definition,
     this.titleOverride,
+    this.source = PuzzleSource.catalog,
   });
 
   final String puzzleId;
@@ -25,6 +26,7 @@ class SavedGame {
   /// the static catalog.
   final BinaryPuzzleDefinition? definition;
   final String? titleOverride;
+  final PuzzleSource source;
 
   bool get isGenerated => definition != null;
 
@@ -36,6 +38,7 @@ class SavedGame {
         'savedAt': savedAt.toIso8601String(),
         if (definition != null) 'definition': _definitionToJson(definition!),
         if (titleOverride != null) 'titleOverride': titleOverride,
+        'source': source.name,
       };
 
   factory SavedGame.fromJson(Map<String, Object?> json) {
@@ -94,6 +97,12 @@ class SavedGame {
           DateTime.now(),
       definition: definition,
       titleOverride: rawTitle as String?,
+      source: PuzzleSource.values.firstWhere(
+        (value) => value.name == json['source'],
+        orElse: () => definition != null
+            ? PuzzleSource.generated
+            : PuzzleSource.catalog,
+      ),
     );
   }
 
@@ -222,8 +231,12 @@ class PuzzleResult {
   final int completionCount;
   final int totalElapsedSeconds;
 
-  PuzzleSource get effectiveSource =>
-      puzzleId.startsWith('binary-') ? PuzzleSource.generated : source;
+  PuzzleSource get effectiveSource {
+    if (source != PuzzleSource.catalog) return source;
+    return puzzleId.startsWith('binary-')
+        ? PuzzleSource.generated
+        : PuzzleSource.catalog;
+  }
 
   int? get effectiveBoardSize {
     if (boardSize != null) return boardSize;
