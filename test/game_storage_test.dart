@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/game_logic.dart';
 import 'package:project_logic_prototype/game_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('SavedGame survives JSON conversion', () {
@@ -204,4 +205,70 @@ void main() {
     expect(updated.completionCount, 2);
     expect(updated.completedAt, DateTime(2026, 7, 30, 17, 0));
   });
+
+  test('PlayerProgress counts one streak day for multiple completions', () {
+    final today = DateTime.now();
+    final progress = const PlayerProgress.empty()
+        .recordCompletion(elapsedSeconds: 40, completedAt: today)
+        .recordCompletion(elapsedSeconds: 70, completedAt: today);
+
+    expect(progress.totalCompleted, 2);
+    expect(progress.totalPlaySeconds, 110);
+    expect(progress.completedDays, hasLength(1));
+    expect(progress.currentStreak, 1);
+    expect(progress.bestStreak, 1);
+    expect(progress.completedToday, isTrue);
+  });
+
+  test('PlayerProgress calculates current and best consecutive streaks', () {
+    final today = DateTime.now();
+    final day = DateTime(today.year, today.month, today.day);
+    final progress = PlayerProgress(
+      totalCompleted: 5,
+      totalPlaySeconds: 300,
+      completedDays: [
+        day.subtract(const Duration(days: 6)).toIso8601String().substring(0, 10),
+        day.subtract(const Duration(days: 5)).toIso8601String().substring(0, 10),
+        day.subtract(const Duration(days: 2)).toIso8601String().substring(0, 10),
+        day.subtract(const Duration(days: 1)).toIso8601String().substring(0, 10),
+        day.toIso8601String().substring(0, 10),
+      ],
+    );
+
+    expect(progress.currentStreak, 3);
+    expect(progress.bestStreak, 3);
+  });
+
+  test('recordCompletion updates results, playtime and streak only once', () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = GameStorage();
+    final today = DateTime.now();
+
+    await storage.recordCompletion(
+      puzzleId: 'easy-01',
+      elapsedSeconds: 45,
+      source: PuzzleSource.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 4,
+      completedAt: today,
+    );
+    await storage.recordCompletion(
+      puzzleId: 'easy-01',
+      elapsedSeconds: 60,
+      source: PuzzleSource.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 4,
+      completedAt: today,
+    );
+
+    final results = await storage.loadResults();
+    final progress = await storage.loadPlayerProgress();
+    expect(results['easy-01']!.completionCount, 2);
+    expect(results['easy-01']!.bestSeconds, 45);
+    expect(results['easy-01']!.totalElapsedSeconds, 105);
+    expect(progress.totalCompleted, 2);
+    expect(progress.totalPlaySeconds, 105);
+    expect(progress.completedDays, hasLength(1));
+  });
+
 }

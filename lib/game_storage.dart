@@ -210,7 +210,8 @@ class PuzzleResult {
     this.difficulty,
     this.boardSize,
     this.completionCount = 1,
-  });
+    int? totalElapsedSeconds,
+  }) : totalElapsedSeconds = totalElapsedSeconds ?? bestSeconds * completionCount;
 
   final String puzzleId;
   final int bestSeconds;
@@ -219,6 +220,7 @@ class PuzzleResult {
   final PuzzleDifficulty? difficulty;
   final int? boardSize;
   final int completionCount;
+  final int totalElapsedSeconds;
 
   PuzzleSource get effectiveSource =>
       puzzleId.startsWith('binary-') ? PuzzleSource.generated : source;
@@ -252,6 +254,7 @@ class PuzzleResult {
         if (difficulty != null) 'difficulty': difficulty!.name,
         if (boardSize != null) 'boardSize': boardSize,
         'completionCount': completionCount,
+        'totalElapsedSeconds': totalElapsedSeconds,
       };
 
   factory PuzzleResult.fromJson(Map<String, Object?> json) {
@@ -259,6 +262,7 @@ class PuzzleResult {
     final difficultyName = json['difficulty'] as String?;
     final rawBoardSize = json['boardSize'];
     final rawCompletionCount = json['completionCount'];
+    final rawTotalElapsedSeconds = json['totalElapsedSeconds'];
 
     return PuzzleResult(
       puzzleId: json['puzzleId'] as String,
@@ -281,6 +285,10 @@ class PuzzleResult {
           rawCompletionCount is num && rawCompletionCount.toInt() > 0
               ? rawCompletionCount.toInt()
               : 1,
+      totalElapsedSeconds: rawTotalElapsedSeconds is num &&
+              rawTotalElapsedSeconds.toInt() >= 0
+          ? rawTotalElapsedSeconds.toInt()
+          : null,
     );
   }
 
@@ -300,13 +308,117 @@ class PuzzleResult {
       difficulty: difficulty,
       boardSize: boardSize,
       completionCount: completionCount + 1,
+      totalElapsedSeconds: totalElapsedSeconds + elapsedSeconds,
     );
   }
+}
+
+
+class PlayerProgress {
+  const PlayerProgress({
+    required this.totalCompleted,
+    required this.totalPlaySeconds,
+    required this.completedDays,
+  });
+
+  const PlayerProgress.empty()
+      : totalCompleted = 0,
+        totalPlaySeconds = 0,
+        completedDays = const <String>[];
+
+  final int totalCompleted;
+  final int totalPlaySeconds;
+  final List<String> completedDays;
+
+  bool get completedToday => completedDays.contains(_dayKey(DateTime.now()));
+
+  int get currentStreak {
+    final days = _parsedDays;
+    if (days.isEmpty) return 0;
+    final today = _dateOnly(DateTime.now());
+    final latest = days.last;
+    if (today.difference(latest).inDays > 1) return 0;
+
+    var streak = 1;
+    for (var index = days.length - 1; index > 0; index--) {
+      if (days[index].difference(days[index - 1]).inDays == 1) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    return streak;
+  }
+
+  int get bestStreak {
+    final days = _parsedDays;
+    if (days.isEmpty) return 0;
+    var best = 1;
+    var current = 1;
+    for (var index = 1; index < days.length; index++) {
+      if (days[index].difference(days[index - 1]).inDays == 1) {
+        current++;
+        if (current > best) best = current;
+      } else {
+        current = 1;
+      }
+    }
+    return best;
+  }
+
+  List<DateTime> get _parsedDays {
+    final values = completedDays
+        .map(DateTime.tryParse)
+        .whereType<DateTime>()
+        .map(_dateOnly)
+        .toSet()
+        .toList()
+      ..sort();
+    return values;
+  }
+
+  PlayerProgress recordCompletion({
+    required int elapsedSeconds,
+    required DateTime completedAt,
+  }) {
+    final days = {...completedDays, _dayKey(completedAt)}.toList()..sort();
+    return PlayerProgress(
+      totalCompleted: totalCompleted + 1,
+      totalPlaySeconds: totalPlaySeconds + elapsedSeconds,
+      completedDays: days,
+    );
+  }
+
+  Map<String, Object?> toJson() => {
+        'totalCompleted': totalCompleted,
+        'totalPlaySeconds': totalPlaySeconds,
+        'completedDays': completedDays,
+      };
+
+  factory PlayerProgress.fromJson(Map<String, Object?> json) {
+    final rawDays = json['completedDays'];
+    return PlayerProgress(
+      totalCompleted: (json['totalCompleted'] as num?)?.toInt() ?? 0,
+      totalPlaySeconds: (json['totalPlaySeconds'] as num?)?.toInt() ?? 0,
+      completedDays: rawDays is List
+          ? (rawDays.whereType<String>().toSet().toList()..sort())
+          : const <String>[],
+    );
+  }
+
+  static DateTime _dateOnly(DateTime value) =>
+      DateTime(value.year, value.month, value.day);
+
+  static String _dayKey(DateTime value) =>
+      '${value.year.toString().padLeft(4, '0')}-'
+      '${value.month.toString().padLeft(2, '0')}-'
+      '${value.day.toString().padLeft(2, '0')}';
 }
 
 class GameStorage {
   static const _activeGameKey = 'active_binary_game_v1';
   static const _resultsKey = 'binary_results_v1';
+  static const _playerProgressKey = 'player_progress_v1';
 
   Future<SavedGame?> loadActiveGame() async {
     final preferences = await SharedPreferences.getInstance();
@@ -351,29 +463,68 @@ class GameStorage {
     }
   }
 
+  Future<PlayerProgress> loadPlayerProgress() async {
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(_playerProgressKey);
+    if (raw != null) {
+      try {
+        return PlayerProgress.fromJson(
+          Map<String, Object?>.from(jsonDecode(raw) as Map),
+        );
+      } on Object {
+        // Fall through to a safe migration from the existing result data.
+      }
+    }
+
+    final results = await loadResults();
+    if (results.isEmpty) return const PlayerProgress.empty();
+    final migrated = PlayerProgress(
+      totalCompleted: results.values.fold<int>(
+        0,
+        (sum, result) => sum + result.completionCount,
+      ),
+      totalPlaySeconds: results.values.fold<int>(
+        0,
+        (sum, result) => sum + result.totalElapsedSeconds,
+      ),
+      completedDays: results.values
+          .map((result) => PlayerProgress._dayKey(result.completedAt))
+          .toSet()
+          .toList()
+        ..sort(),
+    );
+    await preferences.setString(
+      _playerProgressKey,
+      jsonEncode(migrated.toJson()),
+    );
+    return migrated;
+  }
+
   Future<void> recordCompletion({
     required String puzzleId,
     required int elapsedSeconds,
     required PuzzleSource source,
     required PuzzleDifficulty difficulty,
     required int boardSize,
+    DateTime? completedAt,
   }) async {
     final results = await loadResults();
+    final progress = await loadPlayerProgress();
     final existing = results[puzzleId];
-    final completedAt = DateTime.now();
+    final completionTime = completedAt ?? DateTime.now();
 
     results[puzzleId] = existing == null
         ? PuzzleResult(
             puzzleId: puzzleId,
             bestSeconds: elapsedSeconds,
-            completedAt: completedAt,
+            completedAt: completionTime,
             source: source,
             difficulty: difficulty,
             boardSize: boardSize,
           )
         : existing.recordAnotherCompletion(
             elapsedSeconds: elapsedSeconds,
-            completedAt: completedAt,
+            completedAt: completionTime,
             source: source,
             difficulty: difficulty,
             boardSize: boardSize,
@@ -384,11 +535,21 @@ class GameStorage {
       _resultsKey,
       jsonEncode(results.values.map((result) => result.toJson()).toList()),
     );
+
+    final updatedProgress = progress.recordCompletion(
+      elapsedSeconds: elapsedSeconds,
+      completedAt: completionTime,
+    );
+    await preferences.setString(
+      _playerProgressKey,
+      jsonEncode(updatedProgress.toJson()),
+    );
   }
 
   Future<void> clearAllProgress() async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove(_activeGameKey);
     await preferences.remove(_resultsKey);
+    await preferences.remove(_playerProgressKey);
   }
 }

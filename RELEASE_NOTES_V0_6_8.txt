@@ -1,0 +1,14 @@
+Project Logic v0.6.8 – Spielserie
+
+- Allgemeine tägliche Spielserie: Ein abgeschlossenes Rätsel pro Tag genügt.
+- Aktuelle und beste Serie auf Basis lokaler Kalendertage.
+- Streak-Karte auf der Startseite mit Status für heute.
+- Spielserie auch in der Statistik.
+- "Summe deiner Bestzeiten" entfernt.
+- Neue Kennzahlen: Spielzeit insgesamt und durchschnittliche Zeit pro Abschluss.
+- Kumulierte Spielzeit pro Puzzle-Ergebnis.
+- Sichere Migration vorhandener v0.6.7-Daten.
+
+Bewusst noch nicht enthalten:
+- Systembenachrichtigungen und Reminder. Diese benötigen eine eigene, plattformspezifisch getestete Version.
+- Tagesrätsel-Serie. Sie folgt zusammen mit dem echten Tagesrätsel.

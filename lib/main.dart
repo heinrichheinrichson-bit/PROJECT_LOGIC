@@ -67,6 +67,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final GameStorage _storage = GameStorage();
   Map<String, PuzzleResult> _results = const {};
+  PlayerProgress _progress = const PlayerProgress.empty();
   bool _loading = true;
 
   @override
@@ -77,9 +78,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _refresh() async {
     final results = await _storage.loadResults();
+    final progress = await _storage.loadPlayerProgress();
     if (!mounted) return;
     setState(() {
       _results = results;
+      _progress = progress;
       _loading = false;
     });
   }
@@ -123,6 +126,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (_loading)
                     const Center(child: CircularProgressIndicator())
                   else ...[
+                    _StreakCard(progress: _progress),
+                    const SizedBox(height: 12),
                     _HomeAction(
                       icon: Icons.grid_4x4_rounded,
                       title: 'Binärpuzzle',
@@ -153,7 +158,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () async {
                         await Navigator.of(context).push(
                           MaterialPageRoute<void>(
-                            builder: (_) => StatisticsScreen(results: _results),
+                            builder: (_) => StatisticsScreen(
+                              results: _results,
+                              progress: _progress,
+                            ),
                           ),
                         );
                         await _refresh();
@@ -177,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                   const SizedBox(height: 28),
                   Text(
-                    'Version 0.6.7 · Spielerfortschritt',
+                    'Version 0.6.8 · Spielserie',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -202,6 +210,7 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
   final GameStorage _storage = GameStorage();
   SavedGame? _savedGame;
   Map<String, PuzzleResult> _results = const {};
+  PlayerProgress _progress = const PlayerProgress.empty();
   bool _loading = true;
 
   @override
@@ -213,10 +222,12 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
   Future<void> _refresh() async {
     final savedGame = await _storage.loadActiveGame();
     final results = await _storage.loadResults();
+    final progress = await _storage.loadPlayerProgress();
     if (!mounted) return;
     setState(() {
       _savedGame = savedGame;
       _results = results;
+      _progress = progress;
       _loading = false;
     });
   }
@@ -329,7 +340,10 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                     onTap: () async {
                       await Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => StatisticsScreen(results: _results),
+                          builder: (_) => StatisticsScreen(
+                              results: _results,
+                              progress: _progress,
+                            ),
                         ),
                       );
                       await _refresh();
@@ -350,6 +364,43 @@ String _formatHomeTime(int seconds) {
   final minutes = seconds ~/ 60;
   final rest = seconds % 60;
   return '$minutes:${rest.toString().padLeft(2, '0')}';
+}
+
+class _StreakCard extends StatelessWidget {
+  const _StreakCard({required this.progress});
+
+  final PlayerProgress progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final streak = progress.currentStreak;
+    final secured = progress.completedToday;
+    return Card(
+      child: ListTile(
+        leading: Icon(
+          secured
+              ? Icons.local_fire_department_rounded
+              : Icons.local_fire_department_outlined,
+          size: 32,
+          color: secured ? Theme.of(context).colorScheme.primary : null,
+        ),
+        title: Text(
+          streak == 1 ? '1 Tag Spielserie' : '$streak Tage Spielserie',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(
+          secured
+              ? 'Deine Serie ist für heute gesichert.'
+              : streak == 0
+                  ? 'Löse heute ein Rätsel und starte deine Serie.'
+                  : 'Löse heute ein Rätsel, damit deine Serie weiterläuft.',
+        ),
+        trailing: secured
+            ? const Icon(Icons.check_circle_outline_rounded)
+            : null,
+      ),
+    );
+  }
 }
 
 class _HomeAction extends StatelessWidget {
@@ -1484,9 +1535,14 @@ class SettingsScreen extends StatelessWidget {
 }
 
 class StatisticsScreen extends StatelessWidget {
-  const StatisticsScreen({required this.results, super.key});
+  const StatisticsScreen({
+    required this.results,
+    required this.progress,
+    super.key,
+  });
 
   final Map<String, PuzzleResult> results;
+  final PlayerProgress progress;
 
   @override
   Widget build(BuildContext context) {
@@ -1506,14 +1562,16 @@ class StatisticsScreen extends StatelessWidget {
       0,
       (sum, result) => sum + result.completionCount,
     );
-    final totalCompleted = results.values.fold<int>(
+    final resultCompletionCount = results.values.fold<int>(
       0,
       (sum, result) => sum + result.completionCount,
     );
-    final totalBestSeconds = results.values.fold<int>(
-      0,
-      (sum, result) => sum + result.bestSeconds,
-    );
+    final totalCompleted = progress.totalCompleted > resultCompletionCount
+        ? progress.totalCompleted
+        : resultCompletionCount;
+    final averageSeconds = totalCompleted == 0
+        ? 0
+        : progress.totalPlaySeconds ~/ totalCompleted;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Statistik')),
@@ -1568,9 +1626,24 @@ class StatisticsScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   Card(
                     child: ListTile(
+                      leading: const Icon(Icons.local_fire_department_outlined),
+                      title: Text('${progress.currentStreak} Tage Spielserie'),
+                      subtitle: Text(
+                        progress.completedToday
+                            ? 'Heute gesichert · Beste Serie: ${progress.bestStreak} Tage'
+                            : 'Heute noch ein Rätsel lösen · Beste Serie: ${progress.bestStreak} Tage',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: ListTile(
                       leading: const Icon(Icons.timer_outlined),
-                      title: const Text('Summe deiner Bestzeiten'),
-                      subtitle: Text(_formatLongTime(totalBestSeconds)),
+                      title: const Text('Spielzeit insgesamt'),
+                      subtitle: Text(_formatLongTime(progress.totalPlaySeconds)),
+                      trailing: totalCompleted == 0
+                          ? null
+                          : Text('Ø ${_formatLongTime(averageSeconds)}'),
                     ),
                   ),
                   const SizedBox(height: 20),

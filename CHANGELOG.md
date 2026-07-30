@@ -1,3 +1,15 @@
+# Changelog
+
+## 0.6.8+22
+
+- Globale Spielserie für mindestens ein abgeschlossenes Rätsel pro Tag.
+- Aktuelle und beste Serie werden lokal gespeichert.
+- Startseite zeigt den heutigen Streak-Status.
+- Statistik ersetzt die Summe der Bestzeiten durch Gesamtspielzeit und Durchschnittszeit.
+- Puzzle-Ergebnisse speichern zusätzlich die kumulierte Spielzeit.
+- Bestehende v0.6.7-Daten werden sicher migriert.
+- Datenmodell ist spielübergreifend für weitere Logikspiele vorbereitet.
+
 ## 0.6.7 - Spielerfortschritt
 
 - Fortschrittsdaten speichern jetzt Rätselquelle, Schwierigkeit, Rastergröße und Anzahl der Abschlüsse.
@@ -11,7 +23,6 @@
 - Zusätzliche Regressionstests für Fortschrittsmetadaten und Wiederholungsabschlüsse ergänzt.
 - Paketversion auf 0.6.7+21 erhöht.
 
-# Changelog
 
 ## 0.6.6 - Binärpuzzle-Hub
 
