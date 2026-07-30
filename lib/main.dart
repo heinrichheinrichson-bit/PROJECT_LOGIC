@@ -52,6 +52,11 @@ class ProjectLogicApp extends StatelessWidget {
   }
 }
 
+int _catalogCompletedCount(Map<String, PuzzleResult> results) {
+  final catalogIds = binaryPuzzleCatalog.map((puzzle) => puzzle.id).toSet();
+  return results.keys.where(catalogIds.contains).length;
+}
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -122,7 +127,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: Icons.grid_4x4_rounded,
                       title: 'Binärpuzzle',
                       subtitle:
-                          '${_results.length} von ${binaryPuzzleCatalog.length} Katalogrätseln gelöst',
+                          '${_catalogCompletedCount(_results)} von ${binaryPuzzleCatalog.length} Katalogrätseln gelöst',
                       enabled: true,
                       onTap: () async {
                         await Navigator.of(context).push(
@@ -172,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                   const SizedBox(height: 28),
                   Text(
-                    'Version 0.6.6 · Binärpuzzle-Hub',
+                    'Version 0.6.7 · Spielerfortschritt',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -319,7 +324,7 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                     icon: Icons.bar_chart_rounded,
                     title: 'Binärpuzzle-Statistik',
                     subtitle:
-                        '${_results.length} von ${binaryPuzzleCatalog.length} Katalogrätseln gelöst',
+                        '${_catalogCompletedCount(_results)} von ${binaryPuzzleCatalog.length} Katalogrätseln gelöst',
                     enabled: true,
                     onTap: () async {
                       await Navigator.of(context).push(
@@ -1101,6 +1106,11 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
         _storage.recordCompletion(
           puzzleId: widget.definition.id,
           elapsedSeconds: elapsedSeconds,
+          source: widget.storeDefinition
+              ? PuzzleSource.generated
+              : PuzzleSource.catalog,
+          difficulty: widget.definition.difficulty,
+          boardSize: widget.definition.size,
         );
         _storage.clearActiveGame();
       }
@@ -1485,14 +1495,21 @@ class StatisticsScreen extends StatelessWidget {
       for (final entry in results.entries)
         if (catalogIds.contains(entry.key)) entry.key: entry.value,
     };
-    final generatedResults = <String, PuzzleResult>{
-      for (final entry in results.entries)
-        if (!catalogIds.contains(entry.key)) entry.key: entry.value,
-    };
+    final generatedResults = results.values
+        .where((result) =>
+            result.effectiveSource == PuzzleSource.generated ||
+            !catalogIds.contains(result.puzzleId))
+        .toList(growable: false);
     final catalogCompleted = catalogResults.length;
     final catalogTotal = binaryPuzzleCatalog.length;
-    final generatedCompleted = generatedResults.length;
-    final totalCompleted = catalogCompleted + generatedCompleted;
+    final generatedCompleted = generatedResults.fold<int>(
+      0,
+      (sum, result) => sum + result.completionCount,
+    );
+    final totalCompleted = results.values.fold<int>(
+      0,
+      (sum, result) => sum + result.completionCount,
+    );
     final totalBestSeconds = results.values.fold<int>(
       0,
       (sum, result) => sum + result.bestSeconds,
@@ -1567,6 +1584,17 @@ class StatisticsScreen extends StatelessWidget {
                       difficulty: difficulty,
                       results: catalogResults,
                     ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Generierte Rätsel nach Größe',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 10),
+                  for (final size in BinaryPuzzleSize.values)
+                    _GeneratedSizeStatistic(
+                      size: size,
+                      results: generatedResults,
+                    ),
                 ],
               ),
             ),
@@ -1584,6 +1612,68 @@ class StatisticsScreen extends StatelessWidget {
       return '$hours:${minutes.toString().padLeft(2, '0')}:${rest.toString().padLeft(2, '0')}';
     }
     return '$minutes:${rest.toString().padLeft(2, '0')}';
+  }
+}
+
+class _GeneratedSizeStatistic extends StatelessWidget {
+  const _GeneratedSizeStatistic({
+    required this.size,
+    required this.results,
+  });
+
+  final BinaryPuzzleSize size;
+  final List<PuzzleResult> results;
+
+  @override
+  Widget build(BuildContext context) {
+    int completedFor(PuzzleDifficulty difficulty) => results
+        .where((result) =>
+            result.effectiveBoardSize == size.value &&
+            result.effectiveDifficulty == difficulty)
+        .fold<int>(0, (sum, result) => sum + result.completionCount);
+
+    final counts = {
+      for (final difficulty in PuzzleDifficulty.values)
+        difficulty: completedFor(difficulty),
+    };
+    final total = counts.values.fold<int>(0, (sum, count) => sum + count);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.grid_4x4_rounded),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    size.label,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+                Text('$total gesamt'),
+              ],
+            ),
+            const Divider(height: 24),
+            for (final difficulty in PuzzleDifficulty.values)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(difficulty.label)),
+                    Text('${counts[difficulty]}'),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -193,30 +193,113 @@ class SavedGame {
   }
 }
 
+enum PuzzleSource {
+  catalog,
+  generated,
+  daily,
+  event,
+  tutorial,
+}
+
 class PuzzleResult {
   const PuzzleResult({
     required this.puzzleId,
     required this.bestSeconds,
     required this.completedAt,
+    this.source = PuzzleSource.catalog,
+    this.difficulty,
+    this.boardSize,
+    this.completionCount = 1,
   });
 
   final String puzzleId;
   final int bestSeconds;
   final DateTime completedAt;
+  final PuzzleSource source;
+  final PuzzleDifficulty? difficulty;
+  final int? boardSize;
+  final int completionCount;
+
+  PuzzleSource get effectiveSource =>
+      puzzleId.startsWith('binary-') ? PuzzleSource.generated : source;
+
+  int? get effectiveBoardSize {
+    if (boardSize != null) return boardSize;
+    final parts = puzzleId.split('-');
+    if (parts.length >= 4 && parts.first == 'binary') {
+      return int.tryParse(parts[1]);
+    }
+    return null;
+  }
+
+  PuzzleDifficulty? get effectiveDifficulty {
+    if (difficulty != null) return difficulty;
+    final parts = puzzleId.split('-');
+    if (parts.length >= 4 && parts.first == 'binary') {
+      return PuzzleDifficulty.values.firstWhere(
+        (value) => value.name == parts[2],
+        orElse: () => PuzzleDifficulty.easy,
+      );
+    }
+    return null;
+  }
 
   Map<String, Object?> toJson() => {
         'puzzleId': puzzleId,
         'bestSeconds': bestSeconds,
         'completedAt': completedAt.toIso8601String(),
+        'source': source.name,
+        if (difficulty != null) 'difficulty': difficulty!.name,
+        if (boardSize != null) 'boardSize': boardSize,
+        'completionCount': completionCount,
       };
 
   factory PuzzleResult.fromJson(Map<String, Object?> json) {
+    final sourceName = json['source'] as String?;
+    final difficultyName = json['difficulty'] as String?;
+    final rawBoardSize = json['boardSize'];
+    final rawCompletionCount = json['completionCount'];
+
     return PuzzleResult(
       puzzleId: json['puzzleId'] as String,
       bestSeconds: json['bestSeconds'] as int,
       completedAt:
           DateTime.tryParse(json['completedAt'] as String? ?? '') ??
               DateTime.now(),
+      source: PuzzleSource.values.firstWhere(
+        (value) => value.name == sourceName,
+        orElse: () => PuzzleSource.catalog,
+      ),
+      difficulty: difficultyName == null
+          ? null
+          : PuzzleDifficulty.values.firstWhere(
+              (value) => value.name == difficultyName,
+              orElse: () => PuzzleDifficulty.easy,
+            ),
+      boardSize: rawBoardSize is num ? rawBoardSize.toInt() : null,
+      completionCount:
+          rawCompletionCount is num && rawCompletionCount.toInt() > 0
+              ? rawCompletionCount.toInt()
+              : 1,
+    );
+  }
+
+  PuzzleResult recordAnotherCompletion({
+    required int elapsedSeconds,
+    required DateTime completedAt,
+    required PuzzleSource source,
+    required PuzzleDifficulty difficulty,
+    required int boardSize,
+  }) {
+    return PuzzleResult(
+      puzzleId: puzzleId,
+      bestSeconds:
+          elapsedSeconds < bestSeconds ? elapsedSeconds : bestSeconds,
+      completedAt: completedAt,
+      source: source,
+      difficulty: difficulty,
+      boardSize: boardSize,
+      completionCount: completionCount + 1,
     );
   }
 }
@@ -271,17 +354,30 @@ class GameStorage {
   Future<void> recordCompletion({
     required String puzzleId,
     required int elapsedSeconds,
+    required PuzzleSource source,
+    required PuzzleDifficulty difficulty,
+    required int boardSize,
   }) async {
     final results = await loadResults();
     final existing = results[puzzleId];
+    final completedAt = DateTime.now();
 
-    if (existing == null || elapsedSeconds < existing.bestSeconds) {
-      results[puzzleId] = PuzzleResult(
-        puzzleId: puzzleId,
-        bestSeconds: elapsedSeconds,
-        completedAt: DateTime.now(),
-      );
-    }
+    results[puzzleId] = existing == null
+        ? PuzzleResult(
+            puzzleId: puzzleId,
+            bestSeconds: elapsedSeconds,
+            completedAt: completedAt,
+            source: source,
+            difficulty: difficulty,
+            boardSize: boardSize,
+          )
+        : existing.recordAnotherCompletion(
+            elapsedSeconds: elapsedSeconds,
+            completedAt: completedAt,
+            source: source,
+            difficulty: difficulty,
+            boardSize: boardSize,
+          );
 
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(

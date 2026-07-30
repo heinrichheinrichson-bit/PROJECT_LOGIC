@@ -57,3 +57,10 @@ Ein exakter Solver, der:
 1. die Eindeutigkeit eines Rätsels prüft,
 2. als Grundlage für den Generator dient,
 3. später durch einen menschlich erklärenden Regel-Solver ergänzt wird.
+
+## Stand v0.6.7
+
+Die Fortschrittsdaten unterscheiden Katalog-, Generator- und künftig auch
+Tages-, Event- und Tutorialrätsel. Generierte Abschlüsse werden nach Rastergröße
+und Schwierigkeit ausgewertet; wiederholte Abschlüsse werden separat gezählt,
+während die persönliche Bestzeit erhalten bleibt.

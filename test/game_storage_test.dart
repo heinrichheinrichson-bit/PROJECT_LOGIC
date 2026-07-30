@@ -148,4 +148,60 @@ void main() {
     expect(() => SavedGame.fromJson(json), throwsFormatException);
   });
 
+
+  
+  // v0.6.7 player-progress metadata regression tests.
+  test('PuzzleResult preserves progress metadata and completion count', () {
+    final original = PuzzleResult(
+      puzzleId: 'binary-8-hard-42',
+      bestSeconds: 180,
+      completedAt: DateTime(2026, 7, 30, 16, 0),
+      source: PuzzleSource.generated,
+      difficulty: PuzzleDifficulty.hard,
+      boardSize: 8,
+      completionCount: 3,
+    );
+  
+    final restored = PuzzleResult.fromJson(original.toJson());
+  
+    expect(restored.source, PuzzleSource.generated);
+    expect(restored.difficulty, PuzzleDifficulty.hard);
+    expect(restored.boardSize, 8);
+    expect(restored.completionCount, 3);
+  });
+  
+  test('legacy generated result infers size and difficulty from puzzle id', () {
+    final restored = PuzzleResult.fromJson({
+      'puzzleId': 'binary-6-medium-12345',
+      'bestSeconds': 90,
+      'completedAt': '2026-07-30T16:00:00.000',
+    });
+  
+    expect(restored.effectiveSource, PuzzleSource.generated);
+    expect(restored.effectiveBoardSize, 6);
+    expect(restored.effectiveDifficulty, PuzzleDifficulty.medium);
+    expect(restored.completionCount, 1);
+  });
+  
+  test('recordAnotherCompletion keeps best time and increments count', () {
+    final original = PuzzleResult(
+      puzzleId: 'easy-01',
+      bestSeconds: 100,
+      completedAt: DateTime(2026, 7, 30, 16, 0),
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 6,
+    );
+  
+    final updated = original.recordAnotherCompletion(
+      elapsedSeconds: 120,
+      completedAt: DateTime(2026, 7, 30, 17, 0),
+      source: PuzzleSource.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 6,
+    );
+  
+    expect(updated.bestSeconds, 100);
+    expect(updated.completionCount, 2);
+    expect(updated.completedAt, DateTime(2026, 7, 30, 17, 0));
+  });
 }

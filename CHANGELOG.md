@@ -1,3 +1,16 @@
+## 0.6.7 - Spielerfortschritt
+
+- Fortschrittsdaten speichern jetzt Rätselquelle, Schwierigkeit, Rastergröße und Anzahl der Abschlüsse.
+- Wiederholtes Lösen desselben Rätsels erhöht die Zahl abgeschlossener Partien, während die Bestzeit erhalten bleibt.
+- Bestehende Ergebnisdaten aus früheren Versionen bleiben lesbar.
+- Metadaten alter generierter Rätsel werden aus ihrer Puzzle-ID rekonstruiert.
+- Statistik für generierte Rätsel nach 4×4, 6×6 und 8×8 sowie Leicht, Mittel und Schwer ergänzt.
+- Gesamtstatistik zählt abgeschlossene Partien statt nur unterschiedlicher Puzzle-IDs.
+- Startseite und Binärpuzzle-Hub zählen beim Katalogfortschritt ausschließlich Katalogrätsel.
+- Puzzle-Quellen für Katalog, Generator, Tagesrätsel, Events und Tutorials vorbereitet.
+- Zusätzliche Regressionstests für Fortschrittsmetadaten und Wiederholungsabschlüsse ergänzt.
+- Paketversion auf 0.6.7+21 erhöht.
+
 # Changelog
 
 ## 0.6.6 - Binärpuzzle-Hub

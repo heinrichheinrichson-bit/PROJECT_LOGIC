@@ -1,0 +1,26 @@
+PROJECT LOGIC v0.6.7 – SPIELERFORTSCHRITT
+==========================================
+
+Diese Version baut die Statistik- und Fortschrittsbasis für zukünftige
+Tagesrätsel, Missionen und weitere Logikspiele aus.
+
+NEU
+---
+- Ergebnisse enthalten jetzt die Rätselquelle:
+  Katalog, Generator, Tagesrätsel, Event oder Tutorial.
+- Schwierigkeit und Rastergröße werden pro Ergebnis gespeichert.
+- Wiederholte Abschlüsse desselben Rätsels werden gezählt.
+- Die persönliche Bestzeit bleibt dabei erhalten.
+- Alte Ergebnisdaten bleiben kompatibel.
+- Alte Generator-Ergebnisse erhalten Größe und Schwierigkeit automatisch
+  aus ihrer bisherigen Puzzle-ID.
+- Generierte Rätsel werden in der Statistik nach Rastergröße und
+  Schwierigkeitsgrad aufgeschlüsselt.
+- Gesamtabschlüsse zählen echte abgeschlossene Partien und nicht nur
+  unterschiedliche Puzzle-IDs.
+
+NICHT ENTHALTEN
+---------------
+- Tagesrätsel sind weiterhin nur vorbereitet.
+- Hinweis-Limits und simulierte Werbung folgen in einer späteren Version.
+- Es wurden keine Spielregeln und keine Generatorregeln verändert.
