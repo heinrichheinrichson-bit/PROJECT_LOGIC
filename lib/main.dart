@@ -61,6 +61,140 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final GameStorage _storage = GameStorage();
+  Map<String, PuzzleResult> _results = const {};
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final results = await _storage.loadResults();
+    if (!mounted) return;
+    setState(() {
+      _results = results;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 32),
+                  Icon(
+                    Icons.grid_view_rounded,
+                    size: 68,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    'PROJECT LOGIC',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.5,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Ruhige Logikspiele. Klare Regeln. Kein Zeitdruck.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  if (_loading)
+                    const Center(child: CircularProgressIndicator())
+                  else ...[
+                    _HomeAction(
+                      icon: Icons.grid_4x4_rounded,
+                      title: 'Binärpuzzle',
+                      subtitle:
+                          '${_results.length} von ${binaryPuzzleCatalog.length} Katalogrätseln gelöst',
+                      enabled: true,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const BinaryPuzzleHubScreen(),
+                          ),
+                        );
+                        await _refresh();
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    const _HomeAction(
+                      icon: Icons.filter_none_rounded,
+                      title: 'Weitere Logikspiele',
+                      subtitle: 'Hitori, Hashi und mehr folgen später',
+                    ),
+                    const SizedBox(height: 12),
+                    _HomeAction(
+                      icon: Icons.bar_chart_rounded,
+                      title: 'Gesamtstatistik',
+                      subtitle: 'Fortschritt über alle Spiele',
+                      enabled: true,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => StatisticsScreen(results: _results),
+                          ),
+                        );
+                        await _refresh();
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _HomeAction(
+                      icon: Icons.settings_outlined,
+                      title: 'Einstellungen',
+                      subtitle: 'Darstellung, Bedienung und lokale Daten',
+                      enabled: true,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const SettingsScreen(),
+                          ),
+                        );
+                        await _refresh();
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 28),
+                  Text(
+                    'Version 0.6.6 · Binärpuzzle-Hub',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class BinaryPuzzleHubScreen extends StatefulWidget {
+  const BinaryPuzzleHubScreen({super.key});
+
+  @override
+  State<BinaryPuzzleHubScreen> createState() => _BinaryPuzzleHubScreenState();
+}
+
+class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
+  final GameStorage _storage = GameStorage();
   SavedGame? _savedGame;
   Map<String, PuzzleResult> _results = const {};
   bool _loading = true;
@@ -94,122 +228,110 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final savedDefinition = _savedDefinition;
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 32),
-                  Icon(Icons.grid_view_rounded,
-                      size: 68, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(height: 18),
-                  Text('PROJECT LOGIC',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w800, letterSpacing: 1.5)),
-                  const SizedBox(height: 8),
-                  Text('Ruhige Logikspiele. Klare Regeln. Kein Zeitdruck.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                  const SizedBox(height: 40),
-                  if (_loading)
-                    const Center(child: CircularProgressIndicator())
-                  else ...[
-                    if (_savedGame != null && _savedDefinition != null) ...[
-                      _HomeAction(
-                        icon: Icons.play_circle_outline_rounded,
-                        title: 'Spiel fortsetzen',
-                        subtitle:
-                            '${_savedGame!.titleOverride ?? '${_savedDefinition!.difficulty.label} · ${_savedDefinition!.displayName}'} · ${_formatHomeTime(_savedGame!.elapsedSeconds)}',
-                        enabled: true,
-                        onTap: () async {
-                          await Navigator.of(context).push(MaterialPageRoute<void>(
+      appBar: AppBar(title: const Text('Binärpuzzle')),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Binärpuzzle',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Fülle jede Reihe und Spalte mit gleich vielen Nullen und Einsen.',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                if (_loading)
+                  const Center(child: CircularProgressIndicator())
+                else ...[
+                  if (_savedGame != null && savedDefinition != null) ...[
+                    _HomeAction(
+                      icon: Icons.play_circle_outline_rounded,
+                      title: 'Spiel fortsetzen',
+                      subtitle:
+                          '${_savedGame!.titleOverride ?? '${savedDefinition.difficulty.label} · ${savedDefinition.displayName}'} · ${_formatHomeTime(_savedGame!.elapsedSeconds)}',
+                      enabled: true,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
                             builder: (_) => BinaryPuzzleScreen(
-                              definition: _savedDefinition!,
+                              definition: savedDefinition,
                               savedGame: _savedGame,
                               titleOverride: _savedGame!.titleOverride,
                               storeDefinition: _savedGame!.isGenerated,
                             ),
-                          ));
-                          await _refresh();
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                    _HomeAction(
-                      icon: Icons.play_arrow_rounded,
-                      title: 'Neues Spiel',
-                      subtitle: 'Spiel und Schwierigkeit auswählen',
-                      enabled: true,
-                      onTap: () async {
-                        await Navigator.of(context).push(MaterialPageRoute<void>(
-                          builder: (_) => const GameSelectionScreen(),
-                        ));
-                        await _refresh();
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    _HomeAction(
-                      icon: Icons.auto_awesome_rounded,
-                      title: 'Rätsel generieren',
-                      subtitle: 'Größe und Schwierigkeit selbst auswählen',
-                      enabled: true,
-                      onTap: () async {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const GeneratedPuzzleSetupScreen(),
                           ),
                         );
                         await _refresh();
                       },
                     ),
                     const SizedBox(height: 12),
-                    const _HomeAction(
-                      icon: Icons.calendar_today_outlined,
-                      title: 'Tagesrätsel',
-                      subtitle: 'Kommt mit dem Generator',
-                    ),
-                    const SizedBox(height: 12),
-                    _HomeAction(
-                      icon: Icons.bar_chart_rounded,
-                      title: 'Statistik',
-                      subtitle:
-                          '${_results.length} von ${binaryPuzzleCatalog.length} Rätseln gelöst',
-                      enabled: true,
-                      onTap: () async {
-                        await Navigator.of(context).push(MaterialPageRoute<void>(
-                          builder: (_) => StatisticsScreen(results: _results),
-                        ));
-                        await _refresh();
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    _HomeAction(
-                      icon: Icons.settings_outlined,
-                      title: 'Einstellungen',
-                      subtitle: 'Darstellung, Bedienung und lokale Daten',
-                      enabled: true,
-                      onTap: () async {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const SettingsScreen(),
-                          ),
-                        );
-                        await _refresh();
-                      },
-                    ),
                   ],
-                  const SizedBox(height: 28),
-                  Text('Version 0.6.5 · Generator-Qualität', textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall),
+                  _HomeAction(
+                    icon: Icons.play_arrow_rounded,
+                    title: 'Neues Katalogrätsel',
+                    subtitle: 'Schwierigkeit und Rätsel auswählen',
+                    enabled: true,
+                    onTap: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const DifficultyScreen(),
+                        ),
+                      );
+                      await _refresh();
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _HomeAction(
+                    icon: Icons.auto_awesome_rounded,
+                    title: 'Zufallsrätsel generieren',
+                    subtitle: 'Größe und Schwierigkeit selbst auswählen',
+                    enabled: true,
+                    onTap: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const GeneratedPuzzleSetupScreen(),
+                        ),
+                      );
+                      await _refresh();
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  const _HomeAction(
+                    icon: Icons.calendar_today_outlined,
+                    title: 'Tagesrätsel',
+                    subtitle: 'Ein gemeinsames Rätsel pro Tag',
+                  ),
+                  const SizedBox(height: 12),
+                  _HomeAction(
+                    icon: Icons.bar_chart_rounded,
+                    title: 'Binärpuzzle-Statistik',
+                    subtitle:
+                        '${_results.length} von ${binaryPuzzleCatalog.length} Katalogrätseln gelöst',
+                    enabled: true,
+                    onTap: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => StatisticsScreen(results: _results),
+                        ),
+                      );
+                      await _refresh();
+                    },
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
         ),
@@ -603,7 +725,7 @@ class _GeneratedPuzzleSetupScreenState
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Generierte Rätsel werden automatisch gespeichert und können über „Spiel fortsetzen“ wieder geöffnet werden.',
+                  'Generierte Rätsel werden automatisch gespeichert und können im Binärpuzzle-Hub über „Spiel fortsetzen“ wieder geöffnet werden.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
@@ -1007,15 +1129,31 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Weiter ansehen'),
             ),
-            FilledButton.tonal(
-              onPressed: _hasNextPuzzle ? () {
-                Navigator.of(context).pop();
-                Navigator.of(this.context).pushReplacement(MaterialPageRoute<void>(
-                  builder: (_) => BinaryPuzzleScreen(definition: _nextPuzzle!),
-                ));
-              } : null,
-              child: const Text('Nächstes Rätsel'),
-            ),
+            if (widget.storeDefinition)
+              FilledButton.tonalIcon(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _startNextGeneratedPuzzle();
+                },
+                icon: const Icon(Icons.auto_awesome_rounded),
+                label: const Text('Neues Rätsel'),
+              )
+            else
+              FilledButton.tonal(
+                onPressed: _hasNextPuzzle
+                    ? () {
+                        Navigator.of(context).pop();
+                        Navigator.of(this.context).pushReplacement(
+                          MaterialPageRoute<void>(
+                            builder: (_) => BinaryPuzzleScreen(
+                              definition: _nextPuzzle!,
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+                child: const Text('Nächstes Rätsel'),
+              ),
             FilledButton(
               onPressed: () {
                 Navigator.of(context).pop();
@@ -1028,6 +1166,60 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
         },
       );
     });
+  }
+
+  Future<void> _startNextGeneratedPuzzle() async {
+    if (!widget.storeDefinition) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            SizedBox.square(
+              dimension: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+            SizedBox(width: 18),
+            Expanded(child: Text('Neues Rätsel wird erzeugt …')),
+          ],
+        ),
+      ),
+    );
+
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+
+    try {
+      final difficulty = widget.definition.difficulty;
+      final size = widget.definition.size;
+      final generated = const BinaryPuzzleGenerator().generate(
+        size: size,
+        difficulty: difficulty,
+        seed: DateTime.now().microsecondsSinceEpoch,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => BinaryPuzzleScreen(
+            definition: generated.definition,
+            storeDefinition: true,
+            titleOverride:
+                '${difficulty.label} · Generiert $size × $size',
+          ),
+        ),
+      );
+    } on Object catch (error) {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Neues Rätsel konnte nicht erzeugt werden: $error'),
+        ),
+      );
+    }
   }
 
   void _undo() {
@@ -1051,9 +1243,14 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   bool get _hasNextPuzzle => _nextPuzzle != null;
 
   BinaryPuzzleDefinition? get _nextPuzzle {
-    final list = puzzlesFor(widget.definition.difficulty);
-    final index = list.indexWhere((item) => item.id == widget.definition.id);
-    return index >= 0 && index + 1 < list.length ? list[index + 1] : null;
+    final index = binaryPuzzleCatalog.indexWhere(
+      (item) => item.id == widget.definition.id,
+    );
+    if (index < 0 || binaryPuzzleCatalog.isEmpty) return null;
+
+    // Keep the action useful even at the end of a difficulty group. After the
+    // final catalogue puzzle, continue with the first puzzle again.
+    return binaryPuzzleCatalog[(index + 1) % binaryPuzzleCatalog.length];
   }
 
   String _formatTime(int seconds) {
@@ -1283,8 +1480,19 @@ class StatisticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final completed = results.length;
-    final total = binaryPuzzleCatalog.length;
+    final catalogIds = binaryPuzzleCatalog.map((puzzle) => puzzle.id).toSet();
+    final catalogResults = <String, PuzzleResult>{
+      for (final entry in results.entries)
+        if (catalogIds.contains(entry.key)) entry.key: entry.value,
+    };
+    final generatedResults = <String, PuzzleResult>{
+      for (final entry in results.entries)
+        if (!catalogIds.contains(entry.key)) entry.key: entry.value,
+    };
+    final catalogCompleted = catalogResults.length;
+    final catalogTotal = binaryPuzzleCatalog.length;
+    final generatedCompleted = generatedResults.length;
+    final totalCompleted = catalogCompleted + generatedCompleted;
     final totalBestSeconds = results.values.fold<int>(
       0,
       (sum, result) => sum + result.bestSeconds,
@@ -1307,20 +1515,37 @@ class StatisticsScreen extends StatelessWidget {
                       child: Column(
                         children: [
                           Text(
-                            '$completed / $total',
+                            '$totalCompleted',
                             style: Theme.of(context)
                                 .textTheme
                                 .displaySmall
                                 ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 4),
-                          const Text('Rätsel abgeschlossen'),
-                          const SizedBox(height: 14),
-                          LinearProgressIndicator(
-                            value: total == 0 ? 0 : completed / total,
-                          ),
+                          const Text('Partien insgesamt abgeschlossen'),
                         ],
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.grid_view_rounded),
+                      title: const Text('Katalogrätsel'),
+                      subtitle: Text(
+                        '$catalogCompleted von $catalogTotal gelöst',
+                      ),
+                      trailing: Text(
+                        '${catalogTotal == 0 ? 0 : ((catalogCompleted / catalogTotal) * 100).round()} %',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.auto_awesome_rounded),
+                      title: const Text('Generierte Rätsel'),
+                      subtitle: Text('$generatedCompleted abgeschlossen'),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1333,14 +1558,14 @@ class StatisticsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Nach Schwierigkeit',
+                    'Katalog nach Schwierigkeit',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 10),
                   for (final difficulty in PuzzleDifficulty.values)
                     _DifficultyStatistic(
                       difficulty: difficulty,
-                      results: results,
+                      results: catalogResults,
                     ),
                 ],
               ),

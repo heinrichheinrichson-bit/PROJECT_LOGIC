@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.6.6 - Binärpuzzle-Hub
+
+### Added
+- Eigener Binärpuzzle-Hub als zentrale Anlaufstelle für Katalogrätsel, Spielstände, Zufallsrätsel, Tagesrätsel und Statistik.
+- Neuer Abschlussdialog-Ablauf für Generator-Rätsel mit direkter Erzeugung eines weiteren Rätsels derselben Größe und Schwierigkeit.
+- Widget-Test für die neue Startseiten- und Hub-Navigation.
+
+### Changed
+- Die globale Startseite zeigt nur noch Spiele sowie globale Bereiche wie Statistik und Einstellungen.
+- „Spiel fortsetzen“ und „Zufallsrätsel generieren“ wurden in den Binärpuzzle-Bereich verschoben.
+- Paketversion auf 0.6.6+20 erhöht.
+
+### Compatibility
+- Bestehende Katalogrätsel, Generator-Rätsel und Savegames bleiben kompatibel.
+- Persistenzformat und Spielregeln wurden nicht verändert.
+
+
 ## 0.6.5 - Generator-Qualität
 
 ### Added
@@ -252,3 +269,8 @@
 - Timer und Fortschrittsanzeige
 - Nächstes Rätsel nach erfolgreichem Abschluss
 - Developer-Testwerkzeuge
+
+### v0.6.6 – Abnahme-Korrekturen
+- Anzahl-Regel liefert weiterhin einen sicheren Hinweis, wenn an anderer Stelle bereits ein Widerspruch besteht.
+- Statistik trennt Katalogrätsel und generierte Rätsel eindeutig.
+- „Nächstes Rätsel“ funktioniert über Schwierigkeitsgrenzen hinweg und bleibt auch nach dem letzten Katalogrätsel nutzbar.

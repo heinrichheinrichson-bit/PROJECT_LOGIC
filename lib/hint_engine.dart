@@ -55,29 +55,61 @@ class BinaryHintEngine {
   final BinaryBoardValidator validator;
 
   BinaryHint? findHint(BinaryPuzzle puzzle) {
-    if (!validator.isValidPartial(puzzle.board)) return null;
+    final board = puzzle.board;
+    final lines = _linesFor(board);
 
-    final currentState = solver.solve(puzzle.board, solutionLimit: 1);
+    // A locally valid count deduction can still help when another, unrelated
+    // row or column already contains a contradiction. In that special case we
+    // deliberately avoid solver-based hints, because the complete board is not
+    // currently solvable. Only a direct count rule from a non-contradictory
+    // line may be returned.
+    if (!validator.isValidPartial(board)) {
+      for (final line in lines) {
+        if (!_isLocallyValidLine(line.values)) continue;
+        final hint = _findCountHint(line);
+        if (hint != null) return hint;
+      }
+      return null;
+    }
+
+    // On a rule-valid board, never suggest a move when the current position is
+    // already unsolvable. This keeps every returned hint globally safe.
+    final currentState = solver.solve(board, solutionLimit: 1);
     if (!currentState.isSolvable) return null;
 
-    final lines = _linesFor(puzzle.board);
-
+    // Preserve the established priority: triple rule before count rule.
     for (final line in lines) {
       final hint = _findTripleHint(line);
-      if (hint != null && _isSafeCandidate(puzzle.board, hint)) return hint;
+      if (hint != null && _isSafeCandidate(board, hint)) return hint;
     }
 
     for (final line in lines) {
       final hint = _findCountHint(line);
-      if (hint != null && _isSafeCandidate(puzzle.board, hint)) return hint;
+      if (hint != null && _isSafeCandidate(board, hint)) return hint;
     }
 
     for (final line in lines) {
       final hint = _findUniqueLineHint(line, lines);
-      if (hint != null && _isSafeCandidate(puzzle.board, hint)) return hint;
+      if (hint != null && _isSafeCandidate(board, hint)) return hint;
     }
 
-    return _findSolverHint(puzzle.board);
+    return _findSolverHint(board);
+  }
+
+  bool _isLocallyValidLine(List<CellValue?> values) {
+    final maximum = values.length ~/ 2;
+    final zeroCount = values.where((value) => value == CellValue.zero).length;
+    final oneCount = values.where((value) => value == CellValue.one).length;
+    if (zeroCount > maximum || oneCount > maximum) return false;
+
+    for (var index = 0; index <= values.length - 3; index++) {
+      final first = values[index];
+      final second = values[index + 1];
+      final third = values[index + 2];
+      if (first != null && first == second && second == third) return false;
+    }
+
+    return true;
   }
 
   bool _isSafeCandidate(

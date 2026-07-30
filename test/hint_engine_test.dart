@@ -55,6 +55,22 @@ void main() {
       expect(hint.value, CellValue.one);
     });
 
+    test('count hint remains available despite an unrelated contradiction', () {
+      final puzzle = _puzzle([
+        [0, null, null, 0],
+        [1, 1, 1, null],
+        [null, null, null, null],
+        [null, null, null, null],
+      ]);
+
+      final hint = findBinaryHint(puzzle);
+
+      expect(hint, isNotNull);
+      expect(hint!.type, BinaryHintType.count);
+      expect(hint.position, const CellPosition(0, 1));
+      expect(hint.value, CellValue.one);
+    });
+
     test('count hints highlight the complete relevant line', () {
       final puzzle = _puzzle([
         [0, null, null, 0],
