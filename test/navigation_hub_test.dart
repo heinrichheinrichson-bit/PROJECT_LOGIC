@@ -20,7 +20,7 @@ void main() {
 
     expect(find.text('Neues Katalogrätsel'), findsOneWidget);
     expect(find.text('Zufallsrätsel generieren'), findsOneWidget);
-    expect(find.text('Tagesrätsel'), findsOneWidget);
+    expect(find.text('Tagesrätsel & Kalender'), findsOneWidget);
     expect(find.text('Binärpuzzle-Statistik'), findsOneWidget);
   });
 }

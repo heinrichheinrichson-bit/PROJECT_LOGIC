@@ -1,3 +1,13 @@
+# Changelog
+
+## 0.7.1+25 – Spielerfortschritt
+
+- Spielerprofil mit Level, XP und Rangtitel ergänzt.
+- Vier Missionen mit dynamischem Fortschritt eingeführt.
+- Zehn dauerhafte Erfolge ergänzt.
+- Fortschrittsbalken animiert und vollständig aus vorhandenen Spieldaten berechnet.
+- Neue, spielübergreifend nutzbare Progress-Architektur und Tests ergänzt.
+
 ## 0.7.0 – Tageskalender
 
 - Archiv der letzten 30 Tagesrätsel ergänzt.

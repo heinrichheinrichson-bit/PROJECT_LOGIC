@@ -9,6 +9,7 @@ import 'daily_challenge.dart';
 import 'game_logic.dart';
 import 'game_storage.dart';
 import 'hint_engine.dart';
+import 'player_progress_system.dart';
 import 'features/binary_puzzle/domain/binary_puzzle_generator.dart';
 
 Future<void> main() async {
@@ -152,6 +153,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 12),
                     _HomeAction(
+                      icon: Icons.person_outline_rounded,
+                      title: 'Spielerprofil',
+                      subtitle: 'Missionen, Level und Erfolge',
+                      enabled: true,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => PlayerProfileScreen(
+                              results: _results,
+                              progress: _progress,
+                            ),
+                          ),
+                        );
+                        await _refresh();
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    _HomeAction(
                       icon: Icons.bar_chart_rounded,
                       title: 'Gesamtstatistik',
                       subtitle: 'Fortschritt über alle Spiele',
@@ -186,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                   const SizedBox(height: 28),
                   Text(
-                    'Version 0.7.0 · Tageskalender',
+                    'Version 0.7.1 · Spielerfortschritt',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -1831,6 +1850,219 @@ int _dailyStreak(List<PuzzleResult> results, {DateTime? now}) {
     }
   }
   return streak;
+}
+
+
+
+class PlayerProfileScreen extends StatelessWidget {
+  const PlayerProfileScreen({
+    required this.results,
+    required this.progress,
+    super.key,
+  });
+
+  final Map<String, PuzzleResult> results;
+  final PlayerProgress progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final snapshot = ProgressSnapshot(
+      results: results,
+      progress: progress,
+      catalogPuzzleIds: binaryPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
+    );
+    const service = PlayerProgressService();
+    final rank = service.rank(snapshot);
+    final missions = service.missions(snapshot);
+    final achievements = service.achievements(snapshot);
+    final unlockedCount = achievements.where((goal) => goal.isCompleted).length;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Spielerprofil')),
+      body: Center(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          CircleAvatar(
+                            radius: 38,
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primaryContainer,
+                            child: Icon(
+                              Icons.psychology_alt_rounded,
+                              size: 42,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            'Level ${rank.level}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                          Text(rank.title),
+                          const SizedBox(height: 16),
+                          TweenAnimationBuilder<double>(
+                            duration: const Duration(milliseconds: 650),
+                            tween: Tween(begin: 0, end: rank.progress),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, value, _) =>
+                                LinearProgressIndicator(value: value),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${rank.currentXp} von ${rank.nextLevelXp} XP bis zum nächsten Level',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Missionen',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Klare Ziele für deine nächsten Spielrunden.',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  for (final mission in missions)
+                    _ProgressGoalCard(goal: mission),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Erfolge',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      Text('$unlockedCount von ${achievements.length}'),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  for (final achievement in achievements)
+                    _ProgressGoalCard(goal: achievement),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProgressGoalCard extends StatelessWidget {
+  const _ProgressGoalCard({required this.goal});
+
+  final ProgressGoal goal;
+
+  @override
+  Widget build(BuildContext context) {
+    final completed = goal.isCompleted;
+    final colors = Theme.of(context).colorScheme;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: completed
+                    ? colors.primaryContainer
+                    : colors.surfaceContainerHighest,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                completed ? Icons.check_rounded : _goalIcon(goal.iconName),
+                color: completed
+                    ? colors.onPrimaryContainer
+                    : colors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          goal.title,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      if (completed)
+                        const Text(
+                          'Geschafft',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        )
+                      else
+                        Text(
+                          '${goal.current.clamp(0, goal.target)} / ${goal.target}',
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(goal.description),
+                  const SizedBox(height: 10),
+                  TweenAnimationBuilder<double>(
+                    duration: const Duration(milliseconds: 550),
+                    tween: Tween(begin: 0, end: goal.progress),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, _) =>
+                        LinearProgressIndicator(value: value),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static IconData _goalIcon(String name) => switch (name) {
+        'flag' => Icons.flag_outlined,
+        'psychology' => Icons.psychology_alt_outlined,
+        'workspace_premium' => Icons.workspace_premium_outlined,
+        'local_fire_department' => Icons.local_fire_department_outlined,
+        'calendar_month' => Icons.calendar_month_outlined,
+        'today' => Icons.today_outlined,
+        'auto_awesome' => Icons.auto_awesome_outlined,
+        'collections_bookmark' => Icons.collections_bookmark_outlined,
+        'diamond' => Icons.diamond_outlined,
+        'grid_on' => Icons.grid_on_outlined,
+        'menu_book' => Icons.menu_book_outlined,
+        _ => Icons.emoji_events_outlined,
+      };
 }
 
 class StatisticsScreen extends StatelessWidget {
