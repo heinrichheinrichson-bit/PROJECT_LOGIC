@@ -1,3 +1,17 @@
+# v0.8.0 – Hashi-Fundament
+
+### Added
+- Hashi als zweites auswählbares Spiel auf der Startseite.
+- Eigener Hashi-Hub mit gezeichneter Vorschau eines gelösten Inselnetzes.
+- Eigene Regelseite und verständliche Einführung in die Spielidee.
+- Erste Hashi-Modelle für Inseln, Brücken und Vorschau-Rätsel.
+- Modell- und Navigationstests für das neue Fundament.
+
+### Compatibility
+- Binärpuzzle, bestehende Spielstände, Fortschritt und Statistiken bleiben unverändert.
+- Noch keine Hashi-Spielstände oder Änderungen am Persistenzformat.
+- Paketversion auf 0.8.0+28 erhöht.
+
 # v0.7.3 – Sprache & Spielgefühl
 
 ### Changed

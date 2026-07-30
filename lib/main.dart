@@ -9,6 +9,7 @@ import 'daily_challenge.dart';
 import 'game_logic.dart';
 import 'game_storage.dart';
 import 'hint_engine.dart';
+import 'hashi_foundation.dart';
 import 'player_progress_system.dart';
 import 'features/binary_puzzle/domain/binary_puzzle_generator.dart';
 
@@ -146,10 +147,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                     const SizedBox(height: 12),
-                    const _HomeAction(
-                      icon: Icons.filter_none_rounded,
-                      title: 'Mehr Spiele',
-                      subtitle: 'Hitori, Hashi und weitere Klassiker sind geplant',
+                    _HomeAction(
+                      icon: Icons.hub_rounded,
+                      title: 'Hashi',
+                      subtitle: 'Entdecke Inseln, Brücken und das neue Spielgefühl',
+                      enabled: true,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const HashiHubScreen(),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     _HomeAction(
@@ -205,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                   const SizedBox(height: 28),
                   Text(
-                    'Version 0.7.3 · Sprache & Spielgefühl',
+                    'Version 0.8.0 · Hashi-Fundament',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),

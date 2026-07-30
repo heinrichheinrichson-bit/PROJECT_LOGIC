@@ -1,7 +1,0 @@
-Project Logic v0.6.8 – Spielserie (Korrektur)
-
-Behoben:
-- Syntaxfehler in PlayerProgress.fromJson bei der sortierten Migration gespeicherter Spieltage.
-- Die Cascade-Expression wird jetzt korrekt geklammert und kann innerhalb des ternären Ausdrucks kompiliert werden.
-
-Version bleibt 0.6.8+22, da v0.6.8 noch nicht veröffentlicht wurde.

@@ -1,0 +1,17 @@
+PROJECT LOGIC v0.8.0 – HASHI-FUNDAMENT
+
+NEU
+- Hashi ist als zweites Spiel direkt von der Startseite erreichbar.
+- Eigener Hashi-Hub mit visueller Vorschau eines gelösten Rätsels.
+- Freundliche Einführung in Inseln, einfache und doppelte Brücken.
+- Eigene Regelseite mit den vier Grundregeln.
+- Erste eigenständige Hashi-Domänenmodelle für Inseln, Brücken und Vorschau-Rätsel.
+- Widget- und Modelltests für Navigation und Fundament.
+
+BEWUSST NOCH NICHT ENTHALTEN
+- Noch kein spielbares Hashi-Rätsel.
+- Noch kein Setzen oder Entfernen von Brücken.
+- Noch keine Siegprüfung, Speicherung oder Generatorfunktion.
+
+WARUM DIESER SCHRITT
+Diese Version führt Hashi kontrolliert und kompilierbar ein. Das sichtbare Spielgefühl und die fachlichen Grundmodelle stehen, bevor in v0.8.1 die interaktive Spielmechanik ergänzt wird.

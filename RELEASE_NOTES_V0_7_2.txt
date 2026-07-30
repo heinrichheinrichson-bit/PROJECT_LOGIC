@@ -1,9 +1,0 @@
-Project Logic v0.7.2 – Daily Motivation
-
-- Tagesmissionen als eigener Bereich im Spielerprofil
-- Drei datumsgesteuerte Ziele: Tagesrätsel, Generator und Katalog
-- Missionen beginnen am nächsten Kalendertag automatisch neu
-- Bestehende dauerhafte Missionen heißen jetzt Langzeitziele
-- Erfolge und Level bleiben vollständig kompatibel
-- Neue Tests für Tageswechsel und datumsgebundene Missions-IDs
-- Version 0.7.2+26

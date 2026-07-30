@@ -23,4 +23,21 @@ void main() {
     expect(find.text('Tagesrätsel'), findsOneWidget);
     expect(find.text('Deine Binärpuzzle-Statistik'), findsOneWidget);
   });
+
+  testWidgets('home opens the Hashi foundation', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await AppPreferences.load();
+
+    await tester.pumpWidget(ProjectLogicApp(preferences: preferences));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hashi'), findsOneWidget);
+    await tester.tap(find.text('Hashi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Verbinde die Inseln'), findsOneWidget);
+    expect(find.text('Regeln ansehen'), findsOneWidget);
+    expect(find.text('Spielbare Einführung folgt'), findsOneWidget);
+  });
+
 }

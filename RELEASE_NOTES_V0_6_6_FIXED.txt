@@ -1,7 +1,0 @@
-Project Logic v0.6.6 – Binärpuzzle-Hub (Abnahme-Korrekturen)
-
-- Sichere Anzahl-Hinweise auch bei einem unabhängigen Fehler an anderer Stelle.
-- Getrennte Statistik für Katalog- und Generatorrätsel.
-- Gesamtsumme zeigt abgeschlossene Partien ohne falschen Nenner.
-- Katalogfortschritt bleibt separat als x von 9 sichtbar.
-- „Nächstes Rätsel“ wechselt zuverlässig zum folgenden Katalogrätsel.

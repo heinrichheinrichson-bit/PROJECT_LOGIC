@@ -1,7 +1,0 @@
-Project Logic v0.7.1 – Korrekturpaket
-
-Behoben:
-- Lint-Hinweis prefer_const_constructors in player_progress_system_test.dart
-- Navigationstest an die sichtbare Beschriftung „Tagesrätsel & Kalender“ angepasst
-
-Keine Änderungen an Gameplay, Speicherdaten oder Versionsnummer.
