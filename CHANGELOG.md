@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.6.1-dev.3 – Unique Clue Removal
+
+### Added
+- Multi-clue removal in deterministic seeded order
+- Solver-backed uniqueness check after every attempted clue removal
+- Difficulty-specific clue targets for easy, medium, and hard puzzles
+- Generation diagnostics for attempted and successful removals
+- Tests for unique solvability, determinism, difficulty progression, and metadata
+
+### Compatibility
+- No UI, save-format, or existing puzzle-catalogue changes
+- This is an internal development build toward v0.6.1
+
 ## v0.6.0 – Generator Core
 
 ### Added
