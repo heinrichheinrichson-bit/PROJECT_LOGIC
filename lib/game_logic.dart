@@ -10,6 +10,17 @@ enum CellValue {
   String get label => this == CellValue.zero ? '0' : '1';
 }
 
+enum BinaryPuzzleSize {
+  small(4, '4 × 4'),
+  standard(6, '6 × 6'),
+  large(8, '8 × 8');
+
+  const BinaryPuzzleSize(this.value, this.label);
+
+  final int value;
+  final String label;
+}
+
 enum PuzzleDifficulty {
   easy('Leicht', 'Zum Kennenlernen'),
   medium('Mittel', 'Weniger Vorgaben'),
@@ -70,6 +81,7 @@ class BinaryPuzzleDefinition {
   final Set<CellPosition> clues;
 
   String get displayName => 'Rätsel $number';
+  int get size => solution.length;
   int get clueCount => clues.length;
 
   BinaryPuzzle createPuzzle() => BinaryPuzzle(

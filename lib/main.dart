@@ -401,7 +401,7 @@ class _PuzzleSelectionScreenState extends State<PuzzleSelectionScreen> {
                 ),
                 subtitle: Text(
                   result == null
-                      ? '6 × 6 · ${definition.clueCount} Vorgaben'
+                      ? '${definition.size} × ${definition.size} · ${definition.clueCount} Vorgaben'
                       : 'Bestzeit ${_formatHomeTime(result.bestSeconds)} · ${definition.clueCount} Vorgaben',
                 ),
                 trailing: Icon(
