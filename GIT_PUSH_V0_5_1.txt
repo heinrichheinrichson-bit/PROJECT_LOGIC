@@ -1,1 +1,0 @@
-git add . && git commit -m "feat(v0.5.1): add isolated binary puzzle solver foundation" && git tag -a v0.5.1 -m "Project Logic v0.5.1 - binary validator and backtracking solver foundation" && git push origin main && git push origin v0.5.1

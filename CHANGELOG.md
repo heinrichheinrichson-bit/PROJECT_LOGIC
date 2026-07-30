@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.5.3 – Hint Safety
+
+### Fixed
+- Jeder direkte Hinweis wird vor der Ausgabe gegen alle Binärpuzzle-Regeln geprüft.
+- Hinweise werden verworfen, wenn sie doppelte vollständige Zeilen oder Spalten erzeugen.
+- Hinweise werden verworfen, wenn der resultierende Spielstand nicht mehr lösbar ist.
+- Für bereits unlösbare Spielstände wird kein scheinbar sicherer Hinweis mehr angeboten.
+- Der Hinweisdialog unterscheidet jetzt klarer zwischen fehlenden und unsicheren Hinweisen.
+
+### Repository cleanup
+- Alte `GIT_PUSH_*`, `TESTANLEITUNG_*` und `UPDATE_*` Dateien werden ignoriert.
+- Historische Hilfstextdateien wurden aus dem Release-Projekt entfernt.
+
 ## v0.5.2 – Solver Integration
 
 ### Added

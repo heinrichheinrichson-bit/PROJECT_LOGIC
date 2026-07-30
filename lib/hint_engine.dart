@@ -44,24 +44,41 @@ class BinaryHintEngine {
   BinaryHint? findHint(BinaryPuzzle puzzle) {
     if (!validator.isValidPartial(puzzle.board)) return null;
 
+    final currentState = solver.solve(puzzle.board, solutionLimit: 1);
+    if (!currentState.isSolvable) return null;
+
     final lines = _linesFor(puzzle.board);
 
     for (final line in lines) {
       final hint = _findTripleHint(line);
-      if (hint != null) return hint;
+      if (hint != null && _isSafeCandidate(puzzle.board, hint)) return hint;
     }
 
     for (final line in lines) {
       final hint = _findCountHint(line);
-      if (hint != null) return hint;
+      if (hint != null && _isSafeCandidate(puzzle.board, hint)) return hint;
     }
 
     for (final line in lines) {
       final hint = _findUniqueLineHint(line, lines);
-      if (hint != null) return hint;
+      if (hint != null && _isSafeCandidate(puzzle.board, hint)) return hint;
     }
 
     return _findSolverHint(puzzle.board);
+  }
+
+  bool _isSafeCandidate(
+    List<List<CellValue?>> board,
+    BinaryHint hint,
+  ) {
+    final candidateBoard = [
+      for (final row in board) [...row],
+    ];
+    candidateBoard[hint.position.row][hint.position.column] = hint.value;
+
+    if (!validator.isValidPartial(candidateBoard)) return false;
+
+    return solver.solve(candidateBoard, solutionLimit: 1).isSolvable;
   }
 
   BinaryHint? _findTripleHint(_BinaryLine line) {

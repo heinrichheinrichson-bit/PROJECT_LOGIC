@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:project_logic_prototype/features/binary_puzzle/domain/binary_board_validator.dart';
 import 'package:project_logic_prototype/game_logic.dart';
 import 'package:project_logic_prototype/hint_engine.dart';
 
@@ -58,6 +59,46 @@ void main() {
         [null, null, null, null],
         [null, null, null, null],
         [null, null, null, null],
+      ]);
+
+      expect(findBinaryHint(puzzle), isNull);
+    });
+
+    test('never returns a hint that creates duplicate columns', () {
+      final puzzle = _puzzle([
+        [0, 0, null, 1],
+        [null, null, 0, 0],
+        [null, null, 1, 1],
+        [null, null, 0, 0],
+      ]);
+
+      final hint = findBinaryHint(puzzle);
+
+      if (hint != null) {
+        final candidateBoard = [
+          for (final row in puzzle.board) [...row],
+        ];
+        candidateBoard[hint.position.row][hint.position.column] = hint.value;
+
+        expect(
+          const BinaryBoardValidator().isValidPartial(candidateBoard),
+          isTrue,
+        );
+      }
+
+      expect(
+        hint?.position == const CellPosition(0, 2) &&
+            hint?.value == CellValue.one,
+        isFalse,
+      );
+    });
+
+    test('returns no hint for a rule-valid but unsolvable board', () {
+      final puzzle = _puzzle([
+        [null, null, null, 1],
+        [null, 1, 1, null],
+        [null, null, null, null],
+        [0, null, null, 0],
       ]);
 
       expect(findBinaryHint(puzzle), isNull);
