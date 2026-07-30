@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.6.0 – Generator Core
+
+### Added
+- Seeded `BinaryBoardGenerator` for complete Binary Puzzle solution boards
+- Line-based backtracking generation using the existing board validator
+- `BinaryBoardGenerationResult` with seed and search diagnostics
+- Automated generation tests for 4×4, 6×6, and 8×8 boards
+- Determinism, balance, uniqueness, and invalid-size tests
+- Generator architecture documentation
+
+### Repository cleanup
+- Removed old tracked push, test-guide, and update helper files from the release snapshot
+- Generated ZIP contains only the maintained project tree
+
+### Compatibility
+- No UI, save-format, puzzle-catalogue, or gameplay changes
+- Existing saves remain compatible
+
 ## v0.5.5 – Hint Quality
 
 ### Improved

@@ -187,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                   const SizedBox(height: 28),
-                  Text('Version 0.5.5 · Hint Quality', textAlign: TextAlign.center,
+                  Text('Version 0.6.0 · Generator Core', textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
