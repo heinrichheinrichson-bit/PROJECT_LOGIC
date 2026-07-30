@@ -10,9 +10,16 @@ enum BinaryHintType {
 
   String get title => switch (this) {
         BinaryHintType.triple => 'Dreier-Regel',
-        BinaryHintType.count => 'Gleiche Anzahl',
-        BinaryHintType.uniqueLine => 'Eindeutige Linie',
-        BinaryHintType.solver => 'Logische Kombination',
+        BinaryHintType.count => 'Anzahl-Regel',
+        BinaryHintType.uniqueLine => 'Eindeutigkeits-Regel',
+        BinaryHintType.solver => 'Kombinierter Schluss',
+      };
+
+  String get badge => switch (this) {
+        BinaryHintType.triple => 'Direkte Regel',
+        BinaryHintType.count => 'Direkte Regel',
+        BinaryHintType.uniqueLine => 'Direkte Regel',
+        BinaryHintType.solver => 'Mehrere Regeln',
       };
 }
 
@@ -22,14 +29,20 @@ class BinaryHint {
     required this.value,
     required this.type,
     required this.reason,
+    required this.relatedPositions,
   });
 
   final CellPosition position;
   final CellValue value;
   final BinaryHintType type;
   final String reason;
+  final List<CellPosition> relatedPositions;
 
   String get title => type.title;
+  String get badge => type.badge;
+  String get coordinate =>
+      'Zeile ${position.row + 1}, Spalte ${position.column + 1}';
+  String get action => 'Trage dort eine ${value.label} ein.';
 }
 
 class BinaryHintEngine {
@@ -95,7 +108,8 @@ class BinaryHintEngine {
           value: _opposite(first),
           type: BinaryHintType.triple,
           reason:
-              '${line.name} darf keine drei gleichen Zahlen direkt hintereinander enthalten.',
+              'Dreierfolge verhindern: In ${line.name} stehen bereits zwei gleiche Zahlen direkt nebeneinander. Eine dritte gleiche Zahl ist nicht erlaubt.',
+          relatedPositions: line.positions.sublist(index, index + 3),
         );
       }
 
@@ -105,7 +119,8 @@ class BinaryHintEngine {
           value: _opposite(second),
           type: BinaryHintType.triple,
           reason:
-              '${line.name} darf keine drei gleichen Zahlen direkt hintereinander enthalten.',
+              'Dreierfolge verhindern: In ${line.name} stehen bereits zwei gleiche Zahlen direkt nebeneinander. Eine dritte gleiche Zahl ist nicht erlaubt.',
+          relatedPositions: line.positions.sublist(index, index + 3),
         );
       }
 
@@ -115,7 +130,8 @@ class BinaryHintEngine {
           value: _opposite(first),
           type: BinaryHintType.triple,
           reason:
-              'Zwischen zwei gleichen Zahlen muss in ${line.name} die andere Zahl stehen.',
+              'In ${line.name} liegen zwei gleiche Zahlen mit einer Lücke dazwischen. Damit keine Dreierfolge entsteht, muss in die Mitte die andere Zahl.',
+          relatedPositions: line.positions.sublist(index, index + 3),
         );
       }
     }
@@ -139,7 +155,8 @@ class BinaryHintEngine {
         value: CellValue.one,
         type: BinaryHintType.count,
         reason:
-            '${line.name} enthält bereits $maximum Nullen. Alle übrigen Felder müssen Einsen sein.',
+            '${line.name} enthält bereits die erlaubten $maximum Nullen. Damit Nullen und Einsen gleich häufig vorkommen, müssen alle freien Felder Einsen sein.',
+        relatedPositions: line.positions,
       );
     }
 
@@ -149,7 +166,8 @@ class BinaryHintEngine {
         value: CellValue.zero,
         type: BinaryHintType.count,
         reason:
-            '${line.name} enthält bereits $maximum Einsen. Alle übrigen Felder müssen Nullen sein.',
+            '${line.name} enthält bereits die erlaubten $maximum Einsen. Damit Nullen und Einsen gleich häufig vorkommen, müssen alle freien Felder Nullen sein.',
+        relatedPositions: line.positions,
       );
     }
 
@@ -196,7 +214,8 @@ class BinaryHintEngine {
         value: value,
         type: BinaryHintType.uniqueLine,
         reason:
-            '${line.name} wäre sonst identisch mit ${peer.name}. Vollständige ${line.orientation == _LineOrientation.row ? 'Zeilen' : 'Spalten'} müssen verschieden sein.',
+            '${line.name} würde mit dem anderen Wert vollständig ${peer.name} entsprechen. Vollständige ${line.orientation == _LineOrientation.row ? 'Zeilen' : 'Spalten'} müssen sich unterscheiden.',
+        relatedPositions: [...line.positions, ...peer.positions],
       );
     }
 
@@ -216,7 +235,8 @@ class BinaryHintEngine {
             value: solution[row][column],
             type: BinaryHintType.solver,
             reason:
-                'Aus der Kombination aller Binärpuzzle-Regeln ergibt sich für dieses Feld nur ein möglicher Wert.',
+                'Keine einzelne Standardregel reicht hier allein aus. Betrachtet man alle Regeln gemeinsam, bleibt für dieses Feld nur ein zulässiger Wert.',
+            relatedPositions: [CellPosition(row, column)],
           );
         }
       }

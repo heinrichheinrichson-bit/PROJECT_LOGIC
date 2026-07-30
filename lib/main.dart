@@ -187,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                   const SizedBox(height: 28),
-                  Text('Version 0.5.4 · Regression Safety', textAlign: TextAlign.center,
+                  Text('Version 0.5.5 · Hint Quality', textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
@@ -450,6 +450,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
   bool _completionRecorded = false;
   CellPosition? _selectedCell;
   CellPosition? _hintCell;
+  Set<CellPosition> _hintRelatedCells = const {};
 
   @override
   void initState() {
@@ -569,6 +570,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
                       issueCells: showIssues ? issueCells : const {},
                       selectedCell: _selectedCell,
                       hintCell: _hintCell,
+                      hintRelatedCells: _hintRelatedCells,
                       animationsEnabled:
                           PreferencesScope.of(context).animationsEnabled,
                       onCellPressed: _cycleCell,
@@ -629,6 +631,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
     setState(() {
       _selectedCell = CellPosition(row, column);
       _hintCell = null;
+      _hintRelatedCells = const {};
       puzzle.cycleCell(row, column);
     });
 
@@ -667,17 +670,35 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
     setState(() {
       _selectedCell = hint.position;
       _hintCell = hint.position;
+      _hintRelatedCells = hint.relatedPositions.toSet();
     });
 
     final apply = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.lightbulb_outline_rounded),
-        title: Text(
-          '${hint.title}: Zeile ${hint.position.row + 1}, Spalte ${hint.position.column + 1}',
-        ),
-        content: Text(
-          '${hint.reason}\n\nDort gehört eine ${hint.value.label} hin.',
+        title: Text(hint.title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              hint.badge,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(hint.reason),
+            const SizedBox(height: 16),
+            Text(
+              hint.coordinate,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 4),
+            Text(hint.action),
+          ],
         ),
         actions: [
           TextButton(
@@ -701,6 +722,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
         );
         _selectedCell = hint.position;
         _hintCell = null;
+        _hintRelatedCells = const {};
       });
       if (PreferencesScope.of(context).hapticsEnabled) {
         HapticFeedback.lightImpact();
@@ -712,6 +734,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
 
   void _runDeveloperAction(_DeveloperAction action) {
     setState(() {
+      _hintCell = null;
+      _hintRelatedCells = const {};
       switch (action) {
         case _DeveloperAction.almostSolved:
           puzzle.fillWithSolution(leaveOneEmpty: true);
@@ -792,12 +816,20 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
   }
 
   void _undo() {
-    setState(puzzle.undo);
+    setState(() {
+      puzzle.undo();
+      _hintCell = null;
+      _hintRelatedCells = const {};
+    });
     _saveGame();
   }
 
   void _redo() {
-    setState(puzzle.redo);
+    setState(() {
+      puzzle.redo();
+      _hintCell = null;
+      _hintRelatedCells = const {};
+    });
     _saveGame();
   }
 
@@ -822,6 +854,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
       _completionRecorded = false;
       _selectedCell = null;
       _hintCell = null;
+      _hintRelatedCells = const {};
     });
     _saveGame();
   }
@@ -1147,6 +1180,7 @@ class _PuzzleBoard extends StatelessWidget {
     required this.issueCells,
     required this.selectedCell,
     required this.hintCell,
+    required this.hintRelatedCells,
     required this.animationsEnabled,
     required this.onCellPressed,
   });
@@ -1155,6 +1189,7 @@ class _PuzzleBoard extends StatelessWidget {
   final Set<CellPosition> issueCells;
   final CellPosition? selectedCell;
   final CellPosition? hintCell;
+  final Set<CellPosition> hintRelatedCells;
   final bool animationsEnabled;
   final void Function(int row, int column) onCellPressed;
 
@@ -1185,7 +1220,9 @@ class _PuzzleBoard extends StatelessWidget {
             final isSelected = selectedCell == CellPosition(row, column);
             final isRelated = selectedCell != null &&
                 (selectedCell!.row == row || selectedCell!.column == column);
-            final isHint = hintCell == CellPosition(row, column);
+            final position = CellPosition(row, column);
+            final isHint = hintCell == position;
+            final isHintRelated = hintRelatedCells.contains(position) && !isHint;
 
             return _PuzzleCell(
               value: value,
@@ -1194,6 +1231,7 @@ class _PuzzleBoard extends StatelessWidget {
               isSelected: isSelected,
               isRelated: isRelated,
               isHint: isHint,
+              isHintRelated: isHintRelated,
               animationsEnabled: animationsEnabled,
               onPressed: clue ? null : () => onCellPressed(row, column),
             );
@@ -1212,6 +1250,7 @@ class _PuzzleCell extends StatelessWidget {
     required this.isSelected,
     required this.isRelated,
     required this.isHint,
+    required this.isHintRelated,
     required this.animationsEnabled,
     required this.onPressed,
   });
@@ -1222,6 +1261,7 @@ class _PuzzleCell extends StatelessWidget {
   final bool isSelected;
   final bool isRelated;
   final bool isHint;
+  final bool isHintRelated;
   final bool animationsEnabled;
   final VoidCallback? onPressed;
 
@@ -1258,14 +1298,22 @@ class _PuzzleCell extends StatelessWidget {
         decoration: BoxDecoration(
           color: isHint
               ? colors.primaryContainer
-              : isRelated && value == null && !hasIssue
+              : isHintRelated && !hasIssue
+                  ? colors.secondaryContainer.withOpacity(0.55)
+                  : isRelated && value == null && !hasIssue
                   ? colors.surfaceContainerHigh
                   : background,
           border: Border.all(
             color: isSelected || isHint
                 ? colors.primary
-                : colors.outlineVariant,
-            width: isSelected || isHint ? 2.2 : 0.6,
+                : isHintRelated
+                    ? colors.secondary
+                    : colors.outlineVariant,
+            width: isSelected || isHint
+                ? 2.2
+                : isHintRelated
+                    ? 1.4
+                    : 0.6,
           ),
         ),
         child: Material(

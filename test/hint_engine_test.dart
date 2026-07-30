@@ -22,6 +22,23 @@ void main() {
       expect(hint.value, CellValue.one);
     });
 
+    test('triple hints explain the rule and highlight three cells', () {
+      final puzzle = _puzzle([
+        [0, 0, null, null],
+        [1, null, 1, null],
+        [null, null, null, null],
+        [null, null, null, null],
+      ]);
+
+      final hint = findBinaryHint(puzzle)!;
+
+      expect(hint.badge, 'Direkte Regel');
+      expect(hint.reason, contains('Dreierfolge'));
+      expect(hint.relatedPositions, hasLength(3));
+      expect(hint.coordinate, 'Zeile 1, Spalte 3');
+      expect(hint.action, 'Trage dort eine 1 ein.');
+    });
+
     test('uses the count rule when half of a line is filled', () {
       final puzzle = _puzzle([
         [0, null, null, 0],
@@ -38,6 +55,21 @@ void main() {
       expect(hint.value, CellValue.one);
     });
 
+    test('count hints highlight the complete relevant line', () {
+      final puzzle = _puzzle([
+        [0, null, null, 0],
+        [null, null, null, null],
+        [null, null, null, null],
+        [null, null, null, null],
+      ]);
+
+      final hint = findBinaryHint(puzzle)!;
+
+      expect(hint.type, BinaryHintType.count);
+      expect(hint.relatedPositions, hasLength(4));
+      expect(hint.reason, contains('gleich häufig'));
+    });
+
     test('falls back to the solver for a uniquely solvable board', () {
       final puzzle = _puzzle([
         [0, null, 1, null],
@@ -50,6 +82,8 @@ void main() {
 
       expect(hint, isNotNull);
       expect(hint!.type, BinaryHintType.solver);
+      expect(hint.badge, 'Mehrere Regeln');
+      expect(hint.relatedPositions, [const CellPosition(0, 1)]);
       expect(hint.position, const CellPosition(0, 1));
       expect(hint.value, CellValue.zero);
     });

@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.5.5 – Hint Quality
+
+### Improved
+- Direct rules remain prioritized before solver-based conclusions
+- Hint dialogs now separate rule type, explanation, coordinate, and action
+- Triple-rule hints highlight the three relevant cells
+- Count-rule hints highlight the complete relevant row or column
+- Uniqueness hints highlight both compared lines
+- Solver conclusions are clearly labelled as a combination of several rules
+- German explanations are more concrete and instructional
+
+### Tests
+- Added assertions for hint wording, badges, coordinates, and highlighted context
+- Existing hint-safety regression tests remain active
+
+### Compatibility
+- No save format or puzzle catalogue changes
+
 ## v0.5.4 – Regression Safety
 
 ### Added
