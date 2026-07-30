@@ -8,6 +8,7 @@ import 'app_preferences.dart';
 import 'game_logic.dart';
 import 'game_storage.dart';
 import 'hint_engine.dart';
+import 'features/binary_puzzle/domain/binary_puzzle_generator.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -151,6 +152,29 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
                     const SizedBox(height: 12),
+                    _HomeAction(
+                      icon: Icons.science_outlined,
+                      title: 'Generator-Test',
+                      subtitle: 'Neues 4 × 4 Binärpuzzle direkt ausprobieren',
+                      enabled: true,
+                      onTap: () async {
+                        final generated = const BinaryPuzzleGenerator().generate(
+                          size: 4,
+                          seed: DateTime.now().microsecondsSinceEpoch,
+                        );
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => BinaryPuzzleScreen(
+                              definition: generated.definition,
+                              saveProgress: false,
+                              titleOverride: 'Generator-Test · 4 × 4',
+                            ),
+                          ),
+                        );
+                        await _refresh();
+                      },
+                    ),
+                    const SizedBox(height: 12),
                     const _HomeAction(
                       icon: Icons.calendar_today_outlined,
                       title: 'Tagesrätsel',
@@ -187,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                   const SizedBox(height: 28),
-                  Text('Version 0.6.0 · Generator Core', textAlign: TextAlign.center,
+                  Text('Version 0.6.1-dev.2 · Generator-Test', textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
@@ -431,11 +455,15 @@ class BinaryPuzzleScreen extends StatefulWidget {
   const BinaryPuzzleScreen({
     required this.definition,
     this.savedGame,
+    this.saveProgress = true,
+    this.titleOverride,
     super.key,
   });
 
   final BinaryPuzzleDefinition definition;
   final SavedGame? savedGame;
+  final bool saveProgress;
+  final String? titleOverride;
 
   @override
   State<BinaryPuzzleScreen> createState() => _BinaryPuzzleScreenState();
@@ -503,7 +531,10 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text('${widget.definition.difficulty.label} · ${widget.definition.displayName}'),
+          title: Text(
+            widget.titleOverride ??
+                '${widget.definition.difficulty.label} · ${widget.definition.displayName}',
+          ),
         actions: [
           if (kDebugMode)
             PopupMenuButton<_DeveloperAction>(
@@ -762,11 +793,13 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
   void _showSolvedDialog() {
     if (!_completionRecorded) {
       _completionRecorded = true;
-      _storage.recordCompletion(
-        puzzleId: widget.definition.id,
-        elapsedSeconds: elapsedSeconds,
-      );
-      _storage.clearActiveGame();
+      if (widget.saveProgress) {
+        _storage.recordCompletion(
+          puzzleId: widget.definition.id,
+          elapsedSeconds: elapsedSeconds,
+        );
+        _storage.clearActiveGame();
+      }
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -860,6 +893,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
   }
 
   Future<void> _saveGame() {
+    if (!widget.saveProgress) return Future<void>.value();
     return _storage.saveActiveGame(
       SavedGame(
         puzzleId: widget.definition.id,
