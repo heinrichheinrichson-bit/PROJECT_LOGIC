@@ -186,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                   const SizedBox(height: 28),
                   Text(
-                    'Version 0.6.9 · Tagesrätsel',
+                    'Version 0.7.0 · Tageskalender',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -332,21 +332,15 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   const SizedBox(height: 12),
                   _HomeAction(
                     icon: Icons.calendar_today_outlined,
-                    title: 'Tagesrätsel',
+                    title: 'Tagesrätsel & Kalender',
                     subtitle: _results.containsKey(_dailyChallenge!.puzzleId)
                         ? 'Heute gelöst · ${_dailyChallenge!.difficulty.label} · ${_dailyChallenge!.size} × ${_dailyChallenge!.size}'
                         : 'Heute wartet · ${_dailyChallenge!.difficulty.label} · ${_dailyChallenge!.size} × ${_dailyChallenge!.size}',
                     enabled: true,
                     onTap: () async {
-                      final challenge = _dailyChallenge!;
                       await Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => BinaryPuzzleScreen(
-                            definition: challenge.definition,
-                            storeDefinition: true,
-                            source: PuzzleSource.daily,
-                            titleOverride: challenge.title,
-                          ),
+                          builder: (_) => const DailyArchiveScreen(),
                         ),
                       );
                       await _refresh();
@@ -379,6 +373,257 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
       ),
     );
   }
+}
+
+
+class DailyArchiveScreen extends StatefulWidget {
+  const DailyArchiveScreen({super.key});
+
+  @override
+  State<DailyArchiveScreen> createState() => _DailyArchiveScreenState();
+}
+
+class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
+  static const _archiveDays = 30;
+  final GameStorage _storage = GameStorage();
+  final DailyChallengeService _service = const DailyChallengeService();
+  Map<String, PuzzleResult> _results = const {};
+  bool _loading = true;
+
+  Future<void> _refresh() async {
+    final results = await _storage.loadResults();
+    if (!mounted) return;
+    setState(() {
+      _results = results;
+      _loading = false;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _openChallenge(DailyChallengeSummary summary) async {
+    final challenge = _service.challengeFor(summary.day);
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => BinaryPuzzleScreen(
+          definition: challenge.definition,
+          storeDefinition: true,
+          source: PuzzleSource.daily,
+          titleOverride: challenge.title,
+        ),
+      ),
+    );
+    await _refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final challenges = _service.archiveSummaries(days: _archiveDays);
+    final today = challenges.first;
+    final todayCompleted = _results.containsKey(today.puzzleId);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Tagesrätsel')),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Center(
+              child: ListView(
+                padding: const EdgeInsets.all(24),
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 620),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      todayCompleted
+                                          ? Icons.check_circle_rounded
+                                          : Icons.today_rounded,
+                                      color: Theme.of(context).colorScheme.primary,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        todayCompleted
+                                            ? 'Heute bereits gelöst'
+                                            : 'Dein heutiges Rätsel wartet',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge
+                                            ?.copyWith(fontWeight: FontWeight.w700),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${today.difficulty.label} · ${today.size} × ${today.size}',
+                                ),
+                                const SizedBox(height: 16),
+                                FilledButton.icon(
+                                  onPressed: () => _openChallenge(today),
+                                  icon: Icon(
+                                    todayCompleted
+                                        ? Icons.replay_rounded
+                                        : Icons.play_arrow_rounded,
+                                  ),
+                                  label: Text(
+                                    todayCompleted
+                                        ? 'Heute erneut spielen'
+                                        : 'Tagesrätsel starten',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'Kalender der letzten $_archiveDays Tage',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Vergangene Rätsel können nachgeholt werden. Das füllt den Kalender, repariert aber keinen verlorenen Spiel-Streak.',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: challenges.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 5,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            childAspectRatio: 0.92,
+                          ),
+                          itemBuilder: (context, index) {
+                            final challenge = challenges[index];
+                            final completed =
+                                _results.containsKey(challenge.puzzleId);
+                            return _DailyCalendarTile(
+                              challenge: challenge,
+                              completed: completed,
+                              isToday: index == 0,
+                              onTap: () => _openChallenge(challenge),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        const Wrap(
+                          spacing: 16,
+                          runSpacing: 8,
+                          children: [
+                            _CalendarLegend(
+                              icon: Icons.check_circle_rounded,
+                              label: 'Gelöst',
+                            ),
+                            _CalendarLegend(
+                              icon: Icons.radio_button_unchecked_rounded,
+                              label: 'Offen',
+                            ),
+                            _CalendarLegend(
+                              icon: Icons.today_rounded,
+                              label: 'Heute',
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+class _DailyCalendarTile extends StatelessWidget {
+  const _DailyCalendarTile({
+    required this.challenge,
+    required this.completed,
+    required this.isToday,
+    required this.onTap,
+  });
+
+  final DailyChallengeSummary challenge;
+  final bool completed;
+  final bool isToday;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Material(
+      color: completed
+          ? colors.primaryContainer
+          : isToday
+              ? colors.secondaryContainer
+              : colors.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                completed
+                    ? Icons.check_circle_rounded
+                    : isToday
+                        ? Icons.today_rounded
+                        : Icons.radio_button_unchecked_rounded,
+                size: 22,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${challenge.day.day}.${challenge.day.month}.',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              Text(
+                '${challenge.size}×${challenge.size}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CalendarLegend extends StatelessWidget {
+  const _CalendarLegend({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(width: 5),
+          Text(label),
+        ],
+      );
 }
 
 

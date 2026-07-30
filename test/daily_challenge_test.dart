@@ -32,4 +32,31 @@ void main() {
       expect(challenge.definition.id, startsWith('daily-binary-'));
     }
   });
+
+  test('archive returns the requested days newest first', () {
+    final archive = service.archiveSummaries(
+      through: DateTime(2026, 7, 30, 23, 59),
+      days: 30,
+    );
+
+    expect(archive, hasLength(30));
+    expect(archive.first.dayKey, '2026-07-30');
+    expect(archive.last.dayKey, '2026-07-01');
+    expect(archive.map((challenge) => challenge.puzzleId).toSet(), hasLength(30));
+  });
+
+  test('archive rejects an empty lookback window', () {
+    expect(
+      () => service.archiveSummaries(through: DateTime(2026, 7, 30), days: 0),
+      throwsArgumentError,
+    );
+  });
+
+  test('daily title includes the archived calendar date', () {
+    final challenge = service.challengeFor(DateTime(2026, 7, 30));
+
+    expect(challenge.title, contains('30. Juli'));
+    expect(challenge.title, contains('${challenge.size} × ${challenge.size}'));
+  });
+
 }

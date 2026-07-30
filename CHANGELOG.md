@@ -1,3 +1,12 @@
+## 0.7.0 – Tageskalender
+
+- Archiv der letzten 30 Tagesrätsel ergänzt.
+- Vergangene Tagesrätsel können nachgeholt werden.
+- Gelöste und offene Tage werden im Kalender markiert.
+- Nachholen verändert den historischen Spiel-Streak nicht.
+- Datumsbezogene Titel und neue Regressionstests ergänzt.
+- Version auf 0.7.0+24 erhöht.
+
 # Changelog
 
 ## 0.6.8+22
