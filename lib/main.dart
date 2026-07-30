@@ -1873,7 +1873,8 @@ class PlayerProfileScreen extends StatelessWidget {
     );
     const service = PlayerProgressService();
     final rank = service.rank(snapshot);
-    final missions = service.missions(snapshot);
+    final dailyMissions = service.dailyMissions(snapshot);
+    final longTermMissions = service.longTermMissions(snapshot);
     final achievements = service.achievements(snapshot);
     final unlockedCount = achievements.where((goal) => goal.isCompleted).length;
 
@@ -1933,18 +1934,33 @@ class PlayerProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Missionen',
+                    'Heute',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Klare Ziele für deine nächsten Spielrunden.',
+                    'Drei klare Ziele, die jeden Tag neu beginnen.',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 10),
-                  for (final mission in missions)
+                  for (final mission in dailyMissions)
+                    _ProgressGoalCard(goal: mission),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Langzeitziele',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Fortschritt, der über den heutigen Tag hinaus zählt.',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  for (final mission in longTermMissions)
                     _ProgressGoalCard(goal: mission),
                   const SizedBox(height: 20),
                   Row(

@@ -39,6 +39,26 @@ class ProgressSnapshot {
 
   bool get dailyCompletedToday =>
       results.containsKey(const DailyChallengeService().today().puzzleId);
+
+  int completionsTodayBySource(PuzzleSource source, DateTime date) {
+    final day = DateTime(date.year, date.month, date.day);
+    return results.values
+        .where((result) {
+          final completed = result.completedAt;
+          final completedDay = DateTime(completed.year, completed.month, completed.day);
+          return result.effectiveSource == source && completedDay == day;
+        })
+        .length;
+  }
+
+  int get completionsToday {
+    final now = DateTime.now();
+    final day = DateTime(now.year, now.month, now.day);
+    return results.values.where((result) {
+      final completed = result.completedAt;
+      return DateTime(completed.year, completed.month, completed.day) == day;
+    }).length;
+  }
 }
 
 class ProgressGoal {
@@ -169,15 +189,50 @@ class PlayerProgressService {
         ),
       ];
 
-  List<ProgressGoal> missions(ProgressSnapshot snapshot) => [
-        _mission(
-          id: 'today',
-          title: 'Heute dranbleiben',
-          description: 'Löse das heutige Tagesrätsel.',
-          iconName: 'today',
-          current: snapshot.dailyCompletedToday ? 1 : 0,
-          target: 1,
-        ),
+  List<ProgressGoal> dailyMissions(
+    ProgressSnapshot snapshot, {
+    DateTime? date,
+  }) {
+    final today = date ?? DateTime.now();
+    final dailyPuzzleId = const DailyChallengeService().challengeFor(today).puzzleId;
+    final completedDaily = snapshot.results.containsKey(dailyPuzzleId);
+    final generatedToday =
+        snapshot.completionsTodayBySource(PuzzleSource.generated, today);
+    final catalogToday =
+        snapshot.completionsTodayBySource(PuzzleSource.catalog, today);
+
+    return [
+      _mission(
+        id: 'daily-${_dateKey(today)}-challenge',
+        title: 'Tagesrätsel',
+        description: 'Löse das heutige Tagesrätsel.',
+        iconName: 'today',
+        current: completedDaily ? 1 : 0,
+        target: 1,
+      ),
+      _mission(
+        id: 'daily-${_dateKey(today)}-generator',
+        title: 'Frische Herausforderung',
+        description: 'Löse heute ein Generatorrätsel.',
+        iconName: 'auto_awesome',
+        current: generatedToday,
+        target: 1,
+      ),
+      _mission(
+        id: 'daily-${_dateKey(today)}-catalog',
+        title: 'Katalogrunde',
+        description: 'Löse heute ein Katalogrätsel.',
+        iconName: 'menu_book',
+        current: catalogToday,
+        target: 1,
+      ),
+    ];
+  }
+
+  List<ProgressGoal> missions(ProgressSnapshot snapshot) =>
+      longTermMissions(snapshot);
+
+  List<ProgressGoal> longTermMissions(ProgressSnapshot snapshot) => [
         _mission(
           id: 'catalog-five',
           title: 'Katalog erkunden',
@@ -203,6 +258,11 @@ class PlayerProgressService {
           target: 3,
         ),
       ];
+
+  String _dateKey(DateTime value) =>
+      '${value.year.toString().padLeft(4, '0')}-'
+      '${value.month.toString().padLeft(2, '0')}-'
+      '${value.day.toString().padLeft(2, '0')}';
 
   PlayerRank rank(ProgressSnapshot snapshot) {
     final unlocked = achievements(snapshot).where((goal) => goal.isCompleted);

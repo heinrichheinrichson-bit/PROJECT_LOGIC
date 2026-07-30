@@ -69,4 +69,36 @@ void main() {
     expect(rank.level, greaterThanOrEqualTo(2));
     expect(rank.nextLevelXp, 200);
   });
+  test('daily missions reset through date-specific ids', () {
+    final result = PuzzleResult(
+      puzzleId: 'binary-6-easy-99',
+      bestSeconds: 50,
+      completedAt: DateTime(2026, 7, 30),
+      source: PuzzleSource.generated,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 6,
+    );
+    final snapshot = ProgressSnapshot(
+      results: {result.puzzleId: result},
+      progress: const PlayerProgress.empty(),
+      catalogPuzzleIds: const {},
+    );
+
+    final firstDay = service.dailyMissions(
+      snapshot,
+      date: DateTime(2026, 7, 30),
+    );
+    final nextDay = service.dailyMissions(
+      snapshot,
+      date: DateTime(2026, 7, 31),
+    );
+
+    expect(firstDay[1].isCompleted, isTrue);
+    expect(nextDay[1].isCompleted, isFalse);
+    expect(firstDay.first.id, isNot(nextDay.first.id));
+  });
+
 }
+
+// Daily missions deliberately use an injected date so tests do not depend on
+// the machine clock.
