@@ -2,12 +2,16 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'game_logic.dart';
+
 class SavedGame {
   const SavedGame({
     required this.puzzleId,
     required this.elapsedSeconds,
     required this.values,
     required this.savedAt,
+    this.definition,
+    this.titleOverride,
   });
 
   final String puzzleId;
@@ -15,14 +19,24 @@ class SavedGame {
   final List<int?> values;
   final DateTime savedAt;
 
+  /// Present for generated puzzles so they can be restored without relying on
+  /// the static catalog.
+  final BinaryPuzzleDefinition? definition;
+  final String? titleOverride;
+
+  bool get isGenerated => definition != null;
+
   Map<String, Object?> toJson() => {
         'puzzleId': puzzleId,
         'elapsedSeconds': elapsedSeconds,
         'values': values,
         'savedAt': savedAt.toIso8601String(),
+        if (definition != null) 'definition': _definitionToJson(definition!),
+        if (titleOverride != null) 'titleOverride': titleOverride,
       };
 
   factory SavedGame.fromJson(Map<String, Object?> json) {
+    final rawDefinition = json['definition'];
     return SavedGame(
       puzzleId: json['puzzleId'] as String,
       elapsedSeconds: json['elapsedSeconds'] as int? ?? 0,
@@ -31,6 +45,61 @@ class SavedGame {
           .toList(),
       savedAt: DateTime.tryParse(json['savedAt'] as String? ?? '') ??
           DateTime.now(),
+      definition: rawDefinition is Map
+          ? _definitionFromJson(Map<String, Object?>.from(rawDefinition))
+          : null,
+      titleOverride: json['titleOverride'] as String?,
+    );
+  }
+
+  static Map<String, Object?> _definitionToJson(
+    BinaryPuzzleDefinition definition,
+  ) =>
+      {
+        'id': definition.id,
+        'number': definition.number,
+        'difficulty': definition.difficulty.name,
+        'solution': [
+          for (final row in definition.solution)
+            [for (final value in row) value == CellValue.zero ? 0 : 1],
+        ],
+        'clues': [
+          for (final clue in definition.clues)
+            {'row': clue.row, 'column': clue.column},
+        ],
+      };
+
+  static BinaryPuzzleDefinition _definitionFromJson(
+    Map<String, Object?> json,
+  ) {
+    final difficultyName = json['difficulty'] as String? ?? 'easy';
+    final difficulty = PuzzleDifficulty.values.firstWhere(
+      (value) => value.name == difficultyName,
+      orElse: () => PuzzleDifficulty.easy,
+    );
+    final solution = (json['solution'] as List<dynamic>)
+        .map(
+          (row) => (row as List<dynamic>)
+              .map((value) => value == 0 ? CellValue.zero : CellValue.one)
+              .toList(),
+        )
+        .toList();
+    final clues = (json['clues'] as List<dynamic>)
+        .map((item) => Map<String, Object?>.from(item as Map))
+        .map(
+          (item) => CellPosition(
+            item['row'] as int,
+            item['column'] as int,
+          ),
+        )
+        .toSet();
+
+    return BinaryPuzzleDefinition(
+      id: json['id'] as String,
+      number: json['number'] as int? ?? 1,
+      difficulty: difficulty,
+      solution: solution,
+      clues: clues,
     );
   }
 }

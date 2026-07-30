@@ -1,5 +1,19 @@
 # Changelog
 
+
+## 0.6.3 - Generator-Persistenz
+
+### Added
+- Generierte Binärpuzzles werden vollständig im aktiven Spielstand gespeichert.
+- „Spiel fortsetzen“ stellt generierte Rätsel inklusive Lösung, Vorgaben, Größe, Schwierigkeit, Titel und Spielwerten wieder her.
+- Speicherung beim Wechsel in den Hintergrund bzw. beim Schließen der App.
+- Neue Serialisierungstests für generierte Puzzle-Definitionen.
+
+### Changed
+- Generator-Rätsel verwenden jetzt denselben zuverlässigen Speicher- und Fortsetzen-Workflow wie Katalogrätsel.
+- Paketversion auf 0.6.3+17 erhöht.
+- Bestehende ältere Spielstände bleiben kompatibel.
+
 ## 0.6.2 - Generator-UI
 
 - Der Puzzle-Generator ist jetzt als reguläre Funktion auf der Startseite erreichbar.
@@ -206,3 +220,4 @@
 - Timer und Fortschrittsanzeige
 - Nächstes Rätsel nach erfolgreichem Abschluss
 - Developer-Testwerkzeuge
+

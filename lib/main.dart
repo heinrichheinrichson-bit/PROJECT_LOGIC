@@ -85,6 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
   BinaryPuzzleDefinition? get _savedDefinition {
     final game = _savedGame;
     if (game == null) return null;
+    if (game.definition != null) return game.definition;
     for (final definition in binaryPuzzleCatalog) {
       if (definition.id == game.puzzleId) return definition;
     }
@@ -125,13 +126,15 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.play_circle_outline_rounded,
                         title: 'Spiel fortsetzen',
                         subtitle:
-                            '${_savedDefinition!.difficulty.label} · ${_savedDefinition!.displayName} · ${_formatHomeTime(_savedGame!.elapsedSeconds)}',
+                            '${_savedGame!.titleOverride ?? '${_savedDefinition!.difficulty.label} · ${_savedDefinition!.displayName}'} · ${_formatHomeTime(_savedGame!.elapsedSeconds)}',
                         enabled: true,
                         onTap: () async {
                           await Navigator.of(context).push(MaterialPageRoute<void>(
                             builder: (_) => BinaryPuzzleScreen(
                               definition: _savedDefinition!,
                               savedGame: _savedGame,
+                              titleOverride: _savedGame!.titleOverride,
+                              storeDefinition: _savedGame!.isGenerated,
                             ),
                           ));
                           await _refresh();
@@ -203,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                   const SizedBox(height: 28),
-                  Text('Version 0.6.2 · Generator-UI', textAlign: TextAlign.center,
+                  Text('Version 0.6.3 · Generator-Persistenz', textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),
@@ -481,7 +484,7 @@ class _GeneratedPuzzleSetupScreenState
         MaterialPageRoute<void>(
           builder: (_) => BinaryPuzzleScreen(
             definition: generated.definition,
-            saveProgress: false,
+            storeDefinition: true,
             titleOverride:
                 '${_difficulty.label} · Generiert ${_size.label}',
           ),
@@ -596,7 +599,7 @@ class _GeneratedPuzzleSetupScreenState
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Hinweis: Generierte Rätsel werden in v0.6.2 noch nicht als dauerhaftes Spiel gespeichert.',
+                  'Generierte Rätsel werden automatisch gespeichert und können über „Spiel fortsetzen“ wieder geöffnet werden.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
@@ -616,6 +619,7 @@ class BinaryPuzzleScreen extends StatefulWidget {
     required this.definition,
     this.savedGame,
     this.saveProgress = true,
+    this.storeDefinition = false,
     this.titleOverride,
     super.key,
   });
@@ -623,13 +627,15 @@ class BinaryPuzzleScreen extends StatefulWidget {
   final BinaryPuzzleDefinition definition;
   final SavedGame? savedGame;
   final bool saveProgress;
+  final bool storeDefinition;
   final String? titleOverride;
 
   @override
   State<BinaryPuzzleScreen> createState() => _BinaryPuzzleScreenState();
 }
 
-class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
+class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
+    with WidgetsBindingObserver {
   final GameStorage _storage = GameStorage();
   late BinaryPuzzle puzzle;
   bool showIssues = true;
@@ -643,6 +649,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     puzzle = widget.definition.createPuzzle();
     showIssues = true;
     final savedGame = widget.savedGame;
@@ -668,7 +675,18 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      _saveGame();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer.cancel();
     super.dispose();
   }
@@ -1060,6 +1078,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen> {
         elapsedSeconds: elapsedSeconds,
         values: puzzle.exportEditableValues(),
         savedAt: DateTime.now(),
+        definition: widget.storeDefinition ? widget.definition : null,
+        titleOverride: widget.titleOverride,
       ),
     );
   }
