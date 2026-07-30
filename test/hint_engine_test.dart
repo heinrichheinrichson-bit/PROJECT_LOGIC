@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/features/binary_puzzle/domain/binary_board_validator.dart';
+import 'package:project_logic_prototype/features/binary_puzzle/domain/binary_puzzle_solver.dart';
 import 'package:project_logic_prototype/game_logic.dart';
 import 'package:project_logic_prototype/hint_engine.dart';
 
@@ -114,6 +115,54 @@ void main() {
 
       expect(findBinaryHint(puzzle), isNull);
     });
+
+    test('never returns a hint that creates duplicate rows', () {
+      final puzzle = _puzzle([
+        [0, 0, 1, null],
+        [0, 0, 1, 1],
+        [1, 1, 0, 0],
+        [1, null, 0, null],
+      ]);
+
+      final hint = findBinaryHint(puzzle);
+
+      _expectReturnedHintIsSafe(puzzle, hint);
+      expect(
+        hint?.position == const CellPosition(0, 3) &&
+            hint?.value == CellValue.one,
+        isFalse,
+      );
+    });
+
+    test('every returned hint keeps the board valid and solvable', () {
+      final boards = <List<List<int?>>>[
+        [
+          [0, 0, null, null],
+          [1, null, 1, null],
+          [null, null, null, null],
+          [null, null, null, null],
+        ],
+        [
+          [0, null, 1, null],
+          [null, null, 0, 1],
+          [1, 0, null, null],
+          [null, 1, null, 0],
+        ],
+        [
+          [0, null, null, 1],
+          [null, 1, null, 0],
+          [1, null, 0, null],
+          [null, 0, 1, null],
+        ],
+      ];
+
+      for (final board in boards) {
+        final puzzle = _puzzle(board);
+        final hint = findBinaryHint(puzzle);
+        _expectReturnedHintIsSafe(puzzle, hint);
+      }
+    });
+
   });
 }
 
@@ -131,3 +180,27 @@ BinaryPuzzle _puzzle(List<List<int?>> board) {
   ]);
   return puzzle;
 }
+
+void _expectReturnedHintIsSafe(
+  BinaryPuzzle puzzle,
+  BinaryHint? hint,
+) {
+  if (hint == null) return;
+
+  final candidateBoard = [
+    for (final row in puzzle.board) [...row],
+  ];
+  candidateBoard[hint.position.row][hint.position.column] = hint.value;
+
+  expect(
+    const BinaryBoardValidator().isValidPartial(candidateBoard),
+    isTrue,
+  );
+  expect(
+    const BinaryPuzzleSolver()
+        .solve(candidateBoard, solutionLimit: 1)
+        .isSolvable,
+    isTrue,
+  );
+}
+

@@ -43,3 +43,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Project Logic local release helpers
+GIT_PUSH_*.txt
+TESTANLEITUNG_*.txt
+UPDATE_*.txt
+*.zip
+
+# Local Flutter run/debug leftovers
+*.pid
+*.lock.tmp
+flutter_*.log

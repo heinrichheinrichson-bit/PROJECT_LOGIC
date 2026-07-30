@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.5.4 – Regression Safety
+
+### Added
+- Regression catalogue under `docs/REGRESSION_TESTS.md`
+- Automated protection against hints that create duplicate rows
+- Shared test assertion proving every returned hint leaves a valid, solvable board
+- Additional representative hint-safety board states
+
+### Repository cleanup
+- Removed historical `GIT_PUSH_*`, `TESTANLEITUNG_*`, and `UPDATE_*` files that were still tracked
+- Added ignore rules for generated release ZIPs and local Flutter run leftovers
+- Future project ZIPs contain only the maintained project state
+
+### Compatibility
+- No gameplay, save format, puzzle catalogue, or UI flow changes
+- Existing local saves remain compatible
+
 ## v0.5.3 – Hint Safety
 
 ### Fixed
