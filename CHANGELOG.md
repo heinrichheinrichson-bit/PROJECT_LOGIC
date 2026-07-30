@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.6.5 - Generator-Qualität
+
+### Added
+- Generator-Diagnosedaten für Laufzeit, Solver-Aufrufe, abgelehnte Entfernungen und Vorgabenverteilung.
+- Zusätzliche Tests für Diagnosekonsistenz und eine gleichmäßige Verteilung der Vorgaben.
+
+### Changed
+- Clues werden nun deterministisch und verteilungsbewusst entfernt.
+- Reihen und Spalten mit vielen verbliebenen Vorgaben werden bevorzugt bearbeitet.
+- Paketversion auf 0.6.5+19 erhöht.
+
+### Compatibility
+- Savegame-Format, Spielregeln und bestehende Rätsel bleiben unverändert.
+- Gleiche Seeds bleiben innerhalb von v0.6.5 deterministisch; die konkrete Vorgabenverteilung kann sich gegenüber v0.6.4 verbessern.
+
+
 ## 0.6.4 - Stabilität & Modernisierung
 
 ### Added

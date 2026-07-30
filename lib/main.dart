@@ -206,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                   const SizedBox(height: 28),
-                  Text('Version 0.6.4 · Stabilität & Modernisierung', textAlign: TextAlign.center,
+                  Text('Version 0.6.5 · Generator-Qualität', textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodySmall),
                 ],
               ),

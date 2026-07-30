@@ -21,7 +21,15 @@ void main() {
       expect(definition.size, 4);
       expect(definition.clueCount, lessThan(16));
       expect(result.successfulRemovals, 16 - definition.clueCount);
-      expect(result.attemptedRemovals, greaterThanOrEqualTo(result.successfulRemovals));
+      expect(
+        result.attemptedRemovals,
+        greaterThanOrEqualTo(result.successfulRemovals),
+      );
+      expect(result.solverCalls, result.attemptedRemovals);
+      expect(
+        result.rejectedRemovals,
+        result.attemptedRemovals - result.successfulRemovals,
+      );
       expect(solverResult.hasUniqueSolution, isTrue);
       expect(solverResult.firstSolution, definition.solution);
     });
@@ -44,6 +52,8 @@ void main() {
       expect(first.seed, second.seed);
       expect(first.attemptedRemovals, second.attemptedRemovals);
       expect(first.successfulRemovals, second.successfulRemovals);
+      expect(first.rowClueCounts, second.rowClueCounts);
+      expect(first.columnClueCounts, second.columnClueCounts);
     });
 
     test('difficulty targets use progressively fewer clues', () {
@@ -65,8 +75,14 @@ void main() {
 
       expect(easy.targetClueCount, greaterThan(medium.targetClueCount));
       expect(medium.targetClueCount, greaterThan(hard.targetClueCount));
-      expect(easy.definition.clueCount, greaterThanOrEqualTo(medium.definition.clueCount));
-      expect(medium.definition.clueCount, greaterThanOrEqualTo(hard.definition.clueCount));
+      expect(
+        easy.definition.clueCount,
+        greaterThanOrEqualTo(medium.definition.clueCount),
+      );
+      expect(
+        medium.definition.clueCount,
+        greaterThanOrEqualTo(hard.definition.clueCount),
+      );
 
       for (final result in [easy, medium, hard]) {
         final puzzle = result.definition.createPuzzle();
@@ -75,6 +91,44 @@ void main() {
           isTrue,
         );
       }
+    });
+
+
+    test('reports consistent generation diagnostics', () {
+      final result = generator.generate(
+        size: 6,
+        seed: 13579,
+        difficulty: PuzzleDifficulty.medium,
+      );
+
+      expect(result.generationDuration, isNot(lessThan(Duration.zero)));
+      expect(result.solverCalls, result.attemptedRemovals);
+      expect(
+        result.successfulRemovals + result.rejectedRemovals,
+        result.attemptedRemovals,
+      );
+      expect(result.rowClueCounts, hasLength(6));
+      expect(result.columnClueCounts, hasLength(6));
+      expect(
+        result.rowClueCounts.reduce((a, b) => a + b),
+        result.definition.clueCount,
+      );
+      expect(
+        result.columnClueCounts.reduce((a, b) => a + b),
+        result.definition.clueCount,
+      );
+    });
+
+    test('keeps clue distribution balanced across rows and columns', () {
+      final result = generator.generate(
+        size: 8,
+        seed: 86420,
+        difficulty: PuzzleDifficulty.hard,
+      );
+
+      expect(result.clueDistributionSpread, lessThanOrEqualTo(3));
+      expect(result.rowClueCounts.every((count) => count > 0), isTrue);
+      expect(result.columnClueCounts.every((count) => count > 0), isTrue);
     });
 
     test('keeps metadata in the generated definition', () {
