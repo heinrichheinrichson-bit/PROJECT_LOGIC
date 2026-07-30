@@ -148,14 +148,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 12),
                     const _HomeAction(
                       icon: Icons.filter_none_rounded,
-                      title: 'Weitere Logikspiele',
-                      subtitle: 'Hitori, Hashi und mehr folgen später',
+                      title: 'Mehr Spiele',
+                      subtitle: 'Hitori, Hashi und weitere Klassiker sind geplant',
                     ),
                     const SizedBox(height: 12),
                     _HomeAction(
                       icon: Icons.person_outline_rounded,
-                      title: 'Spielerprofil',
-                      subtitle: 'Missionen, Level und Erfolge',
+                      title: 'Dein Fortschritt',
+                      subtitle: 'Level, Ziele und Erfolge auf einen Blick',
                       enabled: true,
                       onTap: () async {
                         await Navigator.of(context).push(
@@ -172,8 +172,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 12),
                     _HomeAction(
                       icon: Icons.bar_chart_rounded,
-                      title: 'Gesamtstatistik',
-                      subtitle: 'Fortschritt über alle Spiele',
+                      title: 'Statistik',
+                      subtitle: 'Deine bisherigen Partien und Bestleistungen',
                       enabled: true,
                       onTap: () async {
                         await Navigator.of(context).push(
@@ -191,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _HomeAction(
                       icon: Icons.settings_outlined,
                       title: 'Einstellungen',
-                      subtitle: 'Darstellung, Bedienung und lokale Daten',
+                      subtitle: 'Aussehen, Spielhilfen und gespeicherte Daten',
                       enabled: true,
                       onTap: () async {
                         await Navigator.of(context).push(
@@ -205,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                   const SizedBox(height: 28),
                   Text(
-                    'Version 0.7.1 · Spielerfortschritt',
+                    'Version 0.7.3 · Sprache & Spielgefühl',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -286,7 +286,7 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Fülle jede Reihe und Spalte mit gleich vielen Nullen und Einsen.',
+                  'Setze 0 und 1 so, dass jede Reihe und Spalte aufgeht.',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -298,7 +298,7 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   if (_savedGame != null && savedDefinition != null) ...[
                     _HomeAction(
                       icon: Icons.play_circle_outline_rounded,
-                      title: 'Spiel fortsetzen',
+                      title: 'Weiterspielen',
                       subtitle:
                           '${_savedGame!.titleOverride ?? '${savedDefinition.difficulty.label} · ${savedDefinition.displayName}'} · ${_formatHomeTime(_savedGame!.elapsedSeconds)}',
                       enabled: true,
@@ -321,8 +321,8 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   ],
                   _HomeAction(
                     icon: Icons.play_arrow_rounded,
-                    title: 'Neues Katalogrätsel',
-                    subtitle: 'Schwierigkeit und Rätsel auswählen',
+                    title: 'Katalog öffnen',
+                    subtitle: 'Wähle ein Rätsel aus der Sammlung',
                     enabled: true,
                     onTap: () async {
                       await Navigator.of(context).push(
@@ -336,8 +336,8 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   const SizedBox(height: 12),
                   _HomeAction(
                     icon: Icons.auto_awesome_rounded,
-                    title: 'Zufallsrätsel generieren',
-                    subtitle: 'Größe und Schwierigkeit selbst auswählen',
+                    title: 'Freies Rätsel',
+                    subtitle: 'Wähle Rastergröße und Schwierigkeit',
                     enabled: true,
                     onTap: () async {
                       await Navigator.of(context).push(
@@ -351,10 +351,10 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   const SizedBox(height: 12),
                   _HomeAction(
                     icon: Icons.calendar_today_outlined,
-                    title: 'Tagesrätsel & Kalender',
+                    title: 'Tagesrätsel',
                     subtitle: _results.containsKey(_dailyChallenge!.puzzleId)
                         ? 'Heute gelöst · ${_dailyChallenge!.difficulty.label} · ${_dailyChallenge!.size} × ${_dailyChallenge!.size}'
-                        : 'Heute wartet · ${_dailyChallenge!.difficulty.label} · ${_dailyChallenge!.size} × ${_dailyChallenge!.size}',
+                        : 'Heute offen · ${_dailyChallenge!.difficulty.label} · ${_dailyChallenge!.size} × ${_dailyChallenge!.size}',
                     enabled: true,
                     onTap: () async {
                       await Navigator.of(context).push(
@@ -368,7 +368,7 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   const SizedBox(height: 12),
                   _HomeAction(
                     icon: Icons.bar_chart_rounded,
-                    title: 'Binärpuzzle-Statistik',
+                    title: 'Deine Binärpuzzle-Statistik',
                     subtitle:
                         '${_catalogCompletedCount(_results)} von ${binaryPuzzleCatalog.length} Katalogrätseln gelöst',
                     enabled: true,
@@ -800,7 +800,7 @@ class DifficultyScreen extends StatelessWidget {
               children: [
                 Text('Schwierigkeit', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
-                Text('Jede Stufe enthält drei spielbare Rätsel.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                Text('Wähle die Schwierigkeit, die heute zu dir passt.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 const SizedBox(height: 20),
                 for (final difficulty in PuzzleDifficulty.values) ...[
                   Card(
@@ -972,7 +972,7 @@ class _GeneratedPuzzleSetupScreenState
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Rätsel generieren')),
+      appBar: AppBar(title: const Text('Freies Rätsel')),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -982,7 +982,7 @@ class _GeneratedPuzzleSetupScreenState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Neues Binärpuzzle',
+                  'Stell dein Rätsel zusammen',
                   style: Theme.of(context)
                       .textTheme
                       .headlineSmall
@@ -990,11 +990,11 @@ class _GeneratedPuzzleSetupScreenState
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Das Rätsel wird vollständig offline erzeugt und vor dem Start auf eine eindeutige Lösung geprüft.',
+                  'Wähle Größe und Schwierigkeit. Das Rätsel wird direkt auf deinem Gerät erstellt und auf eine eindeutige Lösung geprüft.',
                   style: TextStyle(color: colors.onSurfaceVariant),
                 ),
                 const SizedBox(height: 24),
-                Text('Brettgröße',
+                Text('Rastergröße',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         )),
@@ -1332,14 +1332,14 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
         context: context,
         builder: (context) => AlertDialog(
           icon: const Icon(Icons.psychology_alt_outlined),
-          title: const Text('Kein sicherer Hinweis'),
+          title: const Text('Hier hilft nur dein nächster Schritt'),
           content: const Text(
             'Aus dem aktuellen Spielstand lässt sich kein garantiert richtiger Wert ableiten. Prüfe mögliche Fehler oder löse zunächst einen anderen Bereich.',
           ),
           actions: [
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Verstanden'),
+              child: const Text('Okay'),
             ),
           ],
         ),
@@ -1479,7 +1479,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Weiter ansehen'),
+              child: const Text('Brett ansehen'),
             ),
             if (widget.source == PuzzleSource.generated)
               FilledButton.tonalIcon(
@@ -1488,7 +1488,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                   _startNextGeneratedPuzzle();
                 },
                 icon: const Icon(Icons.auto_awesome_rounded),
-                label: const Text('Neues Rätsel'),
+                label: const Text('Noch eins'),
               )
             else if (widget.source == PuzzleSource.catalog)
               FilledButton.tonal(
@@ -1504,14 +1504,14 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                         );
                       }
                     : null,
-                child: const Text('Nächstes Rätsel'),
+                child: const Text('Weiter zum nächsten'),
               ),
             FilledButton(
               onPressed: () {
                 Navigator.of(context).pop();
                 _reset();
               },
-              child: const Text('Neu starten'),
+              child: const Text('Noch einmal spielen'),
             ),
           ],
         );
@@ -1534,7 +1534,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
               child: CircularProgressIndicator(strokeWidth: 2.5),
             ),
             SizedBox(width: 18),
-            Expanded(child: Text('Neues Rätsel wird erzeugt …')),
+            Expanded(child: Text('Dein Rätsel wird vorbereitet …')),
           ],
         ),
       ),
@@ -1569,7 +1569,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Neues Rätsel konnte nicht erzeugt werden: $error'),
+          content: Text('Das Rätsel konnte gerade nicht erstellt werden: $error'),
         ),
       );
     }
@@ -1774,7 +1774,7 @@ class SettingsScreen extends StatelessWidget {
                           Icons.delete_outline,
                           color: Theme.of(context).colorScheme.error,
                         ),
-                        title: const Text('Spielfortschritt löschen'),
+                        title: const Text('Gespeicherte Daten löschen'),
                         subtitle: const Text(
                           'Entfernt aktives Spiel, Bestzeiten und Statistik',
                         ),
@@ -1801,7 +1801,7 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.warning_amber_rounded),
-        title: const Text('Spielfortschritt löschen?'),
+        title: const Text('Wirklich alles löschen?'),
         content: const Text(
           'Aktives Spiel, Bestzeiten und die gesamte Statistik werden dauerhaft gelöscht. Die Einstellungen bleiben erhalten.',
         ),
@@ -1822,7 +1822,7 @@ class SettingsScreen extends StatelessWidget {
     await GameStorage().clearAllProgress();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Spielfortschritt wurde gelöscht.')),
+      const SnackBar(content: Text('Deine gespeicherten Daten wurden gelöscht.')),
     );
   }
 }
@@ -1879,7 +1879,7 @@ class PlayerProfileScreen extends StatelessWidget {
     final unlockedCount = achievements.where((goal) => goal.isCompleted).length;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Spielerprofil')),
+      appBar: AppBar(title: const Text('Dein Fortschritt')),
       body: Center(
         child: ListView(
           padding: const EdgeInsets.all(24),
@@ -2149,7 +2149,7 @@ class StatisticsScreen extends StatelessWidget {
                                 ?.copyWith(fontWeight: FontWeight.w700),
                           ),
                           const SizedBox(height: 4),
-                          const Text('Partien insgesamt abgeschlossen'),
+                          const Text('gelöste Rätsel insgesamt'),
                         ],
                       ),
                     ),
@@ -2171,7 +2171,7 @@ class StatisticsScreen extends StatelessWidget {
                   Card(
                     child: ListTile(
                       leading: const Icon(Icons.auto_awesome_rounded),
-                      title: const Text('Generierte Rätsel'),
+                      title: const Text('Freie Rätsel'),
                       subtitle: Text('$generatedCompleted abgeschlossen'),
                     ),
                   ),
@@ -2203,7 +2203,7 @@ class StatisticsScreen extends StatelessWidget {
                   Card(
                     child: ListTile(
                       leading: const Icon(Icons.timer_outlined),
-                      title: const Text('Spielzeit insgesamt'),
+                      title: const Text('Zeit beim Rätseln'),
                       subtitle: Text(_formatLongTime(progress.totalPlaySeconds)),
                       trailing: totalCompleted == 0
                           ? null
@@ -2212,7 +2212,7 @@ class StatisticsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Katalog nach Schwierigkeit',
+                    'Katalog',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 10),
@@ -2223,7 +2223,7 @@ class StatisticsScreen extends StatelessWidget {
                     ),
                   const SizedBox(height: 20),
                   Text(
-                    'Generierte Rätsel nach Größe',
+                    'Freie Rätsel nach Größe',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 10),
@@ -2584,12 +2584,12 @@ class _RulesPanel extends StatelessWidget {
     return ExpansionTile(
       initiallyExpanded: issues.isNotEmpty,
       tilePadding: EdgeInsets.zero,
-      title: const Text('Regeln und Hinweise'),
+      title: const Text('So funktioniert es'),
       childrenPadding: const EdgeInsets.only(bottom: 12),
       children: [
-        const _RuleLine('Jede Zeile und Spalte enthält drei 0 und drei 1.'),
-        const _RuleLine('Nie drei gleiche Zahlen direkt nebeneinander.'),
-        const _RuleLine('Keine zwei vollständigen Zeilen oder Spalten sind gleich.'),
+        const _RuleLine('In jeder Reihe und Spalte stehen gleich viele 0 und 1.'),
+        const _RuleLine('Drei gleiche Zahlen dürfen nie direkt aufeinanderfolgen.'),
+        const _RuleLine('Keine zwei fertigen Reihen oder Spalten dürfen identisch sein.'),
         if (issues.isNotEmpty) ...[
           const Divider(height: 24),
           for (final issue in issues)

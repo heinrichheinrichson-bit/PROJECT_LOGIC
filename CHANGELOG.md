@@ -1,3 +1,13 @@
+# v0.7.3 – Sprache & Spielgefühl
+
+### Changed
+- Texte in Startseite, Binärpuzzle-Hub, Katalog, Generator, Profil, Statistik, Einstellungen und Regeln überarbeitet.
+- Technische und generische Bezeichnungen durch kürzere, natürlichere Formulierungen ersetzt.
+- Missionen und Erfolge neu benannt und verständlicher beschrieben.
+- Begriffe vereinheitlicht: Katalog, freie Rätsel und Tagesrätsel.
+- Abschluss-, Hinweis- und Löschdialoge freundlicher formuliert.
+- Paketversion auf 0.7.3+27 erhöht.
+
 # Changelog
 
 ## 0.7.1+25 – Spielerfortschritt

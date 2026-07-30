@@ -1,7 +1,7 @@
 name: project_logic_prototype
 description: First offline prototype for a binary puzzle collection.
 publish_to: "none"
-version: 0.7.2+26
+version: 0.7.3+27
 environment:
   sdk: ">=3.3.0 <4.0.0"
 

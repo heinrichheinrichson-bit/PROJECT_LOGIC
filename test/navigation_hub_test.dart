@@ -18,9 +18,9 @@ void main() {
     await tester.tap(find.text('Binärpuzzle'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Neues Katalogrätsel'), findsOneWidget);
-    expect(find.text('Zufallsrätsel generieren'), findsOneWidget);
-    expect(find.text('Tagesrätsel & Kalender'), findsOneWidget);
-    expect(find.text('Binärpuzzle-Statistik'), findsOneWidget);
+    expect(find.text('Katalog öffnen'), findsOneWidget);
+    expect(find.text('Freies Rätsel'), findsOneWidget);
+    expect(find.text('Tagesrätsel'), findsOneWidget);
+    expect(find.text('Deine Binärpuzzle-Statistik'), findsOneWidget);
   });
 }
