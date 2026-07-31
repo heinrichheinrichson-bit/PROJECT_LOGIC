@@ -1712,9 +1712,26 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   }
 
   Future<void> _showSolvedDialog() async {
+    int? previousBestSeconds;
+    String? collectionProgress;
     if (!_completionRecorded) {
       _completionRecorded = true;
       if (widget.saveProgress) {
+        if (widget.source == PuzzleSource.catalog) {
+          previousBestSeconds =
+              (await _storage.loadResults())[widget.definition.id]?.bestSeconds;
+        } else {
+          previousBestSeconds = GameStatistics.fromAttempts(
+            await _storage.loadAttempts(),
+            gameType: GameType.binairo,
+          )
+              .filtered(
+                mode: widget.source,
+                difficulty: widget.definition.difficulty,
+                boardSize: widget.definition.size,
+              )
+              .bestSeconds;
+        }
         await _storage.recordCompletion(
           puzzleId: widget.definition.id,
           elapsedSeconds: elapsedSeconds,
@@ -1725,11 +1742,29 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
           rewardedHints: _hintBudget.rewardedHints,
         );
         await _storage.clearActiveGame();
+        if (widget.source == PuzzleSource.catalog) {
+          final results = await _storage.loadResults();
+          final chapter = chaptersFor(widget.definition.difficulty).firstWhere(
+            (chapter) => chapter.puzzles
+                .any((puzzle) => puzzle.id == widget.definition.id),
+          );
+          final chapterSolved = chapter.puzzles
+              .where((puzzle) => results.containsKey(puzzle.id))
+              .length;
+          final group = puzzlesFor(widget.definition.difficulty);
+          final groupSolved =
+              group.where((puzzle) => results.containsKey(puzzle.id)).length;
+          collectionProgress =
+              '${chapter.title}: $chapterSolved/${chapter.puzzles.length} · '
+              'Sammlung: $groupSolved/${group.length}';
+        }
       }
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      final isNewRecord =
+          previousBestSeconds == null || elapsedSeconds < previousBestSeconds;
       showDialog<void>(
         context: context,
         builder: (context) {
@@ -1747,9 +1782,47 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
             title: Text(widget.source == PuzzleSource.daily
                 ? 'Tagesrätsel geschafft!'
                 : 'Gelöst!'),
-            content: Text(widget.source == PuzzleSource.daily
-                ? 'Deine Zeit: ${_formatTime(elapsedSeconds)}. Die Spielserie ist für heute gesichert. Morgen wartet ein neues Rätsel.'
-                : 'Alle Regeln sind erfüllt. Zeit: ${_formatTime(elapsedSeconds)}.'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(widget.source == PuzzleSource.daily
+                    ? 'Die Spielserie ist für heute gesichert.'
+                    : 'Alle Regeln sind erfüllt.'),
+                const SizedBox(height: 16),
+                if (isNewRecord)
+                  const Chip(
+                    avatar: Icon(Icons.workspace_premium_outlined),
+                    label: Text('Neue Bestzeit'),
+                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _CompactStatistic(
+                      value: _formatTime(elapsedSeconds),
+                      label: 'Zeit',
+                    ),
+                    _CompactStatistic(
+                      value: '$_hintsUsed',
+                      label: 'Hinweise',
+                    ),
+                    _CompactStatistic(
+                      value: previousBestSeconds == null
+                          ? '–'
+                          : _formatTime(previousBestSeconds),
+                      label: 'Bisher',
+                    ),
+                  ],
+                ),
+                if (collectionProgress != null) ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    collectionProgress,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ],
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),

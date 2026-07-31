@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/domain/game_identity.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
+import 'core/statistics/game_statistics.dart';
 import 'app_preferences.dart';
 import 'game_storage.dart';
 import 'features/hashi/domain/hashi_generator.dart';
@@ -1241,8 +1242,37 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   Future<void> _showCompletionIfSolved() async {
     if (!_game.isSolved || _completionShown) return;
     _completionShown = true;
+    int? previousBestSeconds;
+    String? collectionProgress;
+    if (widget.mode == GameMode.catalog) {
+      previousBestSeconds = (await _gameStorage
+              .loadResults())['${GameType.hashi.name}:${widget.puzzle.id}']
+          ?.bestSeconds;
+    } else {
+      previousBestSeconds = GameStatistics.fromAttempts(
+        await _gameStorage.loadAttempts(),
+        gameType: GameType.hashi,
+      )
+          .filtered(
+            mode: widget.mode,
+            difficulty: widget.puzzle.sharedDifficulty,
+            boardSize: widget.puzzle.size,
+          )
+          .bestSeconds;
+    }
     if (widget.mode == GameMode.catalog) {
       await _progressStore.markCompleted(widget.puzzle.id);
+      final completed = await _progressStore.loadCompleted();
+      final chapter = hashiChaptersFor().firstWhere(
+        (chapter) =>
+            chapter.puzzles.any((puzzle) => puzzle.id == widget.puzzle.id),
+      );
+      final chapterSolved = chapter.puzzles
+          .where((puzzle) => completed.contains(puzzle.id))
+          .length;
+      collectionProgress =
+          '${chapter.title}: $chapterSolved/${chapter.puzzles.length} · '
+          'Sammlung: ${completed.length}/${hashiPuzzleCatalog.length}';
     }
     await _gameStorage.recordCompletion(
       puzzleId: widget.puzzle.id,
@@ -1256,6 +1286,8 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
       rewardedHints: _hintBudget.rewardedHints,
     );
     if (!mounted) return;
+    final isNewRecord =
+        previousBestSeconds == null || _elapsedSeconds < previousBestSeconds;
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -1270,6 +1302,13 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 18),
+            if (isNewRecord) ...[
+              const Chip(
+                avatar: Icon(Icons.workspace_premium_outlined),
+                label: Text('Neue Bestzeit'),
+              ),
+              const SizedBox(height: 10),
+            ],
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -1280,6 +1319,21 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            Text(
+              '$_hintsUsed Hinweise · Bisherige Bestzeit: '
+              '${previousBestSeconds == null ? '–' : _formatHashiTime(previousBestSeconds)}',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (collectionProgress != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                collectionProgress,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
           ],
         ),
         actions: [
@@ -1324,6 +1378,12 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
         ],
       ),
     );
+  }
+
+  String _formatHashiTime(int seconds) {
+    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
+    final rest = (seconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$rest';
   }
 
   Future<void> _runDeveloperAction(_HashiDeveloperAction action) async {
