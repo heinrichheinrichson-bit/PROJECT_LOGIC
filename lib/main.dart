@@ -159,7 +159,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       enabled: true,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => const HashiHubScreen(),
+                          builder: (_) => HashiHubScreen(
+                            onOpenStatistics: () async {
+                              final storage = GameStorage();
+                              final results = await storage.loadResults();
+                              final progress =
+                                  await storage.loadPlayerProgress();
+                              if (!context.mounted) return;
+                              await Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => StatisticsScreen(
+                                    results: results,
+                                    progress: progress,
+                                    gameType: GameType.hashi,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -1622,21 +1639,28 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                   label: const Text('Noch eins'),
                 )
               else if (widget.source == PuzzleSource.catalog)
-                FilledButton.tonal(
-                  onPressed: _hasNextPuzzle
-                      ? () {
-                          Navigator.of(context).pop();
-                          Navigator.of(this.context).pushReplacement(
-                            MaterialPageRoute<void>(
-                              builder: (_) => BinaryPuzzleScreen(
-                                definition: _nextPuzzle!,
-                              ),
-                            ),
-                          );
-                        }
-                      : null,
-                  child: const Text('Weiter zum nächsten'),
-                ),
+                if (_hasNextPuzzle)
+                  FilledButton.tonal(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(this.context).pushReplacement(
+                        MaterialPageRoute<void>(
+                          builder: (_) => BinaryPuzzleScreen(
+                            definition: _nextPuzzle!,
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('Nächstes Rätsel'),
+                  )
+                else
+                  FilledButton.tonal(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(this.context).pop();
+                    },
+                    child: const Text('Zur Sammlung'),
+                  ),
               FilledButton(
                 onPressed: () {
                   Navigator.of(context).pop();
@@ -1733,14 +1757,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   bool get _hasNextPuzzle => _nextPuzzle != null;
 
   BinaryPuzzleDefinition? get _nextPuzzle {
-    final index = binaryPuzzleCatalog.indexWhere(
-      (item) => item.id == widget.definition.id,
-    );
-    if (index < 0 || binaryPuzzleCatalog.isEmpty) return null;
-
-    // Keep the action useful even at the end of a difficulty group. After the
-    // final catalogue puzzle, continue with the first puzzle again.
-    return binaryPuzzleCatalog[(index + 1) % binaryPuzzleCatalog.length];
+    return nextPuzzleInDifficulty(widget.definition);
   }
 
   String _formatTime(int seconds) {

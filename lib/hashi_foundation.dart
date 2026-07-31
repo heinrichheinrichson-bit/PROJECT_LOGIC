@@ -566,7 +566,9 @@ class HashiGameState {
 }
 
 class HashiHubScreen extends StatefulWidget {
-  const HashiHubScreen({super.key});
+  const HashiHubScreen({this.onOpenStatistics, super.key});
+
+  final AsyncCallback? onOpenStatistics;
 
   @override
   State<HashiHubScreen> createState() => _HashiHubScreenState();
@@ -713,6 +715,14 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                   icon: const Icon(Icons.apps_rounded),
                   label: const Text('Rätselsammlung'),
                 ),
+                if (widget.onOpenStatistics != null) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: widget.onOpenStatistics,
+                    icon: const Icon(Icons.insights_outlined),
+                    label: const Text('Hashi-Statistik'),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 TextButton.icon(
                   onPressed: () => Navigator.of(context).push(

@@ -41,6 +41,13 @@ void main() {
     expect(find.text('Regeln ansehen'), findsOneWidget);
     expect(find.text('Rätselsammlung'), findsOneWidget);
     expect(find.text('Erste Herausforderung'), findsOneWidget);
+    expect(find.text('Hashi-Statistik'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Hashi-Statistik'));
+    await tester.tap(find.text('Hashi-Statistik'));
+    await tester.pumpAndSettle();
+    expect(find.text('Hashi-Statistik'), findsOneWidget);
+    expect(find.text('Leistung'), findsOneWidget);
   });
 
   testWidgets('global and Binairo statistics stay separated', (tester) async {

@@ -615,3 +615,12 @@ List<BinaryPuzzleDefinition> puzzlesFor(PuzzleDifficulty difficulty) =>
     binaryPuzzleCatalog
         .where((puzzle) => puzzle.difficulty == difficulty)
         .toList();
+
+BinaryPuzzleDefinition? nextPuzzleInDifficulty(
+  BinaryPuzzleDefinition current,
+) {
+  final group = puzzlesFor(current.difficulty);
+  final index = group.indexWhere((puzzle) => puzzle.id == current.id);
+  if (index < 0 || index + 1 >= group.length) return null;
+  return group[index + 1];
+}

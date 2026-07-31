@@ -129,6 +129,14 @@ void main() {
       final ids = binaryPuzzleCatalog.map((puzzle) => puzzle.id).toSet();
       expect(ids.length, binaryPuzzleCatalog.length);
     });
+
+    test('next puzzle stays inside the selected difficulty', () {
+      final hard = puzzlesFor(PuzzleDifficulty.hard);
+
+      expect(nextPuzzleInDifficulty(hard.first), hard[1]);
+      expect(nextPuzzleInDifficulty(hard[1]), hard[2]);
+      expect(nextPuzzleInDifficulty(hard.last), isNull);
+    });
   });
 
   test('editable values can be exported and restored', () {
