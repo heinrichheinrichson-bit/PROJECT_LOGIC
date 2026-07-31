@@ -309,6 +309,33 @@ void main() {
     expect(progress.completedDays, hasLength(1));
   });
 
+  test('results from different games cannot overwrite each other', () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = GameStorage();
+
+    await storage.recordCompletion(
+      puzzleId: 'easy-01',
+      elapsedSeconds: 60,
+      source: GameMode.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 6,
+    );
+    await storage.recordCompletion(
+      puzzleId: 'easy-01',
+      elapsedSeconds: 90,
+      gameType: GameType.hashi,
+      source: GameMode.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 7,
+    );
+
+    final results = await storage.loadResults();
+
+    expect(results, hasLength(2));
+    expect(results['easy-01']?.gameType, GameType.binairo);
+    expect(results['hashi:easy-01']?.gameType, GameType.hashi);
+  });
+
   // v0.6.9 daily challenge persistence regression tests.
   test('daily SavedGame preserves its puzzle source', () {
     final definition = BinaryPuzzleDefinition(

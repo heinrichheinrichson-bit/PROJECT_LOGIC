@@ -228,6 +228,12 @@ class PuzzleResult {
   final int completionCount;
   final int totalElapsedSeconds;
 
+  /// Binairo keeps its historic unprefixed keys for UI and save compatibility.
+  /// Other games use a namespaced key to avoid collisions between catalogs.
+  String get storageKey => gameType == GameType.binairo
+      ? puzzleId
+      : '${gameType.name}:$puzzleId';
+
   PuzzleSource get effectiveSource {
     if (source != PuzzleSource.catalog) return source;
     return puzzleId.startsWith('binary-')
@@ -471,7 +477,7 @@ class GameStorage {
                 Map<String, Object?>.from(item as Map),
               ))
           .toList();
-      return {for (final result in results) result.puzzleId: result};
+      return {for (final result in results) result.storageKey: result};
     } on Object {
       return {};
     }
@@ -520,18 +526,23 @@ class GameStorage {
     required PuzzleSource source,
     required PuzzleDifficulty difficulty,
     required int boardSize,
+    GameType gameType = GameType.binairo,
     DateTime? completedAt,
   }) async {
     final results = await loadResults();
     final progress = await loadPlayerProgress();
-    final existing = results[puzzleId];
+    final resultKey = gameType == GameType.binairo
+        ? puzzleId
+        : '${gameType.name}:$puzzleId';
+    final existing = results[resultKey];
     final completionTime = completedAt ?? DateTime.now();
 
-    results[puzzleId] = existing == null
+    results[resultKey] = existing == null
         ? PuzzleResult(
             puzzleId: puzzleId,
             bestSeconds: elapsedSeconds,
             completedAt: completionTime,
+            gameType: gameType,
             source: source,
             difficulty: difficulty,
             boardSize: boardSize,

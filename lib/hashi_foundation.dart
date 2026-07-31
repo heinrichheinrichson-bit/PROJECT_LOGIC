@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/domain/game_identity.dart';
+import 'game_storage.dart';
+
 @immutable
 class HashiIsland {
   const HashiIsland({
@@ -54,6 +57,12 @@ class HashiPuzzle {
   final int difficulty;
   final List<HashiIsland> islands;
   final List<HashiBridge> solution;
+
+  PuzzleDifficulty get sharedDifficulty => switch (difficulty) {
+        <= 1 => PuzzleDifficulty.easy,
+        2 => PuzzleDifficulty.medium,
+        _ => PuzzleDifficulty.hard,
+      };
 }
 
 
@@ -896,6 +905,7 @@ class HashiGameScreen extends StatefulWidget {
 
 class _HashiGameScreenState extends State<HashiGameScreen> {
   final HashiProgressStore _progressStore = HashiProgressStore();
+  final GameStorage _gameStorage = GameStorage();
   late HashiGameState _game;
   final List<HashiGameState> _history = [];
   final List<HashiGameState> _redoHistory = [];
@@ -982,6 +992,14 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
     if (!_game.isSolved || _completionShown) return;
     _completionShown = true;
     await _progressStore.markCompleted(widget.puzzle.id);
+    await _gameStorage.recordCompletion(
+      puzzleId: widget.puzzle.id,
+      elapsedSeconds: _elapsedSeconds,
+      gameType: GameType.hashi,
+      source: GameMode.catalog,
+      difficulty: widget.puzzle.sharedDifficulty,
+      boardSize: widget.puzzle.size,
+    );
     if (!mounted) return;
     await showDialog<void>(
       context: context,
