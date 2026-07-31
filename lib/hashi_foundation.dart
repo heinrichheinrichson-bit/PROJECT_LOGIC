@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -383,6 +384,132 @@ class HashiProgressStore {
     final completed = preferences.getStringList(_key)?.toSet() ?? <String>{};
     completed.add(puzzleId);
     await preferences.setStringList(_key, completed.toList()..sort());
+  }
+}
+
+class SavedHashiGame {
+  const SavedHashiGame({
+    required this.puzzle,
+    required this.mode,
+    required this.bridges,
+    required this.elapsedSeconds,
+    required this.moves,
+    required this.hintsUsed,
+    required this.rewardedHints,
+  });
+
+  static const schemaVersion = 1;
+  final HashiPuzzle puzzle;
+  final GameMode mode;
+  final List<HashiBridge> bridges;
+  final int elapsedSeconds;
+  final int moves;
+  final int hintsUsed;
+  final int rewardedHints;
+
+  Map<String, Object?> toJson() => {
+        'schemaVersion': schemaVersion,
+        'mode': mode.name,
+        'elapsedSeconds': elapsedSeconds,
+        'moves': moves,
+        'hintsUsed': hintsUsed,
+        'rewardedHints': rewardedHints,
+        'puzzle': {
+          'id': puzzle.id,
+          'title': puzzle.title,
+          'size': puzzle.size,
+          'difficulty': puzzle.difficulty,
+          'islands': [
+            for (final island in puzzle.islands)
+              {
+                'row': island.row,
+                'column': island.column,
+                'bridges': island.bridges,
+              },
+          ],
+          'solution': [
+            for (final bridge in puzzle.solution) _bridgeJson(bridge)
+          ],
+        },
+        'bridges': [for (final bridge in bridges) _bridgeJson(bridge)],
+      };
+
+  factory SavedHashiGame.fromJson(Map<String, Object?> json) {
+    if (json['schemaVersion'] != schemaVersion) {
+      throw const FormatException('Unsupported Hashi save version.');
+    }
+    final puzzleJson = Map<String, Object?>.from(json['puzzle']! as Map);
+    final puzzle = HashiPuzzle(
+      id: puzzleJson['id']! as String,
+      title: puzzleJson['title']! as String,
+      size: puzzleJson['size']! as int,
+      difficulty: puzzleJson['difficulty']! as int,
+      islands: (puzzleJson['islands']! as List).map((item) {
+        final value = Map<String, Object?>.from(item as Map);
+        return HashiIsland(
+          row: value['row']! as int,
+          column: value['column']! as int,
+          bridges: value['bridges']! as int,
+        );
+      }).toList(growable: false),
+      solution: (puzzleJson['solution']! as List)
+          .map((item) => _bridgeFromJson(item as Map))
+          .toList(growable: false),
+    );
+    return SavedHashiGame(
+      puzzle: puzzle,
+      mode: GameMode.values.byName(json['mode']! as String),
+      bridges: (json['bridges']! as List)
+          .map((item) => _bridgeFromJson(item as Map))
+          .toList(growable: false),
+      elapsedSeconds: json['elapsedSeconds']! as int,
+      moves: json['moves']! as int,
+      hintsUsed: json['hintsUsed']! as int,
+      rewardedHints: json['rewardedHints']! as int,
+    );
+  }
+
+  static Map<String, Object?> _bridgeJson(HashiBridge bridge) => {
+        'from': bridge.from,
+        'to': bridge.to,
+        'count': bridge.count,
+      };
+
+  static HashiBridge _bridgeFromJson(Map<dynamic, dynamic> raw) {
+    final value = Map<String, Object?>.from(raw);
+    return HashiBridge(
+      from: value['from']! as int,
+      to: value['to']! as int,
+      count: value['count']! as int,
+    );
+  }
+}
+
+class HashiGameStore {
+  static const _key = 'active_hashi_game_v1';
+
+  Future<SavedHashiGame?> load() async {
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(_key);
+    if (raw == null) return null;
+    try {
+      return SavedHashiGame.fromJson(
+        Map<String, Object?>.from(jsonDecode(raw) as Map),
+      );
+    } on Object {
+      await preferences.remove(_key);
+      return null;
+    }
+  }
+
+  Future<void> save(SavedHashiGame game) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_key, jsonEncode(game.toJson()));
+  }
+
+  Future<void> clear() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_key);
   }
 }
 
@@ -1137,11 +1264,13 @@ class HashiGameScreen extends StatefulWidget {
   const HashiGameScreen({
     required this.puzzle,
     this.mode = GameMode.catalog,
+    this.savedGame,
     super.key,
   });
 
   final HashiPuzzle puzzle;
   final GameMode mode;
+  final SavedHashiGame? savedGame;
 
   @override
   State<HashiGameScreen> createState() => _HashiGameScreenState();
@@ -1150,6 +1279,7 @@ class HashiGameScreen extends StatefulWidget {
 class _HashiGameScreenState extends State<HashiGameScreen> {
   final HashiProgressStore _progressStore = HashiProgressStore();
   final GameStorage _gameStorage = GameStorage();
+  final HashiGameStore _saveStore = HashiGameStore();
   late HashiGameState _game;
   final List<HashiGameState> _history = [];
   final List<HashiGameState> _redoHistory = [];
@@ -1171,20 +1301,45 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   @override
   void initState() {
     super.initState();
-    _game = HashiGameState(puzzle: widget.puzzle);
+    final saved = widget.savedGame;
+    _game = HashiGameState(
+      puzzle: widget.puzzle,
+      bridges: saved?.bridges,
+    );
+    if (saved != null) {
+      _elapsedSeconds = saved.elapsedSeconds;
+      _moves = saved.moves;
+      _hintsUsed = saved.hintsUsed;
+      _hintBudget = HintBudget(
+        usedHints: saved.hintsUsed,
+        rewardedHints: saved.rewardedHints,
+      );
+    }
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && !_completionShown) {
         setState(() => _elapsedSeconds++);
+        if (_elapsedSeconds % 10 == 0) unawaited(_saveGame());
       }
     });
   }
 
   @override
   void dispose() {
+    if (!_completionShown) unawaited(_saveGame());
     _timer?.cancel();
     _messageTimer?.cancel();
     super.dispose();
   }
+
+  Future<void> _saveGame() => _saveStore.save(SavedHashiGame(
+        puzzle: widget.puzzle,
+        mode: widget.mode,
+        bridges: _game.bridges,
+        elapsedSeconds: _elapsedSeconds,
+        moves: _moves,
+        hintsUsed: _hintsUsed,
+        rewardedHints: _hintBudget.rewardedHints,
+      ));
 
   List<int> get _possibleTargets {
     final selected = _selectedIsland;
@@ -1236,6 +1391,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
       );
     }
 
+    if (!identical(previous, next)) unawaited(_saveGame());
     await _showCompletionIfSolved();
   }
 
@@ -1285,6 +1441,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
       hintsUsed: _hintsUsed,
       rewardedHints: _hintBudget.rewardedHints,
     );
+    await _saveStore.clear();
     if (!mounted) return;
     final isNewRecord =
         previousBestSeconds == null || _elapsedSeconds < previousBestSeconds;
@@ -1546,6 +1703,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
         _moves--;
       }
     });
+    unawaited(_saveGame());
   }
 
   void _redo() {
@@ -1566,6 +1724,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
         _moves++;
       }
     });
+    unawaited(_saveGame());
     _showCompletionIfSolved();
   }
 
@@ -1594,6 +1753,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
       _moves++;
     });
     _showActionMessage('Eine passende Brücke wurde ergänzt');
+    unawaited(_saveGame());
     await _showCompletionIfSolved();
   }
 
@@ -1639,6 +1799,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
     );
     if (!mounted) return;
     setState(() => _hintBudget = _hintBudget.earnRewardedHint());
+    unawaited(_saveGame());
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
           content: Text('Ein zusätzlicher Tipp wurde freigeschaltet.')),
@@ -1663,6 +1824,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
       _elapsedSeconds = 0;
       _moves = 0;
     });
+    unawaited(_saveGame());
   }
 
   @override

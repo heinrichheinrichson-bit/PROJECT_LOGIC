@@ -76,6 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final GameStorage _storage = GameStorage();
   Map<String, PuzzleResult> _results = const {};
   PlayerProgress _progress = const PlayerProgress.empty();
+  SavedHashiGame? _savedHashiGame;
   bool _loading = true;
 
   @override
@@ -87,10 +88,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _refresh() async {
     final results = await _storage.loadResults();
     final progress = await _storage.loadPlayerProgress();
+    final savedHashiGame = await HashiGameStore().load();
     if (!mounted) return;
     setState(() {
       _results = results;
       _progress = progress;
+      _savedHashiGame = savedHashiGame;
       _loading = false;
     });
   }
@@ -134,6 +137,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (_loading)
                     const Center(child: CircularProgressIndicator())
                   else ...[
+                    if (_savedHashiGame case final saved?) ...[
+                      _HomeAction(
+                        icon: Icons.play_circle_outline_rounded,
+                        title: 'Hashi fortsetzen',
+                        subtitle:
+                            '${saved.puzzle.sharedDifficulty.label} · ${saved.moves} Züge · ${_shortTime(saved.elapsedSeconds)}',
+                        enabled: true,
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => HashiGameScreen(
+                                puzzle: saved.puzzle,
+                                mode: saved.mode,
+                                savedGame: saved,
+                              ),
+                            ),
+                          );
+                          await _refresh();
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     _StreakCard(progress: _progress),
                     const SizedBox(height: 12),
                     _HomeAction(
@@ -246,6 +271,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  static String _shortTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final rest = seconds % 60;
+    return '$minutes:${rest.toString().padLeft(2, '0')}';
   }
 }
 
