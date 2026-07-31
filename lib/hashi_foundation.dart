@@ -784,6 +784,20 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final bridgeCounts = List<int>.generate(
+      _game.puzzle.islands.length,
+      _game.bridgeCountAt,
+    );
+    final fulfilledIslands = List<int>.generate(
+      _game.puzzle.islands.length,
+      (index) => index,
+    ).where((index) =>
+        bridgeCounts[index] == _game.puzzle.islands[index].bridges).length;
+    final instruction = _actionMessage ??
+        (_selectedIsland == null
+            ? 'Wähle eine Insel.'
+            : 'Wähle eine leuchtende Zielinsel.');
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.puzzle.title),
@@ -805,69 +819,131 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 680),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+              padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       _StatusChip(
                         icon: Icons.timer_outlined,
                         label: _timeLabel,
                       ),
-                      const SizedBox(width: 10),
                       _StatusChip(
                         icon: Icons.touch_app_outlined,
                         label: '$_moves Züge',
                       ),
+                      _StatusChip(
+                        icon: Icons.hub_outlined,
+                        label:
+                            '$fulfilledIslands/${_game.puzzle.islands.length} Inseln',
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _actionMessage ??
-                        (_selectedIsland == null
-                            ? 'Wähle eine Insel.'
-                            : 'Leuchtende Inseln sind mögliche Ziele.'),
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  const SizedBox(height: 10),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.15),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: child,
+                      ),
+                    ),
+                    child: Container(
+                      key: ValueKey(instruction),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _actionMessage == null
+                            ? colors.surfaceContainerHighest
+                            : colors.primaryContainer,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        instruction,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: _actionMessage == null
+                                  ? colors.onSurfaceVariant
+                                  : colors.onPrimaryContainer,
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Eine → zwei → keine Brücke',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: colors.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Expanded(
                     child: Center(
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: HashiBoard(
-                          puzzle: _game.puzzle,
-                          bridges: _game.bridges,
-                          selectedIsland: _selectedIsland,
-                          possibleTargets: _possibleTargets,
-                          bridgeCounts: List<int>.generate(
-                            _game.puzzle.islands.length,
-                            _game.bridgeCountAt,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: colors.surfaceContainerLowest,
+                          borderRadius: BorderRadius.circular(28),
+                          border: Border.all(
+                            color: colors.outlineVariant.withValues(alpha: 0.7),
                           ),
-                          onIslandTap: _handleIslandTap,
-                          onBridgeTap: _handleBridgeTap,
+                          boxShadow: [
+                            BoxShadow(
+                              color: colors.shadow.withValues(alpha: 0.08),
+                              blurRadius: 22,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: AspectRatio(
+                            aspectRatio: 1,
+                            child: HashiBoard(
+                              puzzle: _game.puzzle,
+                              bridges: _game.bridges,
+                              selectedIsland: _selectedIsland,
+                              possibleTargets: _possibleTargets,
+                              bridgeCounts: bridgeCounts,
+                              onIslandTap: _handleIslandTap,
+                              onBridgeTap: _handleBridgeTap,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Text(
-                    'Tipp: Eine gesetzte Brücke kannst du direkt antippen, um sie zu entfernen.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: colors.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Ziel: Zahlen erfüllen, Kreuzungen vermeiden, alle Inseln verbinden.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.lightbulb_outline_rounded,
+                          size: 20,
+                          color: colors.primary,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '1× verbinden, 2× doppeln, 3× entfernen. Eine Brücke kannst du auch direkt antippen.',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: colors.onSurfaceVariant,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -1123,22 +1199,50 @@ class _HashiBoardPainter extends CustomPainter {
           offsetY + (island.row + 0.5) * cell,
         );
 
+    final guidePaint = Paint()
+      ..color = colorScheme.outlineVariant.withValues(alpha: 0.22)
+      ..style = PaintingStyle.fill;
+    final guideRadius = (cell * 0.018).clamp(0.8, 1.6).toDouble();
+    for (var row = 0; row < puzzle.size; row++) {
+      for (var column = 0; column < puzzle.size; column++) {
+        canvas.drawCircle(
+          Offset(
+            offsetX + (column + 0.5) * cell,
+            offsetY + (row + 0.5) * cell,
+          ),
+          guideRadius,
+          guidePaint,
+        );
+      }
+    }
+
+    final bridgeWidth = (cell * 0.075).clamp(2.4, 5.2).toDouble();
+    final bridgeUnderlay = Paint()
+      ..color = colorScheme.surfaceContainerLowest
+      ..strokeWidth = bridgeWidth +
+          (cell * 0.075).clamp(2.0, 4.5).toDouble()
+      ..strokeCap = StrokeCap.round;
     final bridgePaint = Paint()
       ..color = colorScheme.primary
-      ..strokeWidth = (cell * 0.07).clamp(2.0, 5.0).toDouble()
+      ..strokeWidth = bridgeWidth
       ..strokeCap = StrokeCap.round;
+
+    void drawBridgeLine(Offset start, Offset end) {
+      canvas.drawLine(start, end, bridgeUnderlay);
+      canvas.drawLine(start, end, bridgePaint);
+    }
 
     for (final bridge in bridges) {
       final start = point(puzzle.islands[bridge.from]);
       final end = point(puzzle.islands[bridge.to]);
       if (bridge.count == 1) {
-        canvas.drawLine(start, end, bridgePaint);
+        drawBridgeLine(start, end);
       } else {
         final horizontal = (start.dy - end.dy).abs() < 0.01;
-        final shift = cell * 0.08;
+        final shift = cell * 0.095;
         final delta = horizontal ? Offset(0, shift) : Offset(shift, 0);
-        canvas.drawLine(start - delta, end - delta, bridgePaint);
-        canvas.drawLine(start + delta, end + delta, bridgePaint);
+        drawBridgeLine(start - delta, end - delta);
+        drawBridgeLine(start + delta, end + delta);
       }
     }
 
@@ -1150,29 +1254,80 @@ class _HashiBoardPainter extends CustomPainter {
       final exceeded = current != null && current > island.bridges;
       final selected = selectedIsland == index;
       final possibleTarget = possibleTargets.contains(index);
-      final radius = cell * 0.31;
+      final radius = cell * 0.32;
+
+      if (selected || possibleTarget) {
+        final haloPaint = Paint()
+          ..color = (selected ? colorScheme.primary : colorScheme.tertiary)
+              .withValues(alpha: selected ? 0.18 : 0.13);
+        canvas.drawCircle(center, radius + cell * 0.14, haloPaint);
+      }
+
+      final shadowPath = Path()
+        ..addOval(Rect.fromCircle(
+          center: center + Offset(0, cell * 0.045),
+          radius: radius,
+        ));
+      canvas.drawShadow(
+        shadowPath,
+        colorScheme.shadow.withValues(alpha: 0.28),
+        cell * 0.07,
+        false,
+      );
 
       final islandPaint = Paint()
-        ..color = exceeded
-            ? colorScheme.errorContainer
-            : fulfilled
-                ? colorScheme.primaryContainer
-                : colorScheme.secondaryContainer;
+        ..shader = RadialGradient(
+          center: const Alignment(-0.25, -0.35),
+          radius: 1.15,
+          colors: exceeded
+              ? [colorScheme.errorContainer, colorScheme.errorContainer]
+              : fulfilled
+                  ? [
+                      colorScheme.primaryContainer,
+                      colorScheme.primaryContainer.withValues(alpha: 0.82),
+                    ]
+                  : [
+                      colorScheme.secondaryContainer,
+                      colorScheme.secondaryContainer.withValues(alpha: 0.82),
+                    ],
+        ).createShader(Rect.fromCircle(center: center, radius: radius));
       final outlinePaint = Paint()
         ..color = selected
             ? colorScheme.primary
             : possibleTarget
                 ? colorScheme.tertiary
                 : exceeded
-                ? colorScheme.error
-                : fulfilled
-                    ? colorScheme.primary
-                    : colorScheme.secondary
+                    ? colorScheme.error
+                    : fulfilled
+                        ? colorScheme.primary
+                        : colorScheme.outline
         ..style = PaintingStyle.stroke
-        ..strokeWidth = (selected || possibleTarget) ? cell * 0.09 : cell * 0.05;
+        ..strokeWidth = (selected || possibleTarget)
+            ? (cell * 0.085).clamp(3.0, 6.0).toDouble()
+            : (cell * 0.045).clamp(1.6, 3.4).toDouble();
 
       canvas.drawCircle(center, radius, islandPaint);
       canvas.drawCircle(center, radius, outlinePaint);
+
+      if (fulfilled && !exceeded) {
+        final checkPaint = Paint()
+          ..color = colorScheme.primary
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = (cell * 0.04).clamp(1.6, 3.0).toDouble()
+          ..strokeCap = StrokeCap.round
+          ..strokeJoin = StrokeJoin.round;
+        final checkCenter = center + Offset(radius * 0.68, -radius * 0.68);
+        canvas.drawCircle(
+          checkCenter,
+          cell * 0.105,
+          Paint()..color = colorScheme.surfaceContainerLowest,
+        );
+        final checkPath = Path()
+          ..moveTo(checkCenter.dx - cell * 0.045, checkCenter.dy)
+          ..lineTo(checkCenter.dx - cell * 0.01, checkCenter.dy + cell * 0.035)
+          ..lineTo(checkCenter.dx + cell * 0.055, checkCenter.dy - cell * 0.04);
+        canvas.drawPath(checkPath, checkPaint);
+      }
 
       final textPainter = TextPainter(
         text: TextSpan(
@@ -1183,8 +1338,9 @@ class _HashiBoardPainter extends CustomPainter {
                 : fulfilled
                     ? colorScheme.onPrimaryContainer
                     : colorScheme.onSecondaryContainer,
-            fontSize: cell * 0.32,
-            fontWeight: FontWeight.w800,
+            fontSize: cell * 0.33,
+            fontWeight: FontWeight.w900,
+            height: 1,
           ),
         ),
         textDirection: TextDirection.ltr,

@@ -1,3 +1,18 @@
+## v0.8.5 – Hashi Premium Polish
+
+### Changed
+- Hashi-Spielfeld mit ruhiger Punktstruktur, klareren Brücken und räumlicher Tiefe überarbeitet.
+- Inseln besitzen deutlichere Zustände für Auswahl, mögliche Ziele, Erfüllung und Überschreitung.
+- Erfüllte Inseln erhalten eine kompakte visuelle Bestätigung.
+- Statusbereich zeigt Zeit, Züge und erfüllte Inseln auf einen Blick.
+- Aktionshinweise wechseln weich und bleiben während des Spiels besser lesbar.
+- Bedienhinweis wurde zu einer kompakten, dauerhaft sichtbaren Kurzhilfe zusammengeführt.
+- Versionsnummer auf 0.8.5+33 erhöht.
+
+### Notes
+- Rätsellogik, Lösungen und gespeicherter Hashi-Fortschritt bleiben unverändert.
+- Der Schwerpunkt dieser Version liegt vollständig auf Spielgefühl und visueller Qualität.
+
 # Changelog
 
 ## v0.8.4 – Repository Cleanup
