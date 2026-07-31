@@ -1,1 +1,0 @@
-git add . && git commit -m "feat(v0.5.2): integrate explainable solver-backed hints" && git tag -a v0.5.2 -m "Project Logic v0.5.2 - Solver Integration" && git push origin main && git push origin v0.5.2

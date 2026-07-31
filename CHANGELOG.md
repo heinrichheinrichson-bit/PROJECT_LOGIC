@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.8.4 – Repository Cleanup
+
+### Changed
+- Projektdokumentation aus dem Repository-Hauptordner in eine klare `docs/`-Struktur verschoben.
+- Release Notes nach Versionsbereich geordnet und historische Hilfsdateien archiviert.
+- README auf den aktuellen Stand mit Binärpuzzle und spielbarem Hashi gebracht.
+- Dokumentationsregeln ergänzt, damit neue Releases den Hauptordner nicht erneut füllen.
+- Paketversion auf 0.8.4+32 erhöht.
+
+### Compatibility
+- Keine Änderungen an Spiellogik, Spielständen oder Persistenzformaten.
+- Bestehende Tests und Plattformdateien bleiben unverändert.
+
 ## v0.8.3
 
 ### Changed
@@ -47,7 +60,6 @@
 - Abschluss-, Hinweis- und Löschdialoge freundlicher formuliert.
 - Paketversion auf 0.7.3+27 erhöht.
 
-# Changelog
 
 ## 0.7.1+25 – Spielerfortschritt
 
@@ -66,7 +78,6 @@
 - Datumsbezogene Titel und neue Regressionstests ergänzt.
 - Version auf 0.7.0+24 erhöht.
 
-# Changelog
 
 ## 0.6.8+22
 

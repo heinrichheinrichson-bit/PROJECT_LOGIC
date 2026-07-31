@@ -1,66 +1,59 @@
-# Project Logic – erster Flutter-Prototyp
+# Project Logic
 
-Dieser Prototyp enthält ein festes, eindeutig lösbares 6×6-Binärpuzzle.
+Project Logic ist eine werbefreie Sammlung klassischer Logikspiele für Flutter.
+Die App setzt auf vollständige Spiele ohne Energie, Timer-Zwang oder
+Fortschritts-Paywalls.
 
-## Enthalten
+## Aktueller Stand
 
-- Antippen eines Feldes: leer → 0 → 1 → leer
-- unveränderliche Vorgabefelder
-- direkte Prüfung der drei Kernregeln
-- Markierung widersprüchlicher Felder
-- Undo und Redo
-- Zurücksetzen
-- Lösungserkennung
-- Light- und Dark-Mode über das Betriebssystem
-- getrennte Spiellogik in `lib/game_logic.dart`
-- Unit-Tests für Grundfunktionen
+### Binärpuzzle
 
-## Bewusst noch nicht enthalten
+- handgebaute Katalogrätsel
+- Generator mit mehreren Größen und Schwierigkeitsstufen
+- Solver und Hinweise
+- Tagesrätsel und Kalender
+- Spielstände, Statistik und Spielerfortschritt
 
-- Rätselgenerator
-- Solver und intelligente Hinweise
-- Datenbank und Autosave
-- Tagesrätsel
-- Hitori
-- Hashi
-- endgültiges Branding
+### Hashi
 
-## Starten
+- eigener Hub und Regelseite
+- sechs spielbare Rätsel in drei Schwierigkeitsstufen
+- einfache und doppelte Brücken
+- Kreuzungs- und Inselprüfung
+- Undo, Neustart, Timer und Zugzähler
+- direkt antippbare Brücken zum intuitiven Entfernen
+- gespeicherter Katalogfortschritt
 
-Flutter muss installiert sein.
+Weitere geplante Spiele sind Sudoku, Hitori, Slitherlink und Kakuro.
+
+## Projekt starten
+
+Voraussetzung ist eine installierte Flutter-Umgebung.
 
 ```bash
-flutter create .
+flutter clean
 flutter pub get
+flutter analyze
 flutter test
 flutter run
 ```
 
-`flutter create .` ergänzt die plattformspezifischen Android-/iOS-Verzeichnisse,
-ohne die vorhandenen Dateien unter `lib/` zu ersetzen.
+## Qualitätsablauf
 
-## Bedienung
+Eine Version wird erst veröffentlicht, wenn:
 
-Ein freies Feld wird durch Antippen zyklisch geändert:
+1. `flutter analyze` ohne Issues durchläuft,
+2. alle automatisierten Tests bestehen,
+3. die betroffenen Funktionen manuell geprüft wurden.
 
-1. leer
-2. 0
-3. 1
-4. wieder leer
+Danach folgen Commit, Tag und Push auf den Branch `master`.
 
-Stärker hervorgehobene Felder sind Vorgaben und können nicht verändert werden.
+## Dokumentation
 
-## Nächster sinnvoller Entwicklungsschritt
+Technische Unterlagen, Konzepte, Testhinweise und historische Release Notes
+liegen gesammelt unter [`docs/`](docs/README.md). Der Repository-Hauptordner
+bleibt bewusst auf die für Entwicklung und Build relevanten Dateien beschränkt.
 
-Ein exakter Solver, der:
+## Version
 
-1. die Eindeutigkeit eines Rätsels prüft,
-2. als Grundlage für den Generator dient,
-3. später durch einen menschlich erklärenden Regel-Solver ergänzt wird.
-
-## Stand v0.6.7
-
-Die Fortschrittsdaten unterscheiden Katalog-, Generator- und künftig auch
-Tages-, Event- und Tutorialrätsel. Generierte Abschlüsse werden nach Rastergröße
-und Schwierigkeit ausgewertet; wiederholte Abschlüsse werden separat gezählt,
-während die persönliche Bestzeit erhalten bleibt.
+Aktueller Entwicklungsstand: **v0.8.4**
