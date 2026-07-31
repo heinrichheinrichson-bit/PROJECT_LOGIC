@@ -711,7 +711,7 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                     await _refreshProgress();
                   },
                   icon: const Icon(Icons.apps_rounded),
-                  label: const Text('Rätselkatalog'),
+                  label: const Text('Rätselsammlung'),
                 ),
                 const SizedBox(height: 12),
                 TextButton.icon(
@@ -1040,7 +1040,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
               Navigator.of(dialogContext).pop();
               Navigator.of(context).pop();
             },
-            child: const Text('Zum Katalog'),
+            child: const Text('Zur Sammlung'),
           ),
           if (_nextPuzzle != null)
             FilledButton(

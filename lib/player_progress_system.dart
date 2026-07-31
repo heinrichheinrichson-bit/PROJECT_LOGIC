@@ -158,7 +158,7 @@ class PlayerProgressService {
         _achievement(
           id: 'generator-ten',
           title: 'Freie Wahl',
-          description: 'Löse 10 freie Rätsel.',
+          description: 'Löse 10 Rätsel im Endlosmodus.',
           iconName: 'auto_awesome',
           current: snapshot.generatedCompleted,
           target: 10,
@@ -166,7 +166,7 @@ class PlayerProgressService {
         _achievement(
           id: 'catalog-complete',
           title: 'Alles gesehen',
-          description: 'Löse jedes Rätsel im Katalog.',
+          description: 'Löse jedes Rätsel der Sammlung.',
           iconName: 'collections_bookmark',
           current: snapshot.catalogCompleted,
           target: snapshot.catalogPuzzleIds.length,
@@ -212,7 +212,7 @@ class PlayerProgressService {
       ),
       _mission(
         id: 'daily-${_dateKey(today)}-generator',
-        title: 'Freie Runde',
+        title: 'Endlosrunde',
         description: 'Löse heute ein frei erzeugtes Rätsel.',
         iconName: 'auto_awesome',
         current: generatedToday,
@@ -220,8 +220,8 @@ class PlayerProgressService {
       ),
       _mission(
         id: 'daily-${_dateKey(today)}-catalog',
-        title: 'Aus dem Katalog',
-        description: 'Löse heute ein Rätsel aus dem Katalog.',
+        title: 'Aus der Sammlung',
+        description: 'Löse heute ein Rätsel aus der Sammlung.',
         iconName: 'menu_book',
         current: catalogToday,
         target: 1,
@@ -235,8 +235,8 @@ class PlayerProgressService {
   List<ProgressGoal> longTermMissions(ProgressSnapshot snapshot) => [
         _mission(
           id: 'catalog-five',
-          title: 'Im Katalog stöbern',
-          description: 'Löse 5 verschiedene Rätsel aus dem Katalog.',
+          title: 'Sammlung entdecken',
+          description: 'Löse 5 verschiedene Rätsel aus der Sammlung.',
           iconName: 'menu_book',
           current: snapshot.catalogCompleted,
           target: 5,

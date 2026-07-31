@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
 import 'package:project_logic_prototype/app_preferences.dart';
+import 'package:project_logic_prototype/game_storage.dart';
 import 'package:project_logic_prototype/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,8 +20,8 @@ void main() {
     await tester.tap(find.text('Binärpuzzle'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Katalog öffnen'), findsOneWidget);
-    expect(find.text('Freies Rätsel'), findsOneWidget);
+    expect(find.text('Rätselsammlung'), findsOneWidget);
+    expect(find.text('Endlosmodus'), findsOneWidget);
     expect(find.text('Tagesrätsel'), findsOneWidget);
     expect(find.text('Deine Binärpuzzle-Statistik'), findsOneWidget);
   });
@@ -37,8 +39,42 @@ void main() {
 
     expect(find.text('Baue ein gemeinsames Brückennetz'), findsOneWidget);
     expect(find.text('Regeln ansehen'), findsOneWidget);
-    expect(find.text('Rätselkatalog'), findsOneWidget);
+    expect(find.text('Rätselsammlung'), findsOneWidget);
     expect(find.text('Erste Herausforderung'), findsOneWidget);
+  });
+
+  testWidgets('global and Binairo statistics stay separated', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: StatisticsScreen(
+          results: <String, PuzzleResult>{},
+          progress: PlayerProgress.empty(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Deine Spiele'), findsOneWidget);
+    expect(find.text('Tagesrätsel'), findsNothing);
+    expect(find.text('Rätselsammlung'), findsNothing);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: StatisticsScreen(
+          results: <String, PuzzleResult>{},
+          progress: PlayerProgress.empty(),
+          gameType: GameType.binairo,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Binairo-Statistik'), findsOneWidget);
+    expect(find.text('Deine Spiele'), findsNothing);
+    expect(find.text('Tagesrätsel'), findsOneWidget);
+    expect(find.text('Rätselsammlung'), findsNWidgets(2));
   });
 
 }

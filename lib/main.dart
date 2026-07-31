@@ -138,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: Icons.grid_4x4_rounded,
                       title: 'Binärpuzzle',
                       subtitle:
-                          '${_catalogCompletedCount(_results)} von ${binaryPuzzleCatalog.length} Katalogrätseln gelöst',
+                          '${_catalogCompletedCount(_results)} von ${binaryPuzzleCatalog.length} Rätseln gelöst',
                       enabled: true,
                       onTap: () async {
                         await Navigator.of(context).push(
@@ -331,8 +331,8 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   ],
                   _HomeAction(
                     icon: Icons.play_arrow_rounded,
-                    title: 'Katalog öffnen',
-                    subtitle: 'Wähle ein Rätsel aus der Sammlung',
+                    title: 'Rätselsammlung',
+                    subtitle: 'Wähle ein handverlesenes Rätsel',
                     enabled: true,
                     onTap: () async {
                       await Navigator.of(context).push(
@@ -346,7 +346,7 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   const SizedBox(height: 12),
                   _HomeAction(
                     icon: Icons.auto_awesome_rounded,
-                    title: 'Freies Rätsel',
+                    title: 'Endlosmodus',
                     subtitle: 'Wähle Rastergröße und Schwierigkeit',
                     enabled: true,
                     onTap: () async {
@@ -379,15 +379,16 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   _HomeAction(
                     icon: Icons.bar_chart_rounded,
                     title: 'Deine Binärpuzzle-Statistik',
-                    subtitle:
-                        '${_catalogCompletedCount(_results)} von ${binaryPuzzleCatalog.length} Katalogrätseln gelöst',
+                      subtitle:
+                        '${_catalogCompletedCount(_results)} von ${binaryPuzzleCatalog.length} Rätseln gelöst',
                     enabled: true,
                     onTap: () async {
                       await Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => StatisticsScreen(
+                            builder: (_) => StatisticsScreen(
                               results: _results,
                               progress: _progress,
+                              gameType: GameType.binairo,
                             ),
                         ),
                       );
@@ -982,7 +983,7 @@ class _GeneratedPuzzleSetupScreenState
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Freies Rätsel')),
+      appBar: AppBar(title: const Text('Endlosmodus')),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -2181,11 +2182,13 @@ class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({
     required this.results,
     required this.progress,
+    this.gameType,
     super.key,
   });
 
   final Map<String, PuzzleResult> results;
   final PlayerProgress progress;
+  final GameType? gameType;
 
   @override
   State<StatisticsScreen> createState() => _StatisticsScreenState();
@@ -2215,10 +2218,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         if (catalogIds.contains(entry.key)) entry.key: entry.value,
     };
     final generatedResults = results.values
-        .where((result) => result.effectiveSource == PuzzleSource.generated)
+        .where((result) =>
+            result.gameType == GameType.binairo &&
+            result.effectiveSource == GameMode.generated)
         .toList(growable: false);
     final dailyResults = results.values
-        .where((result) => result.effectiveSource == PuzzleSource.daily)
+        .where((result) =>
+            result.gameType == GameType.binairo &&
+            result.effectiveSource == GameMode.daily)
         .toList(growable: false);
     final catalogCompleted = catalogResults.length;
     final catalogTotal = binaryPuzzleCatalog.length;
@@ -2248,22 +2255,36 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       _attempts,
       gameType: GameType.hashi,
     );
-    final binairoCompleted = results.values
+    final binairoResults = results.values
         .where((result) => result.gameType == GameType.binairo)
-        .fold<int>(0, (sum, result) => sum + result.completionCount);
+        .toList(growable: false);
+    final binairoCompleted = binairoResults.fold<int>(
+      0,
+      (sum, result) => sum + result.completionCount,
+    );
+    final binairoPlaySeconds = binairoResults.fold<int>(
+      0,
+      (sum, result) => sum + result.totalElapsedSeconds,
+    );
+    final binairoAverageSeconds = binairoCompleted == 0
+        ? 0
+        : binairoPlaySeconds ~/ binairoCompleted;
     final hashiCompleted = results.values
         .where((result) => result.gameType == GameType.hashi)
         .fold<int>(0, (sum, result) => sum + result.completionCount);
-    final hashiCatalogCompleted = results.values
+    final hashiCollectionCompleted = results.values
         .where((result) =>
             result.gameType == GameType.hashi &&
             result.effectiveSource == GameMode.catalog)
         .map((result) => result.puzzleId)
         .toSet()
         .length;
+    final isBinairoDetail = widget.gameType == GameType.binairo;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Statistik')),
+      appBar: AppBar(
+        title: Text(isBinairoDetail ? 'Binairo-Statistik' : 'Statistik'),
+      ),
       body: Center(
         child: ListView(
           padding: const EdgeInsets.all(24),
@@ -2273,136 +2294,121 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          Text(
-                            '$totalCompleted',
-                            style: Theme.of(context)
-                                .textTheme
-                                .displaySmall
-                                ?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text('gelöste Rätsel insgesamt'),
-                        ],
-                      ),
-                    ),
+                  _StatisticsHero(
+                    value: isBinairoDetail ? binairoCompleted : totalCompleted,
+                    label: isBinairoDetail
+                        ? 'Binairo-Rätsel gelöst'
+                        : 'Rätsel insgesamt gelöst',
                   ),
-                  const SizedBox(height: 12),
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.grid_view_rounded),
-                      title: const Text('Katalogrätsel'),
-                      subtitle: Text(
-                        '$catalogCompleted von $catalogTotal gelöst',
-                      ),
-                      trailing: Text(
-                        '${catalogTotal == 0 ? 0 : ((catalogCompleted / catalogTotal) * 100).round()} %',
-                      ),
+                  if (isBinairoDetail) ...[
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.collections_bookmark_outlined,
+                      title: 'Rätselsammlung',
+                      subtitle: '$catalogCompleted von $catalogTotal gelöst',
+                      trailing:
+                          '${((catalogCompleted / catalogTotal) * 100).round()} %',
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.auto_awesome_rounded),
-                      title: const Text('Freie Rätsel'),
-                      subtitle: Text('$generatedCompleted abgeschlossen'),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.all_inclusive_rounded,
+                      title: 'Endlosmodus',
+                      subtitle: '$generatedCompleted abgeschlossen',
                     ),
-                  ),
-                  const SizedBox(height: 12),                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.calendar_today_outlined),
-                      title: const Text('Tagesrätsel'),
-                      subtitle: Text(
-                        dailyCompletedToday
-                            ? 'Heute gelöst · $dailyCompleted insgesamt'
-                            : 'Heute noch offen · $dailyCompleted insgesamt',
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.calendar_today_outlined,
+                      title: 'Tagesrätsel',
+                      subtitle: dailyCompletedToday
+                          ? 'Heute gelöst · $dailyCompleted insgesamt'
+                          : 'Heute noch offen · $dailyCompleted insgesamt',
+                      trailing: '$dailyStreak Tage',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.timer_outlined,
+                      title: 'Spielzeit',
+                      subtitle: _formatLongTime(binairoPlaySeconds),
+                      trailing: binairoCompleted == 0
+                          ? null
+                          : 'Ø ${_formatLongTime(binairoAverageSeconds)}',
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Rätselsammlung',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    for (final difficulty in PuzzleDifficulty.values)
+                      _DifficultyStatistic(
+                        difficulty: difficulty,
+                        results: catalogResults,
                       ),
-                      trailing: Text('$dailyStreak Tage'),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Endlosmodus nach Größe',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.local_fire_department_outlined),
-                      title: Text('${progress.currentStreak} Tage Spielserie'),
-                      subtitle: Text(
-                        progress.completedToday
-                            ? 'Heute gesichert · Beste Serie: ${progress.bestStreak} Tage'
-                            : 'Heute noch ein Rätsel lösen · Beste Serie: ${progress.bestStreak} Tage',
+                    const SizedBox(height: 10),
+                    for (final size in BinaryPuzzleSize.values)
+                      _GeneratedSizeStatistic(
+                        size: size,
+                        results: generatedResults,
                       ),
+                  ] else ...[
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.local_fire_department_outlined,
+                      title: '${progress.currentStreak} Tage Spielserie',
+                      subtitle: progress.completedToday
+                          ? 'Heute gesichert · Beste Serie: ${progress.bestStreak} Tage'
+                          : 'Heute noch ein Rätsel lösen · Beste Serie: ${progress.bestStreak} Tage',
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Card(
-                    child: ListTile(
-                      leading: const Icon(Icons.timer_outlined),
-                      title: const Text('Zeit beim Rätseln'),
-                      subtitle: Text(_formatLongTime(progress.totalPlaySeconds)),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.timer_outlined,
+                      title: 'Gesamte Spielzeit',
+                      subtitle: _formatLongTime(progress.totalPlaySeconds),
                       trailing: totalCompleted == 0
                           ? null
-                          : Text('Ø ${_formatLongTime(averageSeconds)}'),
+                          : 'Ø ${_formatLongTime(averageSeconds)}',
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Spiele',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Das Wichtigste auf einen Blick. Weitere Werte findest du direkt beim jeweiligen Spiel.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                  const SizedBox(height: 10),
-                  _GameStatisticsOverviewCard(
-                    gameType: GameType.binairo,
-                    icon: Icons.grid_view_rounded,
-                    completed: binairoCompleted,
-                    catalogCompleted: catalogCompleted,
-                    catalogTotal: catalogTotal,
-                    endlessCompleted: generatedCompleted,
-                    solvedWithoutHints: binairoStatistics.solvedWithoutHints,
-                  ),
-                  const SizedBox(height: 10),
-                  _GameStatisticsOverviewCard(
-                    gameType: GameType.hashi,
-                    icon: Icons.hub_outlined,
-                    completed: hashiCompleted,
-                    catalogCompleted: hashiCatalogCompleted,
-                    catalogTotal: hashiPuzzleCatalog.length,
-                    endlessCompleted: hashiStatistics.completedForMode(
-                      GameMode.generated,
+                    const SizedBox(height: 24),
+                    Text(
+                      'Deine Spiele',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    solvedWithoutHints: hashiStatistics.solvedWithoutHints,
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Katalog',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 10),
-                  for (final difficulty in PuzzleDifficulty.values)
-                    _DifficultyStatistic(
-                      difficulty: difficulty,
-                      results: catalogResults,
+                    const SizedBox(height: 4),
+                    Text(
+                      'Kompakte Übersicht – ausführliche Werte findest du direkt im jeweiligen Spielbereich.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
                     ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Freie Rätsel nach Größe',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 10),
-                  for (final size in BinaryPuzzleSize.values)
-                    _GeneratedSizeStatistic(
-                      size: size,
-                      results: generatedResults,
+                    const SizedBox(height: 10),
+                    _GameStatisticsOverviewCard(
+                      gameType: GameType.binairo,
+                      icon: Icons.grid_view_rounded,
+                      completed: binairoCompleted,
+                      catalogCompleted: catalogCompleted,
+                      catalogTotal: catalogTotal,
+                      endlessCompleted: generatedCompleted,
+                      solvedWithoutHints: binairoStatistics.solvedWithoutHints,
                     ),
+                    const SizedBox(height: 10),
+                    _GameStatisticsOverviewCard(
+                      gameType: GameType.hashi,
+                      icon: Icons.hub_outlined,
+                      completed: hashiCompleted,
+                      catalogCompleted: hashiCollectionCompleted,
+                      catalogTotal: hashiPuzzleCatalog.length,
+                      endlessCompleted: hashiStatistics.completedForMode(
+                        GameMode.generated,
+                      ),
+                      solvedWithoutHints: hashiStatistics.solvedWithoutHints,
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -2421,6 +2427,56 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
     return '$minutes:${rest.toString().padLeft(2, '0')}';
   }
+}
+
+class _StatisticsHero extends StatelessWidget {
+  const _StatisticsHero({required this.value, required this.label});
+
+  final int value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Text(
+                '$value',
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(label),
+            ],
+          ),
+        ),
+      );
+}
+
+class _StatisticListCard extends StatelessWidget {
+  const _StatisticListCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String? trailing;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: ListTile(
+          leading: Icon(icon),
+          title: Text(title),
+          subtitle: Text(subtitle),
+          trailing: trailing == null ? null : Text(trailing!),
+        ),
+      );
 }
 
 class _GameStatisticsOverviewCard extends StatelessWidget {
@@ -2468,7 +2524,7 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
               Expanded(
                 child: _CompactStatistic(
                   value: '$catalogCompleted/$catalogTotal',
-                  label: 'Katalog',
+                  label: 'Sammlung',
                 ),
               ),
               Expanded(

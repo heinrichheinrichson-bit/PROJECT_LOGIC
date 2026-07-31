@@ -8,7 +8,7 @@ Fortschritts-Paywalls.
 
 ### Binärpuzzle
 
-- handgebaute Katalogrätsel
+- handverlesene Rätselsammlung
 - Generator mit mehreren Größen und Schwierigkeitsstufen
 - Solver und Hinweise
 - Tagesrätsel und Kalender
@@ -22,7 +22,7 @@ Fortschritts-Paywalls.
 - Kreuzungs- und Inselprüfung
 - Undo, Neustart, Timer und Zugzähler
 - direkt antippbare Brücken zum intuitiven Entfernen
-- gespeicherter Katalogfortschritt
+- gespeicherter Sammlungsfortschritt
 
 Weitere geplante Spiele sind Sudoku, Hitori, Slitherlink und Kakuro.
 
