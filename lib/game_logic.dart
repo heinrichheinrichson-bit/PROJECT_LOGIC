@@ -52,6 +52,13 @@ class CellChange {
   final CellValue? after;
 }
 
+class _HistoryEntry {
+  const _HistoryEntry(this.changes, {this.isReset = false});
+
+  final List<CellChange> changes;
+  final bool isReset;
+}
+
 class RuleIssue {
   const RuleIssue(this.message, this.cells);
 
@@ -109,13 +116,15 @@ class BinaryPuzzle {
   final Set<CellPosition> clues;
   final List<List<CellValue?>> board;
 
-  final List<CellChange> _undoStack = [];
-  final List<CellChange> _redoStack = [];
+  final List<_HistoryEntry> _undoStack = [];
+  final List<_HistoryEntry> _redoStack = [];
 
   bool isClue(int row, int column) => clues.contains(CellPosition(row, column));
 
   bool get canUndo => _undoStack.isNotEmpty;
   bool get canRedo => _redoStack.isNotEmpty;
+  bool get nextUndoIsReset => canUndo && _undoStack.last.isReset;
+  bool get nextRedoIsReset => canRedo && _redoStack.last.isReset;
   int get editableCellCount => size * size - clues.length;
   int get filledEditableCellCount {
     var count = 0;
@@ -200,25 +209,37 @@ class BinaryPuzzle {
 
   void undo() {
     if (_undoStack.isEmpty) return;
-    final change = _undoStack.removeLast();
-    board[change.position.row][change.position.column] = change.before;
-    _redoStack.add(change);
+    final entry = _undoStack.removeLast();
+    for (final change in entry.changes.reversed) {
+      board[change.position.row][change.position.column] = change.before;
+    }
+    _redoStack.add(entry);
   }
 
   void redo() {
     if (_redoStack.isEmpty) return;
-    final change = _redoStack.removeLast();
-    board[change.position.row][change.position.column] = change.after;
-    _undoStack.add(change);
+    final entry = _redoStack.removeLast();
+    for (final change in entry.changes) {
+      board[change.position.row][change.position.column] = change.after;
+    }
+    _undoStack.add(entry);
   }
 
   void reset() {
+    final changes = <CellChange>[];
     for (var row = 0; row < size; row++) {
       for (var column = 0; column < size; column++) {
-        board[row][column] = isClue(row, column) ? solution[row][column] : null;
+        if (!isClue(row, column) && board[row][column] != null) {
+          changes.add(CellChange(
+            position: CellPosition(row, column),
+            before: board[row][column],
+            after: null,
+          ));
+          board[row][column] = null;
+        }
       }
     }
-    _undoStack.clear();
+    _undoStack.add(_HistoryEntry(changes, isReset: true));
     _redoStack.clear();
   }
 
@@ -256,7 +277,7 @@ class BinaryPuzzle {
 
   void _apply(CellChange change, {required bool clearRedo}) {
     board[change.position.row][change.position.column] = change.after;
-    _undoStack.add(change);
+    _undoStack.add(_HistoryEntry([change]));
     if (clearRedo) _redoStack.clear();
   }
 

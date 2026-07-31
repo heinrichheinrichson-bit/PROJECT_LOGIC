@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/domain/game_identity.dart';
 import 'core/monetization/hint_economy.dart';
+import 'core/presentation/confirm_restart_dialog.dart';
 import 'app_preferences.dart';
 import 'game_storage.dart';
 
@@ -66,7 +67,6 @@ class HashiPuzzle {
         _ => PuzzleDifficulty.hard,
       };
 }
-
 
 const hashiPreviewBridges = [
   HashiBridge(from: 0, to: 1),
@@ -377,8 +377,8 @@ class HashiGameState {
 
   int bridgeCountAt(int islandIndex) {
     return bridges
-        .where((bridge) =>
-            bridge.from == islandIndex || bridge.to == islandIndex)
+        .where(
+            (bridge) => bridge.from == islandIndex || bridge.to == islandIndex)
         .fold(0, (total, bridge) => total + bridge.count);
   }
 
@@ -476,8 +476,7 @@ class HashiGameState {
     final hint = nextHintBridge;
     if (hint == null) return this;
     final updated = bridges
-        .where((bridge) =>
-            !_sameConnection(bridge, hint.from, hint.to))
+        .where((bridge) => !_sameConnection(bridge, hint.from, hint.to))
         .toList()
       ..add(hint);
     return HashiGameState(puzzle: puzzle, bridges: updated);
@@ -650,7 +649,8 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                         child: LinearProgressIndicator(
                           minHeight: 8,
                           value: _completed.length / hashiPuzzleCatalog.length,
-                          backgroundColor: colors.surface.withValues(alpha: 0.55),
+                          backgroundColor:
+                              colors.surface.withValues(alpha: 0.55),
                         ),
                       ),
                     ],
@@ -888,7 +888,6 @@ class HashiTutorialScreen extends StatelessWidget {
   }
 }
 
-
 enum _HashiDeveloperAction {
   almostSolved,
   solve,
@@ -917,6 +916,10 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   String? _actionMessage;
   int _elapsedSeconds = 0;
   int _moves = 0;
+  bool _restartUndoPending = false;
+  bool _restartRedoPending = false;
+  int _movesBeforeRestart = 0;
+  int _elapsedBeforeRestart = 0;
   bool _completionShown = false;
   bool _showMistakes = false;
   HintBudget _hintBudget = const HintBudget();
@@ -972,6 +975,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
       if (!identical(previous, next)) {
         _history.add(previous);
         _redoHistory.clear();
+        _restartRedoPending = false;
         _game = next;
         _moves++;
       }
@@ -990,7 +994,6 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
 
     await _showCompletionIfSolved();
   }
-
 
   Future<void> _showCompletionIfSolved() async {
     if (!_game.isSolved || _completionShown) return;
@@ -1123,12 +1126,11 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
         _showActionMessage('Fehlerzustand erzeugt');
         return;
       case _HashiDeveloperAction.reset:
-        _restart();
+        await _restart(confirm: false);
         _showActionMessage('Testzustand gelöscht');
         return;
     }
   }
-
 
   void _showActionMessage(String message) {
     _messageTimer?.cancel();
@@ -1145,6 +1147,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
     setState(() {
       _history.add(previous);
       _redoHistory.clear();
+      _restartRedoPending = false;
       _game = next;
       _moves++;
       _selectedIsland = null;
@@ -1160,25 +1163,41 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
 
   void _undo() {
     if (_history.isEmpty) return;
+    final restoresRestart = _restartUndoPending && _history.length == 1;
     setState(() {
       _redoHistory.add(_game);
       _game = _history.removeLast();
       _selectedIsland = null;
       _actionMessage = null;
       _completionShown = false;
-      if (_moves > 0) _moves--;
+      if (restoresRestart) {
+        _moves = _movesBeforeRestart;
+        _elapsedSeconds = _elapsedBeforeRestart;
+        _restartUndoPending = false;
+        _restartRedoPending = true;
+      } else if (_moves > 0) {
+        _moves--;
+      }
     });
   }
 
   void _redo() {
     if (_redoHistory.isEmpty) return;
+    final reappliesRestart = _restartRedoPending && _redoHistory.length == 1;
     setState(() {
       _history.add(_game);
       _game = _redoHistory.removeLast();
       _selectedIsland = null;
       _actionMessage = null;
       _completionShown = false;
-      _moves++;
+      if (reappliesRestart) {
+        _moves = 0;
+        _elapsedSeconds = 0;
+        _restartUndoPending = true;
+        _restartRedoPending = false;
+      } else {
+        _moves++;
+      }
     });
     _showCompletionIfSolved();
   }
@@ -1201,6 +1220,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
     setState(() {
       _history.add(_game);
       _redoHistory.clear();
+      _restartRedoPending = false;
       _game = next;
       _selectedIsland = null;
       _moves++;
@@ -1252,14 +1272,22 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
     if (!mounted) return;
     setState(() => _hintBudget = _hintBudget.earnRewardedHint());
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ein zusätzlicher Tipp wurde freigeschaltet.')),
+      const SnackBar(
+          content: Text('Ein zusätzlicher Tipp wurde freigeschaltet.')),
     );
   }
 
-  void _restart() {
+  Future<void> _restart({bool confirm = true}) async {
+    if (confirm && (!await confirmPuzzleRestart(context) || !mounted)) return;
     setState(() {
+      _movesBeforeRestart = _moves;
+      _elapsedBeforeRestart = _elapsedSeconds;
+      _history
+        ..clear()
+        ..add(_game);
+      _restartUndoPending = true;
+      _restartRedoPending = false;
       _game = HashiGameState(puzzle: widget.puzzle);
-      _history.clear();
       _redoHistory.clear();
       _selectedIsland = null;
       _actionMessage = null;
@@ -1283,8 +1311,10 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
     final fulfilledIslands = List<int>.generate(
       _game.puzzle.islands.length,
       (index) => index,
-    ).where((index) =>
-        bridgeCounts[index] == _game.puzzle.islands[index].bridges).length;
+    )
+        .where((index) =>
+            bridgeCounts[index] == _game.puzzle.islands[index].bridges)
+        .length;
     final instruction = _actionMessage ??
         (_selectedIsland == null
             ? 'Wähle eine Insel.'
@@ -1493,9 +1523,10 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
                         Expanded(
                           child: Text(
                             '1× verbinden, 2× doppeln, 3× entfernen. Tipp, Undo, Redo und optionale Fehleranzeige helfen beim Lösen.',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: colors.onSurfaceVariant,
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: colors.onSurfaceVariant,
+                                    ),
                           ),
                         ),
                       ],
@@ -1663,7 +1694,8 @@ class HashiBoard extends StatelessWidget {
             (point.dy - start.dy) * segment.dy) /
         lengthSquared;
     final t = projection.clamp(0.0, 1.0).toDouble();
-    final nearest = Offset(start.dx + segment.dx * t, start.dy + segment.dy * t);
+    final nearest =
+        Offset(start.dx + segment.dx * t, start.dy + segment.dy * t);
     return (point - nearest).distance;
   }
 
@@ -1785,8 +1817,7 @@ class _HashiBoardPainter extends CustomPainter {
     final bridgeWidth = (cell * 0.075).clamp(2.4, 5.2).toDouble();
     final bridgeUnderlay = Paint()
       ..color = colorScheme.surfaceContainerLowest
-      ..strokeWidth = bridgeWidth +
-          (cell * 0.075).clamp(2.0, 4.5).toDouble()
+      ..strokeWidth = bridgeWidth + (cell * 0.075).clamp(2.0, 4.5).toDouble()
       ..strokeCap = StrokeCap.round;
     void drawBridgeLine(Offset start, Offset end, Color color) {
       final bridgePaint = Paint()

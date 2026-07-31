@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 
 import 'app_preferences.dart';
 import 'core/monetization/hint_economy.dart';
+import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/statistics/game_statistics.dart';
 import 'core/statistics/puzzle_attempt.dart';
 import 'daily_challenge.dart';
@@ -37,20 +38,20 @@ class ProjectLogicApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           title: 'Project Logic',
           themeMode: preferences.themePreference.themeMode,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF365A7A),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF83B8E3),
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF365A7A),
+              brightness: Brightness.light,
+            ),
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF83B8E3),
+              brightness: Brightness.dark,
+            ),
+            useMaterial3: true,
+          ),
           home: const HomeScreen(),
         ),
       ),
@@ -153,7 +154,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     _HomeAction(
                       icon: Icons.hub_rounded,
                       title: 'Hashi',
-                      subtitle: 'Entdecke Inseln, Brücken und das neue Spielgefühl',
+                      subtitle:
+                          'Entdecke Inseln, Brücken und das neue Spielgefühl',
                       enabled: true,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
@@ -379,17 +381,17 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   _HomeAction(
                     icon: Icons.bar_chart_rounded,
                     title: 'Deine Binärpuzzle-Statistik',
-                      subtitle:
+                    subtitle:
                         '${_catalogCompletedCount(_results)} von ${binaryPuzzleCatalog.length} Rätseln gelöst',
                     enabled: true,
                     onTap: () async {
                       await Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                            builder: (_) => StatisticsScreen(
-                              results: _results,
-                              progress: _progress,
-                              gameType: GameType.binairo,
-                            ),
+                          builder: (_) => StatisticsScreen(
+                            results: _results,
+                            progress: _progress,
+                            gameType: GameType.binairo,
+                          ),
                         ),
                       );
                       await _refresh();
@@ -404,7 +406,6 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
     );
   }
 }
-
 
 class DailyArchiveScreen extends StatefulWidget {
   const DailyArchiveScreen({super.key});
@@ -480,7 +481,8 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
                                       todayCompleted
                                           ? Icons.check_circle_rounded
                                           : Icons.today_rounded,
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color:
+                                          Theme.of(context).colorScheme.primary,
                                     ),
                                     const SizedBox(width: 10),
                                     Expanded(
@@ -491,7 +493,8 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleLarge
-                                            ?.copyWith(fontWeight: FontWeight.w700),
+                                            ?.copyWith(
+                                                fontWeight: FontWeight.w700),
                                       ),
                                     ),
                                   ],
@@ -527,7 +530,8 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
                         Text(
                           'Vergangene Rätsel können nachgeholt werden. Das füllt den Kalender, repariert aber keinen verlorenen Spiel-Streak.',
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -656,7 +660,6 @@ class _CalendarLegend extends StatelessWidget {
       );
 }
 
-
 String _formatHomeTime(int seconds) {
   final minutes = seconds ~/ 60;
   final rest = seconds % 60;
@@ -692,17 +695,20 @@ class _StreakCard extends StatelessWidget {
                   ? 'Löse heute ein Rätsel und starte deine Serie.'
                   : 'Löse heute ein Rätsel, damit deine Serie weiterläuft.',
         ),
-        trailing: secured
-            ? const Icon(Icons.check_circle_outline_rounded)
-            : null,
+        trailing:
+            secured ? const Icon(Icons.check_circle_outline_rounded) : null,
       ),
     );
   }
 }
 
 class _HomeAction extends StatelessWidget {
-  const _HomeAction({required this.icon, required this.title, required this.subtitle,
-      this.enabled = false, this.onTap});
+  const _HomeAction(
+      {required this.icon,
+      required this.title,
+      required this.subtitle,
+      this.enabled = false,
+      this.onTap});
   final IconData icon;
   final String title;
   final String subtitle;
@@ -722,13 +728,23 @@ class _HomeAction extends StatelessWidget {
           child: Row(children: [
             Icon(icon, size: 30),
             const SizedBox(width: 16),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 3),
-              Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
-            ])),
-            if (enabled) const Icon(Icons.arrow_forward_ios_rounded, size: 17)
-            else const Text('BALD', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+            Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(title,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 3),
+                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                ])),
+            if (enabled)
+              const Icon(Icons.arrow_forward_ios_rounded, size: 17)
+            else
+              const Text('BALD',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
           ]),
         ),
       ),
@@ -748,21 +764,35 @@ class GameSelectionScreen extends StatelessWidget {
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text('Welches Spiel?', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 20),
-              _GameChoice(
-                icon: Icons.grid_4x4_rounded,
-                title: 'Binärpuzzle',
-                subtitle: 'Balance aus 0 und 1',
-                enabled: true,
-                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DifficultyScreen())),
-              ),
-              const SizedBox(height: 12),
-              const _GameChoice(icon: Icons.filter_none_rounded, title: 'Hitori', subtitle: 'Zahlen schwärzen und verbinden'),
-              const SizedBox(height: 12),
-              const _GameChoice(icon: Icons.hub_outlined, title: 'Hashi', subtitle: 'Inseln mit Brücken verbinden'),
-            ]),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('Welches Spiel?',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 20),
+                  _GameChoice(
+                    icon: Icons.grid_4x4_rounded,
+                    title: 'Binärpuzzle',
+                    subtitle: 'Balance aus 0 und 1',
+                    enabled: true,
+                    onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                            builder: (_) => const DifficultyScreen())),
+                  ),
+                  const SizedBox(height: 12),
+                  const _GameChoice(
+                      icon: Icons.filter_none_rounded,
+                      title: 'Hitori',
+                      subtitle: 'Zahlen schwärzen und verbinden'),
+                  const SizedBox(height: 12),
+                  const _GameChoice(
+                      icon: Icons.hub_outlined,
+                      title: 'Hashi',
+                      subtitle: 'Inseln mit Brücken verbinden'),
+                ]),
           ),
         ),
       ),
@@ -771,8 +801,12 @@ class GameSelectionScreen extends StatelessWidget {
 }
 
 class _GameChoice extends StatelessWidget {
-  const _GameChoice({required this.icon, required this.title, required this.subtitle,
-      this.enabled = false, this.onTap});
+  const _GameChoice(
+      {required this.icon,
+      required this.title,
+      required this.subtitle,
+      this.enabled = false,
+      this.onTap});
   final IconData icon;
   final String title;
   final String subtitle;
@@ -783,11 +817,15 @@ class _GameChoice extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         leading: Icon(icon, size: 32),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
         subtitle: Text(subtitle),
-        trailing: enabled ? const Icon(Icons.arrow_forward_ios_rounded, size: 17) : const Text('IN ARBEIT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+        trailing: enabled
+            ? const Icon(Icons.arrow_forward_ios_rounded, size: 17)
+            : const Text('IN ARBEIT',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
         onTap: enabled ? onTap : null,
       ),
     );
@@ -809,24 +847,40 @@ class DifficultyScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Schwierigkeit', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                Text('Schwierigkeit',
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
-                Text('Wähle die Schwierigkeit, die heute zu dir passt.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                Text('Wähle die Schwierigkeit, die heute zu dir passt.',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 const SizedBox(height: 20),
                 for (final difficulty in PuzzleDifficulty.values) ...[
                   Card(
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      leading: Icon(switch (difficulty) {
-                        PuzzleDifficulty.easy => Icons.eco_outlined,
-                        PuzzleDifficulty.medium => Icons.psychology_alt_outlined,
-                        PuzzleDifficulty.hard => Icons.local_fire_department_outlined,
-                      }, size: 32),
-                      title: Text(difficulty.label, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      subtitle: Text('${difficulty.description} · ${puzzlesFor(difficulty).length} Rätsel'),
-                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 17),
-                      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
-                        builder: (_) => PuzzleSelectionScreen(difficulty: difficulty),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 10),
+                      leading: Icon(
+                          switch (difficulty) {
+                            PuzzleDifficulty.easy => Icons.eco_outlined,
+                            PuzzleDifficulty.medium =>
+                              Icons.psychology_alt_outlined,
+                            PuzzleDifficulty.hard =>
+                              Icons.local_fire_department_outlined,
+                          },
+                          size: 32),
+                      title: Text(difficulty.label,
+                          style: const TextStyle(fontWeight: FontWeight.w700)),
+                      subtitle: Text(
+                          '${difficulty.description} · ${puzzlesFor(difficulty).length} Rätsel'),
+                      trailing:
+                          const Icon(Icons.arrow_forward_ios_rounded, size: 17),
+                      onTap: () =>
+                          Navigator.of(context).push(MaterialPageRoute<void>(
+                        builder: (_) =>
+                            PuzzleSelectionScreen(difficulty: difficulty),
                       )),
                     ),
                   ),
@@ -905,8 +959,7 @@ class _PuzzleSelectionScreenState extends State<PuzzleSelectionScreen> {
                 ),
                 onTap: () async {
                   await Navigator.of(context).push(MaterialPageRoute<void>(
-                    builder: (_) =>
-                        BinaryPuzzleScreen(definition: definition),
+                    builder: (_) => BinaryPuzzleScreen(definition: definition),
                   ));
                   await _loadResults();
                 },
@@ -918,7 +971,6 @@ class _PuzzleSelectionScreenState extends State<PuzzleSelectionScreen> {
     );
   }
 }
-
 
 class GeneratedPuzzleSetupScreen extends StatefulWidget {
   const GeneratedPuzzleSetupScreen({super.key});
@@ -962,7 +1014,7 @@ class _GeneratedPuzzleSetupScreenState
             storeDefinition: true,
             source: PuzzleSource.generated,
             titleOverride:
-                '${_difficulty.label} · Generiert ${_size.label}',
+                '${_difficulty.label} · Zufallsrätsel ${_size.label}',
           ),
         ),
       );
@@ -1021,8 +1073,7 @@ class _GeneratedPuzzleSetupScreenState
                   selected: {_size},
                   onSelectionChanged: _isGenerating
                       ? null
-                      : (selection) =>
-                          setState(() => _size = selection.first),
+                      : (selection) => setState(() => _size = selection.first),
                 ),
                 const SizedBox(height: 24),
                 Text('Schwierigkeit',
@@ -1123,6 +1174,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   bool showIssues = true;
   late final Timer _timer;
   int elapsedSeconds = 0;
+  int? _elapsedBeforeReset;
   bool _completionRecorded = false;
   CellPosition? _selectedCell;
   CellPosition? _hintCell;
@@ -1201,124 +1253,124 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
             widget.titleOverride ??
                 '${widget.definition.difficulty.label} · ${widget.definition.displayName}',
           ),
-        actions: [
-          if (kDebugMode)
-            PopupMenuButton<_DeveloperAction>(
-              tooltip: 'Testwerkzeuge',
-              icon: const Icon(Icons.bug_report_outlined),
-              onSelected: _runDeveloperAction,
-              itemBuilder: (context) => const [
-                PopupMenuItem(
-                  value: _DeveloperAction.almostSolved,
-                  child: Text('Bis auf 1 Feld lösen'),
-                ),
-                PopupMenuItem(
-                  value: _DeveloperAction.solve,
-                  child: Text('Sofort lösen'),
-                ),
-                PopupMenuItem(
-                  value: _DeveloperAction.error,
-                  child: Text('Regelfehler erzeugen'),
-                ),
-                PopupMenuItem(
-                  value: _DeveloperAction.reset,
-                  child: Text('Testzustand löschen'),
-                ),
-              ],
-            ),
-          IconButton(
-            tooltip: hintLabel,
-            onPressed: puzzle.isSolved ? null : _showHint,
-            icon: const Icon(Icons.lightbulb_outline_rounded),
-          ),
-          IconButton(
-            tooltip: 'Zurücksetzen',
-            onPressed: _reset,
-            icon: const Icon(Icons.restart_alt),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _GameInfoBar(
-                    elapsedSeconds: elapsedSeconds,
-                    filled: puzzle.filledEditableCellCount,
-                    total: puzzle.editableCellCount,
-                    progress: puzzle.progress,
+          actions: [
+            if (kDebugMode)
+              PopupMenuButton<_DeveloperAction>(
+                tooltip: 'Testwerkzeuge',
+                icon: const Icon(Icons.bug_report_outlined),
+                onSelected: _runDeveloperAction,
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: _DeveloperAction.almostSolved,
+                    child: Text('Bis auf 1 Feld lösen'),
                   ),
-                  const SizedBox(height: 12),
-                  _StatusCard(
-                    isSolved: puzzle.isSolved,
-                    isComplete: puzzle.isComplete,
-                    issueCount: issues.length,
+                  PopupMenuItem(
+                    value: _DeveloperAction.solve,
+                    child: Text('Sofort lösen'),
                   ),
-                  const SizedBox(height: 18),
-                  AspectRatio(
-                    aspectRatio: 1,
-                    child: _PuzzleBoard(
-                      puzzle: puzzle,
-                      issueCells: showIssues ? issueCells : const {},
-                      selectedCell: _selectedCell,
-                      hintCell: _hintCell,
-                      hintRelatedCells: _hintRelatedCells,
-                      animationsEnabled:
-                          PreferencesScope.of(context).animationsEnabled,
-                      onCellPressed: _cycleCell,
-                    ),
+                  PopupMenuItem(
+                    value: _DeveloperAction.error,
+                    child: Text('Regelfehler erzeugen'),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.tonalIcon(
-                          onPressed: puzzle.canUndo ? _undo : null,
-                          icon: const Icon(Icons.undo),
-                          label: const Text('Rückgängig'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton.tonalIcon(
-                          onPressed: puzzle.canRedo ? _redo : null,
-                          icon: const Icon(Icons.redo),
-                          label: const Text('Wiederholen'),
-                        ),
-                      ),
-                    ],
+                  PopupMenuItem(
+                    value: _DeveloperAction.reset,
+                    child: Text('Testzustand löschen'),
                   ),
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: puzzle.isSolved ? null : _showHint,
-                    icon: const Icon(Icons.lightbulb_outline_rounded),
-                    label: Text(hintLabel),
-                  ),
-                  const SizedBox(height: 12),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Regelfehler markieren'),
-                    subtitle: const Text(
-                      'Markiert direkte Widersprüche, ohne die Lösung zu verraten.',
-                    ),
-                    value: showIssues,
-                    onChanged: (value) {
-                      setState(() => showIssues = value);
-                      PreferencesScope.of(context).setShowRuleIssues(value);
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  _RulesPanel(issues: showIssues ? issues : const []),
                 ],
+              ),
+            IconButton(
+              tooltip: hintLabel,
+              onPressed: puzzle.isSolved ? null : _showHint,
+              icon: const Icon(Icons.lightbulb_outline_rounded),
+            ),
+            IconButton(
+              tooltip: 'Zurücksetzen',
+              onPressed: _reset,
+              icon: const Icon(Icons.restart_alt),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _GameInfoBar(
+                      elapsedSeconds: elapsedSeconds,
+                      filled: puzzle.filledEditableCellCount,
+                      total: puzzle.editableCellCount,
+                      progress: puzzle.progress,
+                    ),
+                    const SizedBox(height: 12),
+                    _StatusCard(
+                      isSolved: puzzle.isSolved,
+                      isComplete: puzzle.isComplete,
+                      issueCount: issues.length,
+                    ),
+                    const SizedBox(height: 18),
+                    AspectRatio(
+                      aspectRatio: 1,
+                      child: _PuzzleBoard(
+                        puzzle: puzzle,
+                        issueCells: showIssues ? issueCells : const {},
+                        selectedCell: _selectedCell,
+                        hintCell: _hintCell,
+                        hintRelatedCells: _hintRelatedCells,
+                        animationsEnabled:
+                            PreferencesScope.of(context).animationsEnabled,
+                        onCellPressed: _cycleCell,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.tonalIcon(
+                            onPressed: puzzle.canUndo ? _undo : null,
+                            icon: const Icon(Icons.undo),
+                            label: const Text('Rückgängig'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton.tonalIcon(
+                            onPressed: puzzle.canRedo ? _redo : null,
+                            icon: const Icon(Icons.redo),
+                            label: const Text('Wiederholen'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: puzzle.isSolved ? null : _showHint,
+                      icon: const Icon(Icons.lightbulb_outline_rounded),
+                      label: Text(hintLabel),
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Regelfehler markieren'),
+                      subtitle: const Text(
+                        'Markiert direkte Widersprüche, ohne die Lösung zu verraten.',
+                      ),
+                      value: showIssues,
+                      onChanged: (value) {
+                        setState(() => showIssues = value);
+                        PreferencesScope.of(context).setShowRuleIssues(value);
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    _RulesPanel(issues: showIssues ? issues : const []),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
         ),
       ),
     );
@@ -1484,7 +1536,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
     if (!mounted) return;
     setState(() => _hintBudget = _hintBudget.earnRewardedHint());
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ein zusätzlicher Hinweis wurde freigeschaltet.')),
+      const SnackBar(
+          content: Text('Ein zusätzlicher Hinweis wurde freigeschaltet.')),
     );
   }
 
@@ -1540,59 +1593,59 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
           final animations =
               PreferencesScope.of(this.context).animationsEnabled;
           return AlertDialog(
-          icon: TweenAnimationBuilder<double>(
-            duration: Duration(milliseconds: animations ? 550 : 0),
-            tween: Tween(begin: 0.6, end: 1),
-            curve: Curves.elasticOut,
-            builder: (context, value, child) =>
-                Transform.scale(scale: value, child: child),
-            child: const Icon(Icons.emoji_events_outlined, size: 42),
-          ),
-          title: Text(widget.source == PuzzleSource.daily
-              ? 'Tagesrätsel geschafft!'
-              : 'Gelöst!'),
-          content: Text(widget.source == PuzzleSource.daily
-              ? 'Deine Zeit: ${_formatTime(elapsedSeconds)}. Die Spielserie ist für heute gesichert. Morgen wartet ein neues Rätsel.'
-              : 'Alle Regeln sind erfüllt. Zeit: ${_formatTime(elapsedSeconds)}.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Brett ansehen'),
+            icon: TweenAnimationBuilder<double>(
+              duration: Duration(milliseconds: animations ? 550 : 0),
+              tween: Tween(begin: 0.6, end: 1),
+              curve: Curves.elasticOut,
+              builder: (context, value, child) =>
+                  Transform.scale(scale: value, child: child),
+              child: const Icon(Icons.emoji_events_outlined, size: 42),
             ),
-            if (widget.source == PuzzleSource.generated)
-              FilledButton.tonalIcon(
+            title: Text(widget.source == PuzzleSource.daily
+                ? 'Tagesrätsel geschafft!'
+                : 'Gelöst!'),
+            content: Text(widget.source == PuzzleSource.daily
+                ? 'Deine Zeit: ${_formatTime(elapsedSeconds)}. Die Spielserie ist für heute gesichert. Morgen wartet ein neues Rätsel.'
+                : 'Alle Regeln sind erfüllt. Zeit: ${_formatTime(elapsedSeconds)}.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Brett ansehen'),
+              ),
+              if (widget.source == PuzzleSource.generated)
+                FilledButton.tonalIcon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _startNextGeneratedPuzzle();
+                  },
+                  icon: const Icon(Icons.auto_awesome_rounded),
+                  label: const Text('Noch eins'),
+                )
+              else if (widget.source == PuzzleSource.catalog)
+                FilledButton.tonal(
+                  onPressed: _hasNextPuzzle
+                      ? () {
+                          Navigator.of(context).pop();
+                          Navigator.of(this.context).pushReplacement(
+                            MaterialPageRoute<void>(
+                              builder: (_) => BinaryPuzzleScreen(
+                                definition: _nextPuzzle!,
+                              ),
+                            ),
+                          );
+                        }
+                      : null,
+                  child: const Text('Weiter zum nächsten'),
+                ),
+              FilledButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  _startNextGeneratedPuzzle();
+                  _reset();
                 },
-                icon: const Icon(Icons.auto_awesome_rounded),
-                label: const Text('Noch eins'),
-              )
-            else if (widget.source == PuzzleSource.catalog)
-              FilledButton.tonal(
-                onPressed: _hasNextPuzzle
-                    ? () {
-                        Navigator.of(context).pop();
-                        Navigator.of(this.context).pushReplacement(
-                          MaterialPageRoute<void>(
-                            builder: (_) => BinaryPuzzleScreen(
-                              definition: _nextPuzzle!,
-                            ),
-                          ),
-                        );
-                      }
-                    : null,
-                child: const Text('Weiter zum nächsten'),
+                child: const Text('Noch einmal spielen'),
               ),
-            FilledButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _reset();
-              },
-              child: const Text('Noch einmal spielen'),
-            ),
-          ],
-        );
+            ],
+          );
         },
       );
     });
@@ -1637,8 +1690,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
             definition: generated.definition,
             storeDefinition: true,
             source: PuzzleSource.generated,
-            titleOverride:
-                '${difficulty.label} · Generiert $size × $size',
+            titleOverride: '${difficulty.label} · Zufallsrätsel $size × $size',
           ),
         ),
       );
@@ -1647,15 +1699,20 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Das Rätsel konnte gerade nicht erstellt werden: $error'),
+          content:
+              Text('Das Rätsel konnte gerade nicht erstellt werden: $error'),
         ),
       );
     }
   }
 
   void _undo() {
+    final restoresReset = puzzle.nextUndoIsReset;
     setState(() {
       puzzle.undo();
+      if (restoresReset && _elapsedBeforeReset != null) {
+        elapsedSeconds = _elapsedBeforeReset!;
+      }
       _hintCell = null;
       _hintRelatedCells = const {};
     });
@@ -1663,8 +1720,10 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   }
 
   void _redo() {
+    final reappliesReset = puzzle.nextRedoIsReset;
     setState(() {
       puzzle.redo();
+      if (reappliesReset) elapsedSeconds = 0;
       _hintCell = null;
       _hintRelatedCells = const {};
     });
@@ -1690,8 +1749,10 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
     return '$minutes:${rest.toString().padLeft(2, '0')}';
   }
 
-  void _reset() {
+  Future<void> _reset() async {
+    if (!await confirmPuzzleRestart(context) || !mounted) return;
     setState(() {
+      _elapsedBeforeReset = elapsedSeconds;
       puzzle.reset();
       elapsedSeconds = 0;
       _completionRecorded = false;
@@ -1757,8 +1818,6 @@ class _GameInfoBar extends StatelessWidget {
     );
   }
 }
-
-
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -1919,7 +1978,8 @@ class SettingsScreen extends StatelessWidget {
     await GameStorage().clearAllProgress();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Deine gespeicherten Daten wurden gelöscht.')),
+      const SnackBar(
+          content: Text('Deine gespeicherten Daten wurden gelöscht.')),
     );
   }
 }
@@ -1948,8 +2008,6 @@ int _dailyStreak(List<PuzzleResult> results, {DateTime? now}) {
   }
   return streak;
 }
-
-
 
 class PlayerProfileScreen extends StatelessWidget {
   const PlayerProfileScreen({
@@ -2244,9 +2302,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final totalCompleted = progress.totalCompleted > resultCompletionCount
         ? progress.totalCompleted
         : resultCompletionCount;
-    final averageSeconds = totalCompleted == 0
-        ? 0
-        : progress.totalPlaySeconds ~/ totalCompleted;
+    final averageSeconds =
+        totalCompleted == 0 ? 0 : progress.totalPlaySeconds ~/ totalCompleted;
     final binairoStatistics = GameStatistics.fromAttempts(
       _attempts,
       gameType: GameType.binairo,
@@ -2266,9 +2323,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       0,
       (sum, result) => sum + result.totalElapsedSeconds,
     );
-    final binairoAverageSeconds = binairoCompleted == 0
-        ? 0
-        : binairoPlaySeconds ~/ binairoCompleted;
+    final binairoAverageSeconds =
+        binairoCompleted == 0 ? 0 : binairoPlaySeconds ~/ binairoCompleted;
     final hashiCompleted = results.values
         .where((result) => result.gameType == GameType.hashi)
         .fold<int>(0, (sum, result) => sum + result.completionCount);
@@ -2312,7 +2368,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     const SizedBox(height: 12),
                     _StatisticListCard(
                       icon: Icons.all_inclusive_rounded,
-                      title: 'Generierte Rätsel',
+                      title: 'Zufallsrätsel',
                       subtitle: '$generatedCompleted abgeschlossen',
                     ),
                     const SizedBox(height: 12),
@@ -2346,7 +2402,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       ),
                     const SizedBox(height: 24),
                     Text(
-                      'Generierte Rätsel nach Größe',
+                      'Zufallsrätsel nach Größe',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 10),
@@ -2530,7 +2586,7 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
               Expanded(
                 child: _CompactStatistic(
                   value: '$endlessCompleted',
-                  label: 'Generiert',
+                  label: 'Zufallsrätsel',
                 ),
               ),
               Expanded(
@@ -2722,7 +2778,8 @@ class _PuzzleBoard extends StatelessWidget {
                 (selectedCell!.row == row || selectedCell!.column == column);
             final position = CellPosition(row, column);
             final isHint = hintCell == position;
-            final isHintRelated = hintRelatedCells.contains(position) && !isHint;
+            final isHintRelated =
+                hintRelatedCells.contains(position) && !isHint;
 
             return _PuzzleCell(
               value: value,
@@ -2801,8 +2858,8 @@ class _PuzzleCell extends StatelessWidget {
               : isHintRelated && !hasIssue
                   ? colors.secondaryContainer.withValues(alpha: 0.55)
                   : isRelated && value == null && !hasIssue
-                  ? colors.surfaceContainerHigh
-                  : background,
+                      ? colors.surfaceContainerHigh
+                      : background,
           border: Border.all(
             color: isSelected || isHint
                 ? colors.primary
@@ -2822,8 +2879,7 @@ class _PuzzleCell extends StatelessWidget {
             onTap: onPressed,
             child: Center(
               child: AnimatedSwitcher(
-                duration:
-                    Duration(milliseconds: animationsEnabled ? 140 : 0),
+                duration: Duration(milliseconds: animationsEnabled ? 140 : 0),
                 transitionBuilder: (child, animation) =>
                     ScaleTransition(scale: animation, child: child),
                 child: Text(
@@ -2831,8 +2887,7 @@ class _PuzzleCell extends StatelessWidget {
                   key: ValueKey(value),
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         color: foreground,
-                        fontWeight:
-                            clue ? FontWeight.w800 : FontWeight.w700,
+                        fontWeight: clue ? FontWeight.w800 : FontWeight.w700,
                       ),
                 ),
               ),
@@ -2917,9 +2972,12 @@ class _RulesPanel extends StatelessWidget {
       title: const Text('So funktioniert es'),
       childrenPadding: const EdgeInsets.only(bottom: 12),
       children: [
-        const _RuleLine('In jeder Reihe und Spalte stehen gleich viele 0 und 1.'),
-        const _RuleLine('Drei gleiche Zahlen dürfen nie direkt aufeinanderfolgen.'),
-        const _RuleLine('Keine zwei fertigen Reihen oder Spalten dürfen identisch sein.'),
+        const _RuleLine(
+            'In jeder Reihe und Spalte stehen gleich viele 0 und 1.'),
+        const _RuleLine(
+            'Drei gleiche Zahlen dürfen nie direkt aufeinanderfolgen.'),
+        const _RuleLine(
+            'Keine zwei fertigen Reihen oder Spalten dürfen identisch sein.'),
         if (issues.isNotEmpty) ...[
           const Divider(height: 24),
           for (final issue in issues)

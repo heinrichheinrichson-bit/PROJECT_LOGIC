@@ -34,6 +34,33 @@ void main() {
       expect(puzzle.board[position.row][position.column], CellValue.one);
     });
 
+    test('reset can be undone and redone as one action', () {
+      final puzzle = binaryPuzzleCatalog.first.createPuzzle();
+      final editable = <CellPosition>[];
+      for (var row = 0; row < puzzle.size; row++) {
+        for (var column = 0; column < puzzle.size; column++) {
+          if (!puzzle.isClue(row, column)) {
+            editable.add(CellPosition(row, column));
+          }
+        }
+      }
+
+      puzzle.setCell(editable[0].row, editable[0].column, CellValue.zero);
+      puzzle.setCell(editable[1].row, editable[1].column, CellValue.one);
+      puzzle.reset();
+
+      expect(puzzle.nextUndoIsReset, isTrue);
+      expect(puzzle.filledEditableCellCount, 0);
+
+      puzzle.undo();
+      expect(puzzle.board[editable[0].row][editable[0].column], CellValue.zero);
+      expect(puzzle.board[editable[1].row][editable[1].column], CellValue.one);
+      expect(puzzle.nextRedoIsReset, isTrue);
+
+      puzzle.redo();
+      expect(puzzle.filledEditableCellCount, 0);
+    });
+
     test('does not change clue cells', () {
       final puzzle = binaryPuzzleCatalog.first.createPuzzle();
       const clue = CellPosition(0, 0);
@@ -104,7 +131,6 @@ void main() {
     });
   });
 
-
   test('editable values can be exported and restored', () {
     final definition = binaryPuzzleCatalog.first;
     final first = definition.createPuzzle();
@@ -137,8 +163,6 @@ void main() {
     );
   });
 
-
-
   test('setCell records a reversible hint move', () {
     final puzzle = binaryPuzzleCatalog.first.createPuzzle();
     CellPosition? editable;
@@ -159,5 +183,4 @@ void main() {
     puzzle.undo();
     expect(puzzle.board[editable.row][editable.column], isNull);
   });
-
 }
