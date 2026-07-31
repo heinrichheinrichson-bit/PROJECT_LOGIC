@@ -1,3 +1,18 @@
+# Changelog
+
+## v0.8.6 – Hashi-Katalog erweitert
+
+### Added
+- Sechs neue handgebaute Hashi-Rätsel; der Katalog enthält jetzt zwölf Rätsel.
+- Schwierigkeitsfilter für leichte, mittlere und schwere Rätsel.
+- Fortschrittsbalken im Hashi-Hub und im Rätselkatalog.
+- Direkter Einstieg in das nächste ungelöste Rätsel.
+- Zusätzlicher Test für eindeutige Rätsel-IDs.
+
+### Changed
+- Der Hashi-Katalog zeigt den Gesamtfortschritt kompakter und deutlicher.
+- Paketversion auf 0.8.6+34 erhöht.
+
 ## v0.8.5 – Hashi Premium Polish
 
 ### Changed

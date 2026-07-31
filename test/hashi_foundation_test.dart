@@ -74,8 +74,15 @@ void main() {
     expect(game.isSolved, isTrue);
   });
 
+
+  test('catalog puzzle ids are unique', () {
+    final ids = hashiPuzzleCatalog.map((puzzle) => puzzle.id).toSet();
+
+    expect(ids, hasLength(hashiPuzzleCatalog.length));
+  });
+
   test('all catalog solutions satisfy numbers and connectivity', () {
-    expect(hashiPuzzleCatalog, hasLength(6));
+    expect(hashiPuzzleCatalog, hasLength(12));
     for (final puzzle in hashiPuzzleCatalog) {
       final game = HashiGameState(puzzle: puzzle, bridges: puzzle.solution);
       expect(game.isSolved, isTrue, reason: puzzle.title);

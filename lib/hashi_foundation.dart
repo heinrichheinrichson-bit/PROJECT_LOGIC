@@ -185,6 +185,159 @@ const hashiPuzzleCatalog = <HashiPuzzle>[
       HashiBridge(from: 4, to: 5),
     ],
   ),
+  HashiPuzzle(
+    id: 'hashi_07',
+    title: 'Brückenleiter',
+    difficulty: 2,
+    size: 7,
+    islands: [
+      HashiIsland(row: 0, column: 1, bridges: 2),
+      HashiIsland(row: 0, column: 5, bridges: 2),
+      HashiIsland(row: 3, column: 1, bridges: 4),
+      HashiIsland(row: 3, column: 5, bridges: 4),
+      HashiIsland(row: 6, column: 1, bridges: 2),
+      HashiIsland(row: 6, column: 5, bridges: 2),
+    ],
+    solution: [
+      HashiBridge(from: 0, to: 1),
+      HashiBridge(from: 0, to: 2),
+      HashiBridge(from: 1, to: 3),
+      HashiBridge(from: 2, to: 3, count: 2),
+      HashiBridge(from: 2, to: 4),
+      HashiBridge(from: 3, to: 5),
+      HashiBridge(from: 4, to: 5),
+    ],
+  ),
+  HashiPuzzle(
+    id: 'hashi_08',
+    title: 'Doppelkreuz',
+    difficulty: 2,
+    size: 7,
+    islands: [
+      HashiIsland(row: 0, column: 3, bridges: 2),
+      HashiIsland(row: 3, column: 0, bridges: 1),
+      HashiIsland(row: 3, column: 3, bridges: 6),
+      HashiIsland(row: 3, column: 6, bridges: 1),
+      HashiIsland(row: 6, column: 3, bridges: 2),
+    ],
+    solution: [
+      HashiBridge(from: 0, to: 2, count: 2),
+      HashiBridge(from: 1, to: 2),
+      HashiBridge(from: 2, to: 3),
+      HashiBridge(from: 2, to: 4, count: 2),
+    ],
+  ),
+  HashiPuzzle(
+    id: 'hashi_09',
+    title: 'Der Rahmen',
+    difficulty: 3,
+    size: 9,
+    islands: [
+      HashiIsland(row: 0, column: 1, bridges: 4),
+      HashiIsland(row: 0, column: 4, bridges: 3),
+      HashiIsland(row: 0, column: 7, bridges: 2),
+      HashiIsland(row: 4, column: 1, bridges: 3),
+      HashiIsland(row: 4, column: 7, bridges: 3),
+      HashiIsland(row: 8, column: 1, bridges: 3),
+      HashiIsland(row: 8, column: 4, bridges: 3),
+      HashiIsland(row: 8, column: 7, bridges: 3),
+    ],
+    solution: [
+      HashiBridge(from: 0, to: 1, count: 2),
+      HashiBridge(from: 1, to: 2),
+      HashiBridge(from: 2, to: 4),
+      HashiBridge(from: 4, to: 7, count: 2),
+      HashiBridge(from: 7, to: 6),
+      HashiBridge(from: 6, to: 5, count: 2),
+      HashiBridge(from: 5, to: 3),
+      HashiBridge(from: 3, to: 0, count: 2),
+    ],
+  ),
+  HashiPuzzle(
+    id: 'hashi_10',
+    title: 'Neun Inseln',
+    difficulty: 3,
+    size: 9,
+    islands: [
+      HashiIsland(row: 0, column: 0, bridges: 2),
+      HashiIsland(row: 0, column: 4, bridges: 3),
+      HashiIsland(row: 0, column: 8, bridges: 2),
+      HashiIsland(row: 4, column: 0, bridges: 3),
+      HashiIsland(row: 4, column: 4, bridges: 4),
+      HashiIsland(row: 4, column: 8, bridges: 3),
+      HashiIsland(row: 8, column: 0, bridges: 2),
+      HashiIsland(row: 8, column: 4, bridges: 3),
+      HashiIsland(row: 8, column: 8, bridges: 2),
+    ],
+    solution: [
+      HashiBridge(from: 0, to: 1),
+      HashiBridge(from: 1, to: 2),
+      HashiBridge(from: 3, to: 4),
+      HashiBridge(from: 4, to: 5),
+      HashiBridge(from: 6, to: 7),
+      HashiBridge(from: 7, to: 8),
+      HashiBridge(from: 0, to: 3),
+      HashiBridge(from: 3, to: 6),
+      HashiBridge(from: 1, to: 4),
+      HashiBridge(from: 4, to: 7),
+      HashiBridge(from: 2, to: 5),
+      HashiBridge(from: 5, to: 8),
+    ],
+  ),
+  HashiPuzzle(
+    id: 'hashi_11',
+    title: 'Schmale Pfade',
+    difficulty: 2,
+    size: 9,
+    islands: [
+      HashiIsland(row: 0, column: 0, bridges: 1),
+      HashiIsland(row: 0, column: 4, bridges: 3),
+      HashiIsland(row: 2, column: 4, bridges: 3),
+      HashiIsland(row: 2, column: 1, bridges: 2),
+      HashiIsland(row: 5, column: 1, bridges: 3),
+      HashiIsland(row: 5, column: 6, bridges: 3),
+      HashiIsland(row: 8, column: 6, bridges: 1),
+    ],
+    solution: [
+      HashiBridge(from: 0, to: 1),
+      HashiBridge(from: 1, to: 2, count: 2),
+      HashiBridge(from: 2, to: 3),
+      HashiBridge(from: 3, to: 4),
+      HashiBridge(from: 4, to: 5, count: 2),
+      HashiBridge(from: 5, to: 6),
+    ],
+  ),
+  HashiPuzzle(
+    id: 'hashi_12',
+    title: 'Vier Tore',
+    difficulty: 3,
+    size: 9,
+    islands: [
+      HashiIsland(row: 0, column: 0, bridges: 3),
+      HashiIsland(row: 0, column: 4, bridges: 5),
+      HashiIsland(row: 0, column: 8, bridges: 3),
+      HashiIsland(row: 4, column: 0, bridges: 3),
+      HashiIsland(row: 4, column: 4, bridges: 4),
+      HashiIsland(row: 4, column: 8, bridges: 3),
+      HashiIsland(row: 8, column: 0, bridges: 3),
+      HashiIsland(row: 8, column: 4, bridges: 5),
+      HashiIsland(row: 8, column: 8, bridges: 3),
+    ],
+    solution: [
+      HashiBridge(from: 0, to: 1, count: 2),
+      HashiBridge(from: 1, to: 2, count: 2),
+      HashiBridge(from: 3, to: 4),
+      HashiBridge(from: 4, to: 5),
+      HashiBridge(from: 6, to: 7, count: 2),
+      HashiBridge(from: 7, to: 8, count: 2),
+      HashiBridge(from: 0, to: 3),
+      HashiBridge(from: 3, to: 6),
+      HashiBridge(from: 1, to: 4),
+      HashiBridge(from: 4, to: 7),
+      HashiBridge(from: 2, to: 5),
+      HashiBridge(from: 5, to: 8),
+    ],
+  ),
 ];
 
 class HashiProgressStore {
@@ -384,6 +537,11 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
     await _refreshProgress();
   }
 
+  HashiPuzzle get _nextPuzzle => hashiPuzzleCatalog.firstWhere(
+        (puzzle) => !_completed.contains(puzzle.id),
+        orElse: () => hashiTutorialPuzzle,
+      );
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -425,6 +583,15 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
+                      const SizedBox(height: 14),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(99),
+                        child: LinearProgressIndicator(
+                          minHeight: 8,
+                          value: _completed.length / hashiPuzzleCatalog.length,
+                          backgroundColor: colors.surface.withValues(alpha: 0.55),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -462,12 +629,14 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                 ),
                 const SizedBox(height: 20),
                 FilledButton.icon(
-                  onPressed: () => _openPuzzle(hashiTutorialPuzzle),
+                  onPressed: () => _openPuzzle(_nextPuzzle),
                   icon: const Icon(Icons.play_arrow_rounded),
                   label: Text(
-                    _completed.contains(hashiTutorialPuzzle.id)
-                        ? 'Noch einmal spielen'
-                        : 'Erste Herausforderung',
+                    _completed.isEmpty
+                        ? 'Erste Herausforderung'
+                        : _completed.length == hashiPuzzleCatalog.length
+                            ? 'Noch einmal spielen'
+                            : 'Nächstes ungelöstes Rätsel',
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -512,6 +681,7 @@ class HashiCatalogScreen extends StatefulWidget {
 class _HashiCatalogScreenState extends State<HashiCatalogScreen> {
   final HashiProgressStore _progressStore = HashiProgressStore();
   Set<String> _completed = <String>{};
+  int _difficultyFilter = 0;
 
   @override
   void initState() {
@@ -534,27 +704,101 @@ class _HashiCatalogScreenState extends State<HashiCatalogScreen> {
     await _refresh();
   }
 
+  List<HashiPuzzle> get _visiblePuzzles => _difficultyFilter == 0
+      ? hashiPuzzleCatalog
+      : hashiPuzzleCatalog
+          .where((puzzle) => puzzle.difficulty == _difficultyFilter)
+          .toList();
+
+  String _difficultyName(int difficulty) => switch (difficulty) {
+        1 => 'Leicht',
+        2 => 'Mittel',
+        3 => 'Schwer',
+        _ => 'Alle',
+      };
+
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final visiblePuzzles = _visiblePuzzles;
     return Scaffold(
       appBar: AppBar(title: const Text('Hashi-Rätsel')),
       body: Center(
-        child: ListView.separated(
-          padding: const EdgeInsets.all(20),
-          itemCount: hashiPuzzleCatalog.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 10),
-          itemBuilder: (context, index) {
-            final puzzle = hashiPuzzleCatalog[index];
-            final completed = _completed.contains(puzzle.id);
-            return ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 680),
-              child: Card(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: ListView.separated(
+            padding: const EdgeInsets.all(20),
+            itemCount: visiblePuzzles.length + 1,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: colors.primaryContainer,
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            '${_completed.length} von ${hashiPuzzleCatalog.length} geschafft',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 10),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(99),
+                            child: LinearProgressIndicator(
+                              minHeight: 8,
+                              value:
+                                  _completed.length / hashiPuzzleCatalog.length,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: List.generate(4, (difficulty) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              selected: _difficultyFilter == difficulty,
+                              onSelected: (_) => setState(
+                                () => _difficultyFilter = difficulty,
+                              ),
+                              label: Text(_difficultyName(difficulty)),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                );
+              }
+
+              final puzzle = visiblePuzzles[index - 1];
+              final catalogIndex = hashiPuzzleCatalog.indexOf(puzzle);
+              final completed = _completed.contains(puzzle.id);
+              return Card(
                 child: ListTile(
                   onTap: () => _open(puzzle),
                   leading: CircleAvatar(
+                    backgroundColor: completed
+                        ? colors.primaryContainer
+                        : colors.surfaceContainerHighest,
                     child: completed
-                        ? const Icon(Icons.check_rounded)
-                        : Text('${index + 1}'),
+                        ? Icon(Icons.check_rounded, color: colors.primary)
+                        : Text('${catalogIndex + 1}'),
                   ),
                   title: Text(
                     puzzle.title,
@@ -565,9 +809,9 @@ class _HashiCatalogScreenState extends State<HashiCatalogScreen> {
                   ),
                   trailing: const Icon(Icons.chevron_right_rounded),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
