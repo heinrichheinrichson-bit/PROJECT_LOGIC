@@ -17,6 +17,10 @@ class ProgressSnapshot {
 
   int get totalCompleted => progress.totalCompleted;
 
+  int completedForGame(GameType gameType) => results.values
+      .where((result) => result.gameType == gameType)
+      .fold(0, (sum, result) => sum + result.completionCount);
+
   int get catalogCompleted =>
       results.keys.where(catalogPuzzleIds.contains).length;
 
@@ -29,8 +33,7 @@ class ProgressSnapshot {
       .length;
 
   int get hardCompleted => results.values
-      .where((result) =>
-          result.effectiveDifficulty == PuzzleDifficulty.hard)
+      .where((result) => result.effectiveDifficulty == PuzzleDifficulty.hard)
       .fold(0, (sum, result) => sum + result.completionCount);
 
   int get largeBoardCompleted => results.values
@@ -42,13 +45,12 @@ class ProgressSnapshot {
 
   int completionsTodayBySource(PuzzleSource source, DateTime date) {
     final day = DateTime(date.year, date.month, date.day);
-    return results.values
-        .where((result) {
-          final completed = result.completedAt;
-          final completedDay = DateTime(completed.year, completed.month, completed.day);
-          return result.effectiveSource == source && completedDay == day;
-        })
-        .length;
+    return results.values.where((result) {
+      final completed = result.completedAt;
+      final completedDay =
+          DateTime(completed.year, completed.month, completed.day);
+      return result.effectiveSource == source && completedDay == day;
+    }).length;
   }
 
   int get completionsToday {
@@ -81,7 +83,8 @@ class ProgressGoal {
   final ProgressGoalKind kind;
 
   bool get isCompleted => current >= target;
-  double get progress => target <= 0 ? 1 : (current / target).clamp(0, 1).toDouble();
+  double get progress =>
+      target <= 0 ? 1 : (current / target).clamp(0, 1).toDouble();
   int get remaining => (target - current).clamp(0, target).toInt();
 }
 
@@ -98,9 +101,8 @@ class PlayerRank {
   final int currentXp;
   final int nextLevelXp;
 
-  double get progress => nextLevelXp == 0
-      ? 1
-      : (currentXp / nextLevelXp).clamp(0, 1).toDouble();
+  double get progress =>
+      nextLevelXp == 0 ? 1 : (currentXp / nextLevelXp).clamp(0, 1).toDouble();
 }
 
 class PlayerProgressService {
@@ -130,6 +132,54 @@ class PlayerProgressService {
           iconName: 'workspace_premium',
           current: snapshot.totalCompleted,
           target: 50,
+        ),
+        _achievement(
+          id: 'hundred-solves',
+          title: 'Hundertmal geknobelt',
+          description: 'Löse 100 Rätsel.',
+          iconName: 'workspace_premium',
+          current: snapshot.totalCompleted,
+          target: 100,
+        ),
+        _achievement(
+          id: 'two-fifty-solves',
+          title: 'Ausdauernder Denker',
+          description: 'Löse 250 Rätsel.',
+          iconName: 'workspace_premium',
+          current: snapshot.totalCompleted,
+          target: 250,
+        ),
+        _achievement(
+          id: 'five-hundred-solves',
+          title: 'Logik gehört zum Alltag',
+          description: 'Löse 500 Rätsel.',
+          iconName: 'diamond',
+          current: snapshot.totalCompleted,
+          target: 500,
+        ),
+        _achievement(
+          id: 'thousand-solves',
+          title: 'Tausend Rätsel',
+          description: 'Löse 1.000 Rätsel.',
+          iconName: 'diamond',
+          current: snapshot.totalCompleted,
+          target: 1000,
+        ),
+        _achievement(
+          id: 'binairo-first',
+          title: 'Binairo entdeckt',
+          description: 'Löse dein erstes Binairo-Rätsel.',
+          iconName: 'grid_on',
+          current: snapshot.completedForGame(GameType.binairo),
+          target: 1,
+        ),
+        _achievement(
+          id: 'hashi-first',
+          title: 'Brückenbauer',
+          description: 'Vollende dein erstes Hashi-Rätsel.',
+          iconName: 'hub',
+          current: snapshot.completedForGame(GameType.hashi),
+          target: 1,
         ),
         _achievement(
           id: 'streak-three',
@@ -194,7 +244,8 @@ class PlayerProgressService {
     DateTime? date,
   }) {
     final today = date ?? DateTime.now();
-    final dailyPuzzleId = const DailyChallengeService().challengeFor(today).puzzleId;
+    final dailyPuzzleId =
+        const DailyChallengeService().challengeFor(today).puzzleId;
     final completedDaily = snapshot.results.containsKey(dailyPuzzleId);
     final generatedToday =
         snapshot.completionsTodayBySource(PuzzleSource.generated, today);
@@ -259,8 +310,7 @@ class PlayerProgressService {
         ),
       ];
 
-  String _dateKey(DateTime value) =>
-      '${value.year.toString().padLeft(4, '0')}-'
+  String _dateKey(DateTime value) => '${value.year.toString().padLeft(4, '0')}-'
       '${value.month.toString().padLeft(2, '0')}-'
       '${value.day.toString().padLeft(2, '0')}';
 

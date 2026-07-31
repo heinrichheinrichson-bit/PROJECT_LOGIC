@@ -2435,7 +2435,10 @@ class PlayerProfileScreen extends StatelessWidget {
     final snapshot = ProgressSnapshot(
       results: results,
       progress: progress,
-      catalogPuzzleIds: binaryPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
+      catalogPuzzleIds: {
+        ...binaryPuzzleCatalog.map((puzzle) => puzzle.id),
+        ...hashiPuzzleCatalog.map((puzzle) => 'hashi:${puzzle.id}'),
+      },
     );
     const service = PlayerProgressService();
     final rank = service.rank(snapshot);
@@ -2443,6 +2446,12 @@ class PlayerProfileScreen extends StatelessWidget {
     final longTermMissions = service.longTermMissions(snapshot);
     final achievements = service.achievements(snapshot);
     final unlockedCount = achievements.where((goal) => goal.isCompleted).length;
+    final upcomingAchievements = achievements
+        .where((goal) => !goal.isCompleted)
+        .toList()
+      ..sort((a, b) => b.progress.compareTo(a.progress));
+    final completedAchievements =
+        achievements.where((goal) => goal.isCompleted).toList();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dein Fortschritt')),
@@ -2541,8 +2550,27 @@ class PlayerProfileScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  for (final achievement in achievements)
+                  for (final achievement in upcomingAchievements.take(5))
                     _ProgressGoalCard(goal: achievement),
+                  if (upcomingAchievements.length > 5 ||
+                      completedAchievements.isNotEmpty)
+                    Card(
+                      child: ExpansionTile(
+                        leading: const Icon(Icons.inventory_2_outlined),
+                        title: const Text('Alle Erfolge'),
+                        subtitle: Text(
+                          '${completedAchievements.length} freigeschaltet · ${achievements.length} insgesamt',
+                        ),
+                        childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                        children: [
+                          for (final achievement
+                              in upcomingAchievements.skip(5))
+                            _ProgressGoalCard(goal: achievement),
+                          for (final achievement in completedAchievements)
+                            _ProgressGoalCard(goal: achievement),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -2642,6 +2670,7 @@ class _ProgressGoalCard extends StatelessWidget {
         'collections_bookmark' => Icons.collections_bookmark_outlined,
         'diamond' => Icons.diamond_outlined,
         'grid_on' => Icons.grid_on_outlined,
+        'hub' => Icons.hub_outlined,
         'menu_book' => Icons.menu_book_outlined,
         _ => Icons.emoji_events_outlined,
       };

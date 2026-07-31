@@ -98,6 +98,38 @@ void main() {
     expect(firstDay.first.id, isNot(nextDay.first.id));
   });
 
+  test('game-specific achievements count Binairo and Hashi separately', () {
+    final hashi = PuzzleResult(
+      puzzleId: 'easy-01',
+      bestSeconds: 60,
+      completedAt: DateTime(2026, 7, 31),
+      gameType: GameType.hashi,
+      source: PuzzleSource.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 7,
+    );
+    final snapshot = ProgressSnapshot(
+      results: {'hashi:easy-01': hashi},
+      progress: const PlayerProgress(
+        totalCompleted: 1,
+        totalPlaySeconds: 60,
+        completedDays: ['2026-07-31'],
+      ),
+      catalogPuzzleIds: const {'hashi:easy-01'},
+    );
+
+    final achievements = service.achievements(snapshot);
+
+    expect(
+      achievements.firstWhere((goal) => goal.id == 'hashi-first').isCompleted,
+      isTrue,
+    );
+    expect(
+      achievements.firstWhere((goal) => goal.id == 'binairo-first').isCompleted,
+      isFalse,
+    );
+    expect(snapshot.catalogCompleted, 1);
+  });
 }
 
 // Daily missions deliberately use an injected date so tests do not depend on
