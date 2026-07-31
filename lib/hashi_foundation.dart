@@ -10,6 +10,7 @@ import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'app_preferences.dart';
 import 'game_storage.dart';
+import 'features/hashi/domain/hashi_generator.dart';
 
 @immutable
 class HashiIsland {
@@ -715,6 +716,16 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                   icon: const Icon(Icons.apps_rounded),
                   label: const Text('Rätselsammlung'),
                 ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const HashiRandomSetupScreen(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.auto_awesome_rounded),
+                  label: const Text('Zufallsrätsel'),
+                ),
                 if (widget.onOpenStatistics != null) ...[
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
@@ -761,6 +772,125 @@ class HashiPuzzleChapter {
   final String title;
   final String description;
   final List<HashiPuzzle> puzzles;
+}
+
+class HashiRandomSetupScreen extends StatefulWidget {
+  const HashiRandomSetupScreen({super.key});
+
+  @override
+  State<HashiRandomSetupScreen> createState() => _HashiRandomSetupScreenState();
+}
+
+class _HashiRandomSetupScreenState extends State<HashiRandomSetupScreen> {
+  int _difficulty = 1;
+  bool _generating = false;
+  String? _error;
+
+  Future<void> _generate() async {
+    if (_generating) return;
+    setState(() {
+      _generating = true;
+      _error = null;
+    });
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    try {
+      final seed = DateTime.now().microsecondsSinceEpoch & 0x7fffffff;
+      final generated = const HashiGenerator().generate(
+        seed: seed,
+        number: 1,
+        difficulty: _difficulty,
+      );
+      if (!mounted) return;
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => HashiGameScreen(
+            puzzle: generated.puzzle,
+            mode: GameMode.generated,
+          ),
+        ),
+      );
+    } on Object {
+      if (!mounted) return;
+      setState(() {
+        _generating = false;
+        _error = 'Das Rätsel konnte gerade nicht erstellt werden.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Hashi-Zufallsrätsel')),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 54,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Ein neues Brückennetz',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Jedes Board wird neu erzeugt und auf eine eindeutige Lösung geprüft.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                SegmentedButton<int>(
+                  segments: const [
+                    ButtonSegment(value: 1, label: Text('Leicht')),
+                    ButtonSegment(value: 2, label: Text('Mittel')),
+                    ButtonSegment(value: 3, label: Text('Schwer')),
+                  ],
+                  selected: {_difficulty},
+                  onSelectionChanged: _generating
+                      ? null
+                      : (selection) =>
+                          setState(() => _difficulty = selection.first),
+                ),
+                const SizedBox(height: 18),
+                if (_error != null) ...[
+                  Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                FilledButton.icon(
+                  onPressed: _generating ? null : _generate,
+                  icon: _generating
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.casino_outlined),
+                  label: Text(
+                    _generating ? 'Rätsel wird geprüft …' : 'Rätsel erstellen',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 List<HashiPuzzleChapter> hashiChaptersFor({int difficulty = 0}) {
@@ -987,9 +1117,14 @@ enum _HashiDeveloperAction {
 }
 
 class HashiGameScreen extends StatefulWidget {
-  const HashiGameScreen({required this.puzzle, super.key});
+  const HashiGameScreen({
+    required this.puzzle,
+    this.mode = GameMode.catalog,
+    super.key,
+  });
 
   final HashiPuzzle puzzle;
+  final GameMode mode;
 
   @override
   State<HashiGameScreen> createState() => _HashiGameScreenState();
@@ -1089,12 +1224,14 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   Future<void> _showCompletionIfSolved() async {
     if (!_game.isSolved || _completionShown) return;
     _completionShown = true;
-    await _progressStore.markCompleted(widget.puzzle.id);
+    if (widget.mode == GameMode.catalog) {
+      await _progressStore.markCompleted(widget.puzzle.id);
+    }
     await _gameStorage.recordCompletion(
       puzzleId: widget.puzzle.id,
       elapsedSeconds: _elapsedSeconds,
       gameType: GameType.hashi,
-      source: GameMode.catalog,
+      source: widget.mode,
       difficulty: widget.puzzle.sharedDifficulty,
       boardSize: widget.puzzle.size,
       moves: _moves,
@@ -1134,9 +1271,19 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
               Navigator.of(dialogContext).pop();
               Navigator.of(context).pop();
             },
-            child: const Text('Zur Sammlung'),
+            child: Text(widget.mode == GameMode.generated
+                ? 'Hashi verlassen'
+                : 'Zur Sammlung'),
           ),
-          if (_nextPuzzle != null)
+          if (widget.mode == GameMode.generated)
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _startNextRandomPuzzle();
+              },
+              child: const Text('Noch eins'),
+            )
+          else if (_nextPuzzle != null)
             FilledButton(
               onPressed: () {
                 Navigator.of(dialogContext).pop();
@@ -1247,9 +1394,56 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   }
 
   HashiPuzzle? get _nextPuzzle {
+    if (widget.mode != GameMode.catalog) return null;
     final index = hashiPuzzleCatalog.indexOf(widget.puzzle);
     if (index < 0 || index + 1 >= hashiPuzzleCatalog.length) return null;
     return hashiPuzzleCatalog[index + 1];
+  }
+
+  Future<void> _startNextRandomPuzzle() async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: Row(
+          children: [
+            SizedBox.square(
+              dimension: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+            SizedBox(width: 18),
+            Expanded(child: Text('Neues Brückennetz wird geprüft …')),
+          ],
+        ),
+      ),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    try {
+      final seed = DateTime.now().microsecondsSinceEpoch & 0x7fffffff;
+      final generated = const HashiGenerator().generate(
+        seed: seed,
+        number: 1,
+        difficulty: widget.puzzle.difficulty,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => HashiGameScreen(
+            puzzle: generated.puzzle,
+            mode: GameMode.generated,
+          ),
+        ),
+      );
+    } on Object {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Das nächste Rätsel konnte nicht erstellt werden.'),
+        ),
+      );
+    }
   }
 
   void _undo() {
@@ -1413,7 +1607,9 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.puzzle.title),
+        title: Text(widget.mode == GameMode.generated
+            ? '${widget.puzzle.sharedDifficulty.label} · Zufallsrätsel'
+            : widget.puzzle.title),
         actions: [
           if (kDebugMode)
             PopupMenuButton<_HashiDeveloperAction>(

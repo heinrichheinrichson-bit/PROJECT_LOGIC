@@ -42,6 +42,16 @@ void main() {
     expect(find.text('Rätselsammlung'), findsOneWidget);
     expect(find.text('Erste Herausforderung'), findsOneWidget);
     expect(find.text('Hashi-Statistik'), findsOneWidget);
+    expect(find.text('Zufallsrätsel'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Zufallsrätsel'));
+    await tester.tap(find.text('Zufallsrätsel'));
+    await tester.pumpAndSettle();
+    expect(find.text('Hashi-Zufallsrätsel'), findsOneWidget);
+    expect(find.text('Rätsel erstellen'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Hashi-Statistik'));
     await tester.tap(find.text('Hashi-Statistik'));
