@@ -1253,6 +1253,8 @@ class HashiTutorialScreen extends StatelessWidget {
   }
 }
 
+enum _ExistingHashiChoice { resume, startNew }
+
 enum _HashiDeveloperAction {
   almostSolved,
   solve,
@@ -1297,6 +1299,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   bool _showMistakes = false;
   HintBudget _hintBudget = const HintBudget();
   int _hintsUsed = 0;
+  bool _checkingExistingGame = false;
 
   @override
   void initState() {
@@ -1314,9 +1317,14 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
         usedHints: saved.hintsUsed,
         rewardedHints: saved.rewardedHints,
       );
+    } else {
+      _checkingExistingGame = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_protectExistingGame());
+      });
     }
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && !_completionShown) {
+      if (mounted && !_completionShown && !_checkingExistingGame) {
         setState(() => _elapsedSeconds++);
         if (_elapsedSeconds % 10 == 0) unawaited(_saveGame());
       }
@@ -1325,7 +1333,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
 
   @override
   void dispose() {
-    if (!_completionShown) unawaited(_saveGame());
+    if (!_completionShown && !_checkingExistingGame) unawaited(_saveGame());
     _timer?.cancel();
     _messageTimer?.cancel();
     super.dispose();
@@ -1340,6 +1348,61 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
         hintsUsed: _hintsUsed,
         rewardedHints: _hintBudget.rewardedHints,
       ));
+
+  Future<void> _protectExistingGame() async {
+    final existing = await _saveStore.load();
+    if (!mounted) return;
+    if (existing == null) {
+      _checkingExistingGame = false;
+      await _saveGame();
+      return;
+    }
+    final choice = await showDialog<_ExistingHashiChoice>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.save_outlined),
+        title: const Text('Offene Hashi-Partie'),
+        content: const Text(
+          'Du hast bereits ein begonnenes Hashi-Rätsel. Möchtest du es fortsetzen oder mit dem neuen Rätsel beginnen?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(
+              _ExistingHashiChoice.startNew,
+            ),
+            child: const Text('Neu beginnen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(
+              _ExistingHashiChoice.resume,
+            ),
+            child: const Text('Fortsetzen'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (choice == null) {
+      Navigator.of(context).pop();
+      return;
+    }
+    if (choice == _ExistingHashiChoice.resume) {
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => HashiGameScreen(
+            puzzle: existing.puzzle,
+            mode: existing.mode,
+            savedGame: existing,
+          ),
+        ),
+      );
+      return;
+    }
+    _checkingExistingGame = false;
+    await _saveStore.clear();
+    await _saveGame();
+  }
 
   List<int> get _possibleTargets {
     final selected = _selectedIsland;
