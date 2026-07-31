@@ -2336,10 +2336,23 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         .toSet()
         .length;
     final isBinairoDetail = widget.gameType == GameType.binairo;
+    final isHashiDetail = widget.gameType == GameType.hashi;
+    final isGameDetail = widget.gameType != null;
+    final selectedStatistics = isBinairoDetail
+        ? binairoStatistics
+        : isHashiDetail
+            ? hashiStatistics
+            : GameStatistics.fromAttempts(_attempts);
+    final selectedCompleted = isBinairoDetail
+        ? binairoCompleted
+        : isHashiDetail
+            ? hashiCompleted
+            : totalCompleted;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isBinairoDetail ? 'Binairo-Statistik' : 'Statistik'),
+        title: Text(
+            isGameDetail ? '${widget.gameType!.label}-Statistik' : 'Statistik'),
       ),
       body: Center(
         child: ListView(
@@ -2351,9 +2364,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _StatisticsHero(
-                    value: isBinairoDetail ? binairoCompleted : totalCompleted,
-                    label: isBinairoDetail
-                        ? 'Binairo-Rätsel gelöst'
+                    value: selectedCompleted,
+                    label: isGameDetail
+                        ? '${widget.gameType!.label}-Rätsel gelöst'
                         : 'Rätsel insgesamt gelöst',
                   ),
                   if (isBinairoDetail) ...[
@@ -2390,6 +2403,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           : 'Ø ${_formatLongTime(binairoAverageSeconds)}',
                     ),
                     const SizedBox(height: 24),
+                    _PerformanceStatisticsSection(
+                      statistics: selectedStatistics,
+                    ),
+                    const SizedBox(height: 24),
+                    _DifficultyPerformanceSection(
+                      statistics: selectedStatistics,
+                    ),
+                    const SizedBox(height: 24),
                     Text(
                       'Rätselsammlung',
                       style: Theme.of(context).textTheme.titleLarge,
@@ -2410,7 +2431,41 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       _GeneratedSizeStatistic(
                         size: size,
                         results: generatedResults,
+                        statistics: binairoStatistics.filtered(
+                          mode: GameMode.generated,
+                          boardSize: size.value,
+                        ),
                       ),
+                  ] else if (isHashiDetail) ...[
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.collections_bookmark_outlined,
+                      title: 'Rätselsammlung',
+                      subtitle:
+                          '$hashiCollectionCompleted von ${hashiPuzzleCatalog.length} gelöst',
+                      trailing:
+                          '${((hashiCollectionCompleted / hashiPuzzleCatalog.length) * 100).round()} %',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.timer_outlined,
+                      title: 'Spielzeit',
+                      subtitle:
+                          _formatLongTime(hashiStatistics.totalPlaySeconds),
+                      trailing: hashiStatistics.averageSeconds == null
+                          ? null
+                          : 'Ø ${_formatLongTime(hashiStatistics.averageSeconds!)}',
+                    ),
+                    const SizedBox(height: 24),
+                    _PerformanceStatisticsSection(
+                      statistics: hashiStatistics,
+                      showMoves: true,
+                    ),
+                    const SizedBox(height: 24),
+                    _DifficultyPerformanceSection(
+                      statistics: hashiStatistics,
+                      showMoves: true,
+                    ),
                   ] else ...[
                     const SizedBox(height: 12),
                     _StatisticListCard(
@@ -2451,6 +2506,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       catalogTotal: catalogTotal,
                       endlessCompleted: generatedCompleted,
                       solvedWithoutHints: binairoStatistics.solvedWithoutHints,
+                      onOpenDetails: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => StatisticsScreen(
+                            results: results,
+                            progress: progress,
+                            gameType: GameType.binairo,
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 10),
                     _GameStatisticsOverviewCard(
@@ -2463,6 +2527,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         GameMode.generated,
                       ),
                       solvedWithoutHints: hashiStatistics.solvedWithoutHints,
+                      onOpenDetails: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => StatisticsScreen(
+                            results: results,
+                            progress: progress,
+                            gameType: GameType.hashi,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ],
@@ -2535,6 +2608,181 @@ class _StatisticListCard extends StatelessWidget {
       );
 }
 
+class _PerformanceStatisticsSection extends StatelessWidget {
+  const _PerformanceStatisticsSection({
+    required this.statistics,
+    this.showMoves = false,
+  });
+
+  final GameStatistics statistics;
+  final bool showMoves;
+
+  @override
+  Widget build(BuildContext context) {
+    String time(int? seconds) =>
+        seconds == null ? '–' : _StatisticsScreenState._formatLongTime(seconds);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Leistung', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 10),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _CompactStatistic(
+                        value: time(statistics.bestSeconds),
+                        label: 'Bestzeit',
+                      ),
+                    ),
+                    Expanded(
+                      child: _CompactStatistic(
+                        value: time(statistics.averageSeconds),
+                        label: 'Durchschnitt',
+                      ),
+                    ),
+                    Expanded(
+                      child: _CompactStatistic(
+                        value: time(statistics.bestWithoutHintsSeconds),
+                        label: 'Bestzeit ohne Hilfe',
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 28),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _CompactStatistic(
+                        value: '${statistics.solvedWithoutHints}',
+                        label: 'Ohne Hinweise',
+                      ),
+                    ),
+                    Expanded(
+                      child: _CompactStatistic(
+                        value: '${statistics.hintsUsed}',
+                        label: 'Hinweise genutzt',
+                      ),
+                    ),
+                    Expanded(
+                      child: _CompactStatistic(
+                        value: showMoves
+                            ? (statistics.fewestMoves?.toString() ?? '–')
+                            : '${statistics.rewardedHints}',
+                        label: showMoves ? 'Wenigste Züge' : 'Bonus-Hinweise',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (statistics.completedCount == 0) ...[
+          const SizedBox(height: 6),
+          Text(
+            'Deine Rekorde erscheinen nach dem nächsten abgeschlossenen Rätsel.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _DifficultyPerformanceSection extends StatelessWidget {
+  const _DifficultyPerformanceSection({
+    required this.statistics,
+    this.showMoves = false,
+  });
+
+  final GameStatistics statistics;
+  final bool showMoves;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Nach Schwierigkeit',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 10),
+        for (final difficulty in PuzzleDifficulty.values)
+          _DifficultyPerformanceCard(
+            difficulty: difficulty,
+            statistics: statistics.filtered(difficulty: difficulty),
+            showMoves: showMoves,
+          ),
+      ],
+    );
+  }
+}
+
+class _DifficultyPerformanceCard extends StatelessWidget {
+  const _DifficultyPerformanceCard({
+    required this.difficulty,
+    required this.statistics,
+    required this.showMoves,
+  });
+
+  final PuzzleDifficulty difficulty;
+  final GameStatistics statistics;
+  final bool showMoves;
+
+  @override
+  Widget build(BuildContext context) {
+    String time(int? seconds) =>
+        seconds == null ? '–' : _StatisticsScreenState._formatLongTime(seconds);
+    return Card(
+      child: ExpansionTile(
+        leading: Icon(switch (difficulty) {
+          PuzzleDifficulty.easy => Icons.eco_outlined,
+          PuzzleDifficulty.medium => Icons.psychology_alt_outlined,
+          PuzzleDifficulty.hard => Icons.local_fire_department_outlined,
+        }),
+        title: Text(difficulty.label),
+        subtitle: Text('${statistics.completedCount} abgeschlossen'),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _CompactStatistic(
+                  value: time(statistics.bestSeconds),
+                  label: 'Bestzeit',
+                ),
+              ),
+              Expanded(
+                child: _CompactStatistic(
+                  value: time(statistics.averageSeconds),
+                  label: 'Durchschnitt',
+                ),
+              ),
+              Expanded(
+                child: _CompactStatistic(
+                  value: showMoves
+                      ? (statistics.fewestMoves?.toString() ?? '–')
+                      : '${statistics.solvedWithoutHints}',
+                  label: showMoves ? 'Wenigste Züge' : 'Ohne Hinweise',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _GameStatisticsOverviewCard extends StatelessWidget {
   const _GameStatisticsOverviewCard({
     required this.gameType,
@@ -2544,6 +2792,7 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
     required this.catalogTotal,
     required this.endlessCompleted,
     required this.solvedWithoutHints,
+    required this.onOpenDetails,
   });
 
   final GameType gameType;
@@ -2553,6 +2802,7 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
   final int catalogTotal;
   final int endlessCompleted;
   final int solvedWithoutHints;
+  final VoidCallback onOpenDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -2600,11 +2850,10 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
           const SizedBox(height: 10),
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              '* Wird ab Statistik 2.0 erfasst.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
+            child: TextButton.icon(
+              onPressed: onOpenDetails,
+              icon: const Icon(Icons.insights_outlined),
+              label: const Text('Alle Statistiken'),
             ),
           ),
         ],
@@ -2642,10 +2891,12 @@ class _GeneratedSizeStatistic extends StatelessWidget {
   const _GeneratedSizeStatistic({
     required this.size,
     required this.results,
+    required this.statistics,
   });
 
   final BinaryPuzzleSize size;
   final List<PuzzleResult> results;
+  final GameStatistics statistics;
 
   @override
   Widget build(BuildContext context) {
@@ -2683,13 +2934,56 @@ class _GeneratedSizeStatistic extends StatelessWidget {
               ],
             ),
             const Divider(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Schwierigkeit',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ),
+                SizedBox(
+                  width: 72,
+                  child: Text(
+                    'Gelöst',
+                    textAlign: TextAlign.end,
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ),
+                SizedBox(
+                  width: 82,
+                  child: Text(
+                    'Bestzeit',
+                    textAlign: TextAlign.end,
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ),
+              ],
+            ),
             for (final difficulty in PuzzleDifficulty.values)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 3),
                 child: Row(
                   children: [
                     Expanded(child: Text(difficulty.label)),
-                    Text('${counts[difficulty]}'),
+                    SizedBox(
+                      width: 72,
+                      child: Text(
+                        '${counts[difficulty]}',
+                        textAlign: TextAlign.end,
+                      ),
+                    ),
+                    SizedBox(
+                      width: 82,
+                      child: Text(
+                        _formatBestTime(
+                          statistics
+                              .filtered(difficulty: difficulty)
+                              .bestSeconds,
+                        ),
+                        textAlign: TextAlign.end,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -2698,6 +2992,9 @@ class _GeneratedSizeStatistic extends StatelessWidget {
       ),
     );
   }
+
+  static String _formatBestTime(int? seconds) =>
+      seconds == null ? '–' : _StatisticsScreenState._formatLongTime(seconds);
 }
 
 class _DifficultyStatistic extends StatelessWidget {

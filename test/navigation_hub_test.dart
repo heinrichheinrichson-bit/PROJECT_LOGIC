@@ -77,4 +77,25 @@ void main() {
     expect(find.text('Rätselsammlung'), findsNWidgets(2));
   });
 
+  testWidgets('Hashi has a dedicated detailed statistics screen',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: StatisticsScreen(
+          results: <String, PuzzleResult>{},
+          progress: PlayerProgress.empty(),
+          gameType: GameType.hashi,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hashi-Statistik'), findsOneWidget);
+    expect(find.text('Leistung'), findsOneWidget);
+    expect(find.text('Nach Schwierigkeit'), findsOneWidget);
+    expect(find.text('Wenigste Züge'), findsOneWidget);
+    expect(find.text('Tagesrätsel'), findsNothing);
+  });
 }

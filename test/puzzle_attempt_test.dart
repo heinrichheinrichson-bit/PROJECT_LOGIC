@@ -56,5 +56,25 @@ void main() {
     expect(binairo.completedCount, 1);
     expect(binairo.completedForMode(GameMode.generated), 1);
     expect(binairo.completedForDifficulty(PuzzleDifficulty.medium), 1);
+    expect(global.bestSeconds, 30);
+    expect(global.averageSeconds, 60);
+    expect(global.bestWithoutHintsSeconds, 30);
+    expect(global.hintsUsed, 1);
+    expect(global.fewestMoves, 8);
+    expect(global.averageMoves, 8);
+    expect(
+      global.filtered(difficulty: PuzzleDifficulty.easy).completedCount,
+      1,
+    );
+  });
+
+  test('empty statistics expose no performance records', () {
+    final statistics = GameStatistics.fromAttempts(const []);
+
+    expect(statistics.bestSeconds, isNull);
+    expect(statistics.averageSeconds, isNull);
+    expect(statistics.bestWithoutHintsSeconds, isNull);
+    expect(statistics.fewestMoves, isNull);
+    expect(statistics.averageMoves, isNull);
   });
 }
