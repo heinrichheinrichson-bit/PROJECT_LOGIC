@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 
 import 'app_preferences.dart';
 import 'core/monetization/hint_economy.dart';
+import 'core/statistics/game_statistics.dart';
+import 'core/statistics/puzzle_attempt.dart';
 import 'daily_challenge.dart';
 import 'game_logic.dart';
 import 'game_storage.dart';
@@ -1512,11 +1514,11 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
     }
   }
 
-  void _showSolvedDialog() {
+  Future<void> _showSolvedDialog() async {
     if (!_completionRecorded) {
       _completionRecorded = true;
       if (widget.saveProgress) {
-        _storage.recordCompletion(
+        await _storage.recordCompletion(
           puzzleId: widget.definition.id,
           elapsedSeconds: elapsedSeconds,
           source: widget.source,
@@ -1525,7 +1527,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
           hintsUsed: _hintsUsed,
           rewardedHints: _hintBudget.rewardedHints,
         );
-        _storage.clearActiveGame();
+        await _storage.clearActiveGame();
       }
     }
 
@@ -2175,7 +2177,7 @@ class _ProgressGoalCard extends StatelessWidget {
       };
 }
 
-class StatisticsScreen extends StatelessWidget {
+class StatisticsScreen extends StatefulWidget {
   const StatisticsScreen({
     required this.results,
     required this.progress,
@@ -2186,7 +2188,27 @@ class StatisticsScreen extends StatelessWidget {
   final PlayerProgress progress;
 
   @override
+  State<StatisticsScreen> createState() => _StatisticsScreenState();
+}
+
+class _StatisticsScreenState extends State<StatisticsScreen> {
+  List<PuzzleAttempt> _attempts = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAttempts();
+  }
+
+  Future<void> _loadAttempts() async {
+    final attempts = await GameStorage().loadAttempts();
+    if (mounted) setState(() => _attempts = attempts);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final results = widget.results;
+    final progress = widget.progress;
     final catalogIds = binaryPuzzleCatalog.map((puzzle) => puzzle.id).toSet();
     final catalogResults = <String, PuzzleResult>{
       for (final entry in results.entries)
@@ -2218,6 +2240,27 @@ class StatisticsScreen extends StatelessWidget {
     final averageSeconds = totalCompleted == 0
         ? 0
         : progress.totalPlaySeconds ~/ totalCompleted;
+    final binairoStatistics = GameStatistics.fromAttempts(
+      _attempts,
+      gameType: GameType.binairo,
+    );
+    final hashiStatistics = GameStatistics.fromAttempts(
+      _attempts,
+      gameType: GameType.hashi,
+    );
+    final binairoCompleted = results.values
+        .where((result) => result.gameType == GameType.binairo)
+        .fold<int>(0, (sum, result) => sum + result.completionCount);
+    final hashiCompleted = results.values
+        .where((result) => result.gameType == GameType.hashi)
+        .fold<int>(0, (sum, result) => sum + result.completionCount);
+    final hashiCatalogCompleted = results.values
+        .where((result) =>
+            result.gameType == GameType.hashi &&
+            result.effectiveSource == GameMode.catalog)
+        .map((result) => result.puzzleId)
+        .toSet()
+        .length;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Statistik')),
@@ -2306,6 +2349,40 @@ class StatisticsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
+                    'Spiele',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Das Wichtigste auf einen Blick. Weitere Werte findest du direkt beim jeweiligen Spiel.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  const SizedBox(height: 10),
+                  _GameStatisticsOverviewCard(
+                    gameType: GameType.binairo,
+                    icon: Icons.grid_view_rounded,
+                    completed: binairoCompleted,
+                    catalogCompleted: catalogCompleted,
+                    catalogTotal: catalogTotal,
+                    endlessCompleted: generatedCompleted,
+                    solvedWithoutHints: binairoStatistics.solvedWithoutHints,
+                  ),
+                  const SizedBox(height: 10),
+                  _GameStatisticsOverviewCard(
+                    gameType: GameType.hashi,
+                    icon: Icons.hub_outlined,
+                    completed: hashiCompleted,
+                    catalogCompleted: hashiCatalogCompleted,
+                    catalogTotal: hashiPuzzleCatalog.length,
+                    endlessCompleted: hashiStatistics.completedForMode(
+                      GameMode.generated,
+                    ),
+                    solvedWithoutHints: hashiStatistics.solvedWithoutHints,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
                     'Katalog',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
@@ -2344,6 +2421,109 @@ class StatisticsScreen extends StatelessWidget {
     }
     return '$minutes:${rest.toString().padLeft(2, '0')}';
   }
+}
+
+class _GameStatisticsOverviewCard extends StatelessWidget {
+  const _GameStatisticsOverviewCard({
+    required this.gameType,
+    required this.icon,
+    required this.completed,
+    required this.catalogCompleted,
+    required this.catalogTotal,
+    required this.endlessCompleted,
+    required this.solvedWithoutHints,
+  });
+
+  final GameType gameType;
+  final IconData icon;
+  final int completed;
+  final int catalogCompleted;
+  final int catalogTotal;
+  final int endlessCompleted;
+  final int solvedWithoutHints;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final progress = catalogTotal == 0 ? 0.0 : catalogCompleted / catalogTotal;
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        leading: CircleAvatar(
+          backgroundColor: colors.primaryContainer,
+          foregroundColor: colors.onPrimaryContainer,
+          child: Icon(icon),
+        ),
+        title: Text(
+          gameType.label,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text('$completed Rätsel abgeschlossen'),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [
+          LinearProgressIndicator(value: progress.clamp(0, 1)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _CompactStatistic(
+                  value: '$catalogCompleted/$catalogTotal',
+                  label: 'Katalog',
+                ),
+              ),
+              Expanded(
+                child: _CompactStatistic(
+                  value: '$endlessCompleted',
+                  label: 'Endlosmodus',
+                ),
+              ),
+              Expanded(
+                child: _CompactStatistic(
+                  value: '$solvedWithoutHints',
+                  label: 'Ohne Hinweise*',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              '* Wird ab Statistik 2.0 erfasst.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactStatistic extends StatelessWidget {
+  const _CompactStatistic({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      );
 }
 
 class _GeneratedSizeStatistic extends StatelessWidget {
