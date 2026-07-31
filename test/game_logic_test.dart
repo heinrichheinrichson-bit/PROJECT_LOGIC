@@ -137,6 +137,18 @@ void main() {
       expect(nextPuzzleInDifficulty(hard[1]), hard[2]);
       expect(nextPuzzleInDifficulty(hard.last), isNull);
     });
+
+    test('catalog chapters keep every puzzle in order', () {
+      final puzzles = puzzlesFor(PuzzleDifficulty.easy);
+      final chapters = chaptersFor(
+        PuzzleDifficulty.easy,
+        chapterSize: 2,
+      );
+
+      expect(chapters, hasLength(2));
+      expect(chapters.expand((chapter) => chapter.puzzles), puzzles);
+      expect(chapters.first.title, 'Erste Schritte');
+    });
   });
 
   test('editable values can be exported and restored', () {

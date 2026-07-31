@@ -616,6 +616,46 @@ List<BinaryPuzzleDefinition> puzzlesFor(PuzzleDifficulty difficulty) =>
         .where((puzzle) => puzzle.difficulty == difficulty)
         .toList();
 
+class BinaryPuzzleChapter {
+  const BinaryPuzzleChapter({
+    required this.index,
+    required this.title,
+    required this.puzzles,
+  });
+
+  final int index;
+  final String title;
+  final List<BinaryPuzzleDefinition> puzzles;
+}
+
+List<BinaryPuzzleChapter> chaptersFor(
+  PuzzleDifficulty difficulty, {
+  int chapterSize = 10,
+}) {
+  if (chapterSize <= 0) throw ArgumentError.value(chapterSize, 'chapterSize');
+  final puzzles = puzzlesFor(difficulty);
+  const titles = [
+    'Erste Schritte',
+    'Sicher kombiniert',
+    'Neue Muster',
+    'Vorausgedacht',
+    'Große Herausforderungen',
+    'Meisterrunde',
+  ];
+  return [
+    for (var start = 0; start < puzzles.length; start += chapterSize)
+      BinaryPuzzleChapter(
+        index: start ~/ chapterSize + 1,
+        title: start ~/ chapterSize < titles.length
+            ? titles[start ~/ chapterSize]
+            : 'Kapitel ${start ~/ chapterSize + 1}',
+        puzzles: List.unmodifiable(
+          puzzles.skip(start).take(chapterSize),
+        ),
+      ),
+  ];
+}
+
 BinaryPuzzleDefinition? nextPuzzleInDifficulty(
   BinaryPuzzleDefinition current,
 ) {

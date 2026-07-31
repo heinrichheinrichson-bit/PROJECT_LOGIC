@@ -939,54 +939,178 @@ class _PuzzleSelectionScreenState extends State<PuzzleSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final puzzles = puzzlesFor(widget.difficulty);
+    final chapters = chaptersFor(widget.difficulty);
+    final completed = puzzles
+        .where((definition) => _results.containsKey(definition.id))
+        .length;
     return Scaffold(
       appBar: AppBar(
         title: Text('Binärpuzzle · ${widget.difficulty.label}'),
       ),
       body: Center(
-        child: ListView.separated(
+        child: ListView(
           padding: const EdgeInsets.all(24),
-          itemCount: puzzles.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final definition = puzzles[index];
-            final result = _results[definition.id];
-            return Card(
-              child: ListTile(
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                leading: CircleAvatar(
-                  child: result == null
-                      ? Text('${definition.number}')
-                      : const Icon(Icons.check_rounded),
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _CollectionProgressCard(
+                      completed: completed,
+                      total: puzzles.length,
+                      label: '${widget.difficulty.label} · Rätselsammlung',
+                    ),
+                    const SizedBox(height: 16),
+                    for (final chapter in chapters) ...[
+                      _BinaryChapterCard(
+                        chapter: chapter,
+                        results: _results,
+                        initiallyExpanded: chapter.index == 1,
+                        onOpenPuzzle: (definition) async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) =>
+                                  BinaryPuzzleScreen(definition: definition),
+                            ),
+                          );
+                          await _loadResults();
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ],
                 ),
-                title: Text(
-                  definition.displayName,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                subtitle: Text(
-                  result == null
-                      ? '${definition.size} × ${definition.size} · ${definition.clueCount} Vorgaben'
-                      : 'Bestzeit ${_formatHomeTime(result.bestSeconds)} · ${definition.clueCount} Vorgaben',
-                ),
-                trailing: Icon(
-                  result == null
-                      ? Icons.play_arrow_rounded
-                      : Icons.replay_rounded,
-                ),
-                onTap: () async {
-                  await Navigator.of(context).push(MaterialPageRoute<void>(
-                    builder: (_) => BinaryPuzzleScreen(definition: definition),
-                  ));
-                  await _loadResults();
-                },
               ),
-            );
-          },
+            ),
+          ],
         ),
       ),
     );
   }
+}
+
+class _CollectionProgressCard extends StatelessWidget {
+  const _CollectionProgressCard({
+    required this.completed,
+    required this.total,
+    required this.label,
+  });
+
+  final int completed;
+  final int total;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: colors.primaryContainer,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text('$completed von $total Rätseln gelöst'),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(99),
+            child: LinearProgressIndicator(
+              minHeight: 8,
+              value: total == 0 ? 0 : completed / total,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BinaryChapterCard extends StatelessWidget {
+  const _BinaryChapterCard({
+    required this.chapter,
+    required this.results,
+    required this.initiallyExpanded,
+    required this.onOpenPuzzle,
+  });
+
+  final BinaryPuzzleChapter chapter;
+  final Map<String, PuzzleResult> results;
+  final bool initiallyExpanded;
+  final ValueChanged<BinaryPuzzleDefinition> onOpenPuzzle;
+
+  @override
+  Widget build(BuildContext context) {
+    final completed = chapter.puzzles
+        .where((puzzle) => results.containsKey(puzzle.id))
+        .length;
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        initiallyExpanded: initiallyExpanded,
+        leading: CircleAvatar(child: Text('${chapter.index}')),
+        title: Text(
+          chapter.title,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text('$completed von ${chapter.puzzles.length} gelöst'),
+        children: [
+          const Divider(height: 1),
+          for (final definition in chapter.puzzles)
+            _BinaryPuzzleListTile(
+              definition: definition,
+              result: results[definition.id],
+              onTap: () => onOpenPuzzle(definition),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BinaryPuzzleListTile extends StatelessWidget {
+  const _BinaryPuzzleListTile({
+    required this.definition,
+    required this.result,
+    required this.onTap,
+  });
+
+  final BinaryPuzzleDefinition definition;
+  final PuzzleResult? result;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        leading: CircleAvatar(
+          child: result == null
+              ? Text('${definition.number}')
+              : const Icon(Icons.check_rounded),
+        ),
+        title: Text(
+          definition.displayName,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(
+          result == null
+              ? '${definition.size} × ${definition.size} · ${definition.clueCount} Vorgaben'
+              : 'Bestzeit ${_formatHomeTime(result!.bestSeconds)} · ${definition.size} × ${definition.size}',
+        ),
+        trailing: Icon(
+          result == null ? Icons.play_arrow_rounded : Icons.replay_rounded,
+        ),
+        onTap: onTap,
+      );
 }
 
 class GeneratedPuzzleSetupScreen extends StatefulWidget {
