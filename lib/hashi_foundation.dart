@@ -920,6 +920,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   bool _completionShown = false;
   bool _showMistakes = false;
   HintBudget _hintBudget = const HintBudget();
+  int _hintsUsed = 0;
 
   @override
   void initState() {
@@ -1002,6 +1003,9 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
       source: GameMode.catalog,
       difficulty: widget.puzzle.sharedDifficulty,
       boardSize: widget.puzzle.size,
+      moves: _moves,
+      hintsUsed: _hintsUsed,
+      rewardedHints: _hintBudget.rewardedHints,
     );
     if (!mounted) return;
     await showDialog<void>(
@@ -1193,6 +1197,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
     if (!preferences.premiumSimulationEnabled) {
       setState(() => _hintBudget = _hintBudget.useHint());
     }
+    _hintsUsed++;
     setState(() {
       _history.add(_game);
       _redoHistory.clear();

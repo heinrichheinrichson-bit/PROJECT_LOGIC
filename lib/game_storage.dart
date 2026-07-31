@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/domain/game_identity.dart';
+import 'core/statistics/puzzle_attempt.dart';
 import 'game_logic.dart';
 
 export 'core/domain/game_identity.dart' show GameMode, GameType, PuzzleSource;
@@ -439,6 +440,7 @@ class GameStorage {
   static const _activeGameKey = 'active_binary_game_v1';
   static const _resultsKey = 'binary_results_v1';
   static const _playerProgressKey = 'player_progress_v1';
+  static const _attemptsKey = 'puzzle_attempts_v1';
 
   Future<SavedGame?> loadActiveGame() async {
     final preferences = await SharedPreferences.getInstance();
@@ -527,6 +529,9 @@ class GameStorage {
     required PuzzleDifficulty difficulty,
     required int boardSize,
     GameType gameType = GameType.binairo,
+    int? moves,
+    int hintsUsed = 0,
+    int rewardedHints = 0,
     DateTime? completedAt,
   }) async {
     final results = await loadResults();
@@ -569,6 +574,42 @@ class GameStorage {
       _playerProgressKey,
       jsonEncode(updatedProgress.toJson()),
     );
+
+    final attempts = await loadAttempts();
+    attempts.add(PuzzleAttempt(
+      id: '${completionTime.microsecondsSinceEpoch}-${gameType.name}-$puzzleId',
+      gameType: gameType,
+      puzzleId: puzzleId,
+      mode: source,
+      difficulty: difficulty,
+      boardSize: boardSize,
+      startedAt: completionTime.subtract(Duration(seconds: elapsedSeconds)),
+      completedAt: completionTime,
+      elapsedSeconds: elapsedSeconds,
+      moves: moves,
+      hintsUsed: hintsUsed,
+      rewardedHints: rewardedHints,
+    ));
+    await preferences.setString(
+      _attemptsKey,
+      jsonEncode(attempts.map((attempt) => attempt.toJson()).toList()),
+    );
+  }
+
+  Future<List<PuzzleAttempt>> loadAttempts() async {
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(_attemptsKey);
+    if (raw == null) return [];
+    try {
+      final decoded = jsonDecode(raw) as List<dynamic>;
+      return decoded
+          .map((item) => PuzzleAttempt.fromJson(
+                Map<String, Object?>.from(item as Map),
+              ))
+          .toList();
+    } on Object {
+      return [];
+    }
   }
 
   Future<void> clearAllProgress() async {
@@ -576,5 +617,6 @@ class GameStorage {
     await preferences.remove(_activeGameKey);
     await preferences.remove(_resultsKey);
     await preferences.remove(_playerProgressKey);
+    await preferences.remove(_attemptsKey);
   }
 }

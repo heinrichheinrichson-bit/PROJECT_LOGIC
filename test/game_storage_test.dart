@@ -336,6 +336,32 @@ void main() {
     expect(results['hashi:easy-01']?.gameType, GameType.hashi);
   });
 
+  test('recordCompletion appends detailed attempt history', () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = GameStorage();
+
+    await storage.recordCompletion(
+      puzzleId: 'hashi_01',
+      elapsedSeconds: 90,
+      gameType: GameType.hashi,
+      source: GameMode.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 7,
+      moves: 8,
+      hintsUsed: 1,
+      rewardedHints: 1,
+      completedAt: DateTime(2026, 7, 31, 20),
+    );
+
+    final attempts = await storage.loadAttempts();
+
+    expect(attempts, hasLength(1));
+    expect(attempts.single.gameType, GameType.hashi);
+    expect(attempts.single.moves, 8);
+    expect(attempts.single.hintsUsed, 1);
+    expect(attempts.single.rewardedHints, 1);
+  });
+
   // v0.6.9 daily challenge persistence regression tests.
   test('daily SavedGame preserves its puzzle source', () {
     final definition = BinaryPuzzleDefinition(

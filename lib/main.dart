@@ -1125,6 +1125,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   CellPosition? _hintCell;
   Set<CellPosition> _hintRelatedCells = const {};
   HintBudget _hintBudget = const HintBudget();
+  int _hintsUsed = 0;
 
   @override
   void initState() {
@@ -1369,6 +1370,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
     if (!preferences.premiumSimulationEnabled) {
       setState(() => _hintBudget = _hintBudget.useHint());
     }
+    _hintsUsed++;
 
     setState(() {
       _selectedCell = hint.position;
@@ -1520,6 +1522,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
           source: widget.source,
           difficulty: widget.definition.difficulty,
           boardSize: widget.definition.size,
+          hintsUsed: _hintsUsed,
+          rewardedHints: _hintBudget.rewardedHints,
         );
         _storage.clearActiveGame();
       }
