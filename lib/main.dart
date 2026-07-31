@@ -16,6 +16,7 @@ import 'game_storage.dart';
 import 'hint_engine.dart';
 import 'hashi_foundation.dart';
 import 'player_progress_system.dart';
+import 'slitherlink_foundation.dart';
 import 'features/binary_puzzle/domain/binary_puzzle_generator.dart';
 
 Future<void> main() async {
@@ -203,6 +204,19 @@ class _HomeScreenState extends State<HomeScreen> {
                               );
                             },
                           ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _HomeAction(
+                      icon: Icons.gesture_rounded,
+                      title: 'Slitherlink',
+                      subtitle:
+                          'Neu · Zeichne eine einzige geschlossene Schleife',
+                      enabled: true,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SlitherlinkHubScreen(),
                         ),
                       ),
                     ),
