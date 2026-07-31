@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 import 'core/presentation/confirm_restart_dialog.dart';
 
 enum SlitherEdgeMark { empty, line, blocked }
+
+enum _SlitherDeveloperAction { almostSolved, solve, error, reset }
 
 @immutable
 class SlitherEdge {
@@ -230,6 +233,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
   final List<SlitherlinkState> _history = [];
   final List<SlitherlinkState> _redo = [];
   bool _completionShown = false;
+  bool _developerCompletion = false;
 
   @override
   void initState() {
@@ -301,9 +305,21 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.celebration_rounded),
         title: const Text('Schleife vollendet!'),
-        content: const Text(
-          'Alle Zahlen stimmen und die Linie bildet genau eine geschlossene Schleife.',
-          textAlign: TextAlign.center,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Alle Zahlen stimmen und die Linie bildet genau eine geschlossene Schleife.',
+              textAlign: TextAlign.center,
+            ),
+            if (_developerCompletion) ...[
+              const SizedBox(height: 14),
+              const Chip(
+                avatar: Icon(Icons.science_outlined),
+                label: Text('Testabschluss · keine Statistik'),
+              ),
+            ],
+          ],
         ),
         actions: [
           TextButton(
@@ -322,11 +338,101 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
     );
   }
 
+  Future<void> _runDeveloperAction(_SlitherDeveloperAction action) async {
+    switch (action) {
+      case _SlitherDeveloperAction.almostSolved:
+        final solution = widget.puzzle.solution.toList()..sort();
+        setState(() {
+          _state = SlitherlinkState(
+            puzzle: widget.puzzle,
+            marks: {
+              for (final id in solution.take(solution.length - 1))
+                id: SlitherEdgeMark.line,
+            },
+          );
+          _history.clear();
+          _redo.clear();
+          _completionShown = false;
+          _developerCompletion = true;
+        });
+        return;
+      case _SlitherDeveloperAction.solve:
+        setState(() {
+          _state = SlitherlinkState(
+            puzzle: widget.puzzle,
+            marks: {
+              for (final edge in _allEdges(widget.puzzle))
+                edge.id: widget.puzzle.solution.contains(edge.id)
+                    ? SlitherEdgeMark.line
+                    : SlitherEdgeMark.blocked,
+            },
+          );
+          _history.clear();
+          _redo.clear();
+          _completionShown = false;
+          _developerCompletion = true;
+        });
+        await _showCompletion();
+        return;
+      case _SlitherDeveloperAction.error:
+        final wrongEdge = _allEdges(widget.puzzle).firstWhere(
+          (edge) => !widget.puzzle.solution.contains(edge.id),
+        );
+        setState(() {
+          _state = SlitherlinkState(
+            puzzle: widget.puzzle,
+            marks: {
+              for (final id in widget.puzzle.solution) id: SlitherEdgeMark.line,
+              wrongEdge.id: SlitherEdgeMark.line,
+            },
+          );
+          _history.clear();
+          _redo.clear();
+          _completionShown = false;
+          _developerCompletion = true;
+        });
+        return;
+      case _SlitherDeveloperAction.reset:
+        setState(() {
+          _state = SlitherlinkState(puzzle: widget.puzzle);
+          _history.clear();
+          _redo.clear();
+          _completionShown = false;
+          _developerCompletion = false;
+        });
+        return;
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: Text(widget.puzzle.title),
           actions: [
+            if (kDebugMode)
+              PopupMenuButton<_SlitherDeveloperAction>(
+                tooltip: 'Testfunktionen',
+                icon: const Icon(Icons.bug_report_outlined),
+                onSelected: _runDeveloperAction,
+                itemBuilder: (_) => const [
+                  PopupMenuItem(
+                    value: _SlitherDeveloperAction.almostSolved,
+                    child: Text('Fast lösen'),
+                  ),
+                  PopupMenuItem(
+                    value: _SlitherDeveloperAction.solve,
+                    child: Text('Sofort lösen'),
+                  ),
+                  PopupMenuItem(
+                    value: _SlitherDeveloperAction.error,
+                    child: Text('Fehler erzeugen'),
+                  ),
+                  PopupMenuItem(
+                    value: _SlitherDeveloperAction.reset,
+                    child: Text('Testzustand leeren'),
+                  ),
+                ],
+              ),
             IconButton(
               tooltip: 'Hinweis',
               onPressed: _completionShown ? null : _hint,

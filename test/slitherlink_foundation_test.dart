@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/slitherlink_foundation.dart';
 
@@ -36,5 +37,25 @@ void main() {
     expect(line.markAt(edge), SlitherEdgeMark.line);
     expect(blocked.markAt(edge), SlitherEdgeMark.blocked);
     expect(emptyAgain.markAt(edge), SlitherEdgeMark.empty);
+  });
+
+  testWidgets('debug solve is clearly marked as a test completion',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: SlitherlinkGameScreen(puzzle: slitherlinkTutorialPuzzle),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.bug_report_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('Fast lösen'), findsOneWidget);
+    expect(find.text('Fehler erzeugen'), findsOneWidget);
+
+    await tester.tap(find.text('Sofort lösen'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Schleife vollendet!'), findsOneWidget);
+    expect(find.text('Testabschluss · keine Statistik'), findsOneWidget);
   });
 }
