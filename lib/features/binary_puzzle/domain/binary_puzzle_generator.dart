@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../../../game_logic.dart';
 import 'binary_board_generator.dart';
+import 'binary_difficulty_rater.dart';
 import 'binary_puzzle_solver.dart';
 
 class BinaryPuzzleGenerationResult {
@@ -16,6 +17,7 @@ class BinaryPuzzleGenerationResult {
     required this.generationDuration,
     required this.rowClueCounts,
     required this.columnClueCounts,
+    required this.difficultyAnalysis,
   });
 
   final BinaryPuzzleDefinition definition;
@@ -28,6 +30,7 @@ class BinaryPuzzleGenerationResult {
   final Duration generationDuration;
   final List<int> rowClueCounts;
   final List<int> columnClueCounts;
+  final BinaryDifficultyAnalysis difficultyAnalysis;
 
   bool get reachedTarget => definition.clueCount <= targetClueCount;
 
@@ -49,10 +52,12 @@ class BinaryPuzzleGenerator {
   const BinaryPuzzleGenerator({
     this.boardGenerator = const BinaryBoardGenerator(),
     this.solver = const BinaryPuzzleSolver(),
+    this.difficultyRater = const BinaryDifficultyRater(),
   });
 
   final BinaryBoardGenerator boardGenerator;
   final BinaryPuzzleSolver solver;
+  final BinaryDifficultyRater difficultyRater;
 
   BinaryPuzzleGenerationResult generate({
     required int size,
@@ -146,6 +151,7 @@ class BinaryPuzzleGenerator {
       generationDuration: stopwatch.elapsed,
       rowClueCounts: List<int>.unmodifiable(rowClueCounts),
       columnClueCounts: List<int>.unmodifiable(columnClueCounts),
+      difficultyAnalysis: difficultyRater.analyze(definition),
     );
   }
 

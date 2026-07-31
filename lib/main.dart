@@ -346,8 +346,8 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   const SizedBox(height: 12),
                   _HomeAction(
                     icon: Icons.auto_awesome_rounded,
-                    title: 'Endlosmodus',
-                    subtitle: 'Wähle Rastergröße und Schwierigkeit',
+                    title: 'Zufallsrätsel',
+                    subtitle: 'Erstelle ein neues Rätsel nach deinen Wünschen',
                     enabled: true,
                     onTap: () async {
                       await Navigator.of(context).push(
@@ -983,7 +983,7 @@ class _GeneratedPuzzleSetupScreenState
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Endlosmodus')),
+      appBar: AppBar(title: const Text('Zufallsrätsel')),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -2312,7 +2312,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     const SizedBox(height: 12),
                     _StatisticListCard(
                       icon: Icons.all_inclusive_rounded,
-                      title: 'Endlosmodus',
+                      title: 'Generierte Rätsel',
                       subtitle: '$generatedCompleted abgeschlossen',
                     ),
                     const SizedBox(height: 12),
@@ -2346,7 +2346,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       ),
                     const SizedBox(height: 24),
                     Text(
-                      'Endlosmodus nach Größe',
+                      'Generierte Rätsel nach Größe',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 10),
@@ -2530,7 +2530,7 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
               Expanded(
                 child: _CompactStatistic(
                   value: '$endlessCompleted',
-                  label: 'Endlosmodus',
+                  label: 'Generiert',
                 ),
               ),
               Expanded(

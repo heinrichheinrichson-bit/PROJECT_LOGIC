@@ -34,6 +34,24 @@ void main() {
       expect(solverResult.firstSolution, definition.solution);
     });
 
+    test('generates a uniquely solvable 10x10 puzzle', () {
+      final result = generator.generate(
+        size: 10,
+        seed: 1010,
+        difficulty: PuzzleDifficulty.medium,
+      );
+      final solverResult = solver.solve(
+        result.definition.createPuzzle().board,
+        solutionLimit: 2,
+      );
+
+      expect(result.definition.size, 10);
+      expect(solverResult.hasUniqueSolution, isTrue);
+      expect(solverResult.firstSolution, result.definition.solution);
+      expect(result.difficultyAnalysis.solvedLogically, isTrue);
+      expect(result.difficultyAnalysis.totalSteps, greaterThan(0));
+    });
+
     test('is deterministic for the same seed and difficulty', () {
       final first = generator.generate(
         size: 4,

@@ -30,9 +30,9 @@ enum GameMode {
 /// Shared difficulty bands. Individual games may add more precise ratings to
 /// their own puzzle definitions while still mapping them to these bands.
 enum PuzzleDifficulty {
-  easy('Leicht', 'Zum Kennenlernen'),
-  medium('Mittel', 'Weniger Vorgaben'),
-  hard('Schwer', 'Nur wenige Vorgaben');
+  easy('Leicht', 'Ruhiger Einstieg'),
+  medium('Mittel', 'Mehrere Schritte vorausdenken'),
+  hard('Schwer', 'Für erfahrene Rätselfans');
 
   const PuzzleDifficulty(this.label, this.description);
 

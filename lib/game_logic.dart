@@ -17,7 +17,8 @@ enum CellValue {
 enum BinaryPuzzleSize {
   small(4, '4 × 4'),
   standard(6, '6 × 6'),
-  large(8, '8 × 8');
+  large(8, '8 × 8'),
+  expert(10, '10 × 10');
 
   const BinaryPuzzleSize(this.value, this.label);
 

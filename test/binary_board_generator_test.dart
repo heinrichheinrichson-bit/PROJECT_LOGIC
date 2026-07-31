@@ -8,7 +8,7 @@ void main() {
   const validator = BinaryBoardValidator();
 
   group('BinaryBoardGenerator', () {
-    for (final size in [4, 6, 8]) {
+    for (final size in [4, 6, 8, 10]) {
       test('generates a valid ${size}x$size board', () {
         final result = generator.generate(
           size: size,

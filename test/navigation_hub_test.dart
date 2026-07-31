@@ -21,7 +21,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Rätselsammlung'), findsOneWidget);
-    expect(find.text('Endlosmodus'), findsOneWidget);
+    expect(find.text('Zufallsrätsel'), findsOneWidget);
     expect(find.text('Tagesrätsel'), findsOneWidget);
     expect(find.text('Deine Binärpuzzle-Statistik'), findsOneWidget);
   });

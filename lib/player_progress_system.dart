@@ -158,7 +158,7 @@ class PlayerProgressService {
         _achievement(
           id: 'generator-ten',
           title: 'Freie Wahl',
-          description: 'Löse 10 Rätsel im Endlosmodus.',
+          description: 'Löse 10 generierte Rätsel.',
           iconName: 'auto_awesome',
           current: snapshot.generatedCompleted,
           target: 10,
@@ -212,7 +212,7 @@ class PlayerProgressService {
       ),
       _mission(
         id: 'daily-${_dateKey(today)}-generator',
-        title: 'Endlosrunde',
+        title: 'Neue Herausforderung',
         description: 'Löse heute ein frei erzeugtes Rätsel.',
         iconName: 'auto_awesome',
         current: generatedToday,
