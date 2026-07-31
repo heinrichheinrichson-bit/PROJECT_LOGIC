@@ -2624,6 +2624,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       legacyBestSeconds: _bestResultSeconds(binairoResults),
                     ),
                     const SizedBox(height: 24),
+                    _ModePerformanceSection(
+                      statistics: selectedStatistics,
+                      modes: const [
+                        GameMode.catalog,
+                        GameMode.generated,
+                        GameMode.daily,
+                      ],
+                    ),
+                    const SizedBox(height: 24),
                     _DifficultyPerformanceSection(
                       statistics: selectedStatistics,
                       legacyResults: binairoResults,
@@ -2682,6 +2691,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           (result) => result.gameType == GameType.hashi,
                         ),
                       ),
+                      showMoves: true,
+                    ),
+                    const SizedBox(height: 24),
+                    _ModePerformanceSection(
+                      statistics: hashiStatistics,
+                      modes: const [GameMode.catalog, GameMode.generated],
                       showMoves: true,
                     ),
                     const SizedBox(height: 24),
@@ -2765,6 +2780,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 24),
+                    _RecentActivitySection(attempts: _attempts),
                   ],
                 ],
               ),
@@ -3055,6 +3072,190 @@ class _DifficultyPerformanceCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ModePerformanceSection extends StatelessWidget {
+  const _ModePerformanceSection({
+    required this.statistics,
+    required this.modes,
+    this.showMoves = false,
+  });
+
+  final GameStatistics statistics;
+  final List<GameMode> modes;
+  final bool showMoves;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Nach Spielart', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 4),
+          Text(
+            'Aufgeschlüsselt nach Sammlung, Zufalls- und Tagesrätseln.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+          const SizedBox(height: 10),
+          for (final mode in modes)
+            _ModePerformanceCard(
+              mode: mode,
+              statistics: statistics.filtered(mode: mode),
+              showMoves: showMoves,
+            ),
+        ],
+      );
+}
+
+class _ModePerformanceCard extends StatelessWidget {
+  const _ModePerformanceCard({
+    required this.mode,
+    required this.statistics,
+    required this.showMoves,
+  });
+
+  final GameMode mode;
+  final GameStatistics statistics;
+  final bool showMoves;
+
+  @override
+  Widget build(BuildContext context) {
+    String time(int? seconds) =>
+        seconds == null ? '–' : _StatisticsScreenState._formatLongTime(seconds);
+    final title = switch (mode) {
+      GameMode.catalog => 'Sammlungsmodus',
+      GameMode.generated => 'Zufallsrätsel',
+      GameMode.daily => 'Tagesmodus',
+      GameMode.event => 'Ereignisrätsel',
+      GameMode.tutorial => 'Einführung',
+    };
+    final icon = switch (mode) {
+      GameMode.catalog => Icons.collections_bookmark_outlined,
+      GameMode.generated => Icons.auto_awesome_outlined,
+      GameMode.daily => Icons.calendar_today_outlined,
+      GameMode.event => Icons.celebration_outlined,
+      GameMode.tutorial => Icons.school_outlined,
+    };
+
+    return Card(
+      child: ExpansionTile(
+        leading: Icon(icon),
+        title: Text(title),
+        subtitle: Text('${statistics.completedCount} abgeschlossen'),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: _CompactStatistic(
+                  value: time(statistics.bestSeconds),
+                  label: 'Bestzeit',
+                ),
+              ),
+              Expanded(
+                child: _CompactStatistic(
+                  value: time(statistics.averageSeconds),
+                  label: 'Durchschnitt',
+                ),
+              ),
+              Expanded(
+                child: _CompactStatistic(
+                  value: _StatisticsScreenState._formatLongTime(
+                    statistics.totalPlaySeconds,
+                  ),
+                  label: 'Spielzeit',
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 28),
+          Row(
+            children: [
+              Expanded(
+                child: _CompactStatistic(
+                  value: '${statistics.solvedWithoutHints}',
+                  label: 'Ohne Hinweise',
+                ),
+              ),
+              Expanded(
+                child: _CompactStatistic(
+                  value: '${statistics.hintsUsed}',
+                  label: 'Hinweise',
+                ),
+              ),
+              Expanded(
+                child: _CompactStatistic(
+                  value: showMoves
+                      ? (statistics.averageMoves?.toString() ?? '–')
+                      : '${statistics.rewardedHints}',
+                  label: showMoves ? 'Ø Züge' : 'Bonus-Hinweise',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecentActivitySection extends StatelessWidget {
+  const _RecentActivitySection({required this.attempts});
+
+  final List<PuzzleAttempt> attempts;
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateTime.now();
+    final start = DateTime(today.year, today.month, today.day)
+        .subtract(const Duration(days: 6));
+    final recent = attempts
+        .where((attempt) => !attempt.completedAt.isBefore(start))
+        .toList(growable: false);
+    final activeDays = recent
+        .map((attempt) =>
+            '${attempt.completedAt.year}-${attempt.completedAt.month}-${attempt.completedAt.day}')
+        .toSet()
+        .length;
+    final playSeconds =
+        recent.fold<int>(0, (sum, attempt) => sum + attempt.elapsedSeconds);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Letzte 7 Tage', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 10),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _CompactStatistic(
+                    value: '${recent.length}',
+                    label: 'Rätsel',
+                  ),
+                ),
+                Expanded(
+                  child: _CompactStatistic(
+                    value: '$activeDays/7',
+                    label: 'Aktive Tage',
+                  ),
+                ),
+                Expanded(
+                  child: _CompactStatistic(
+                    value: _StatisticsScreenState._formatLongTime(playSeconds),
+                    label: 'Spielzeit',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
