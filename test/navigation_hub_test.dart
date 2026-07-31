@@ -37,6 +37,7 @@ void main() {
 
     expect(find.text('Baue ein gemeinsames Brückennetz'), findsOneWidget);
     expect(find.text('Regeln ansehen'), findsOneWidget);
+    expect(find.text('Rätselkatalog'), findsOneWidget);
     expect(find.text('Erste Herausforderung'), findsOneWidget);
   });
 

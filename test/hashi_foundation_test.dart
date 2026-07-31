@@ -22,6 +22,23 @@ void main() {
     expect(game.bridgeCountBetween(0, 1), 0);
   });
 
+  test('an existing bridge can be removed directly', () {
+    var game = HashiGameState(puzzle: hashiTutorialPuzzle);
+    game = game.cycleConnection(0, 1);
+    game = game.cycleConnection(0, 1);
+
+    final updated = game.removeConnection(0, 1);
+
+    expect(game.bridgeCountBetween(0, 1), 2);
+    expect(updated.bridgeCountBetween(0, 1), 0);
+  });
+
+  test('removing a missing bridge leaves state unchanged', () {
+    final game = HashiGameState(puzzle: hashiTutorialPuzzle);
+
+    expect(identical(game.removeConnection(0, 1), game), isTrue);
+  });
+
   test('islands cannot connect through another island', () {
     final game = HashiGameState(puzzle: hashiTutorialPuzzle);
 
@@ -56,4 +73,13 @@ void main() {
     expect(game.allIslandsConnected, isTrue);
     expect(game.isSolved, isTrue);
   });
+
+  test('all catalog solutions satisfy numbers and connectivity', () {
+    expect(hashiPuzzleCatalog, hasLength(6));
+    for (final puzzle in hashiPuzzleCatalog) {
+      final game = HashiGameState(puzzle: puzzle, bridges: puzzle.solution);
+      expect(game.isSolved, isTrue, reason: puzzle.title);
+    }
+  });
 }
+

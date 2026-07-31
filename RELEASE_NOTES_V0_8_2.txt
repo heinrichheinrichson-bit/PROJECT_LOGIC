@@ -1,0 +1,13 @@
+PROJECT LOGIC v0.8.2 – Hashi-Rätselkatalog
+
+Neu:
+- Sechs handgebaute Hashi-Rätsel in drei Schwierigkeitsstufen.
+- Eigener Rätselkatalog mit dauerhaft gespeicherten Abschlussmarkierungen.
+- Timer und Zugzähler während jeder Partie.
+- Mögliche Zielinseln werden nach der ersten Auswahl hervorgehoben.
+- Verbesserter Abschlussdialog mit Zeit, Zügen und direktem nächsten Rätsel.
+- Überarbeiteter Hashi-Hub mit sichtbarem Katalogfortschritt.
+
+Qualität:
+- Alle Kataloglösungen werden durch Logiktests validiert.
+- Binärpuzzle, bestehende Spielstände und globaler Fortschritt bleiben unverändert.

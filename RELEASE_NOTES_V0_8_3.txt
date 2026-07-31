@@ -1,0 +1,8 @@
+Project Logic v0.8.3 – Intuitive Hashi-Korrekturen
+
+- Gesetzte Brücken können direkt angetippt und entfernt werden.
+- Der bekannte Zyklus „eine → zwei → keine Brücke“ bleibt erhalten.
+- Kurze Statusmeldungen bestätigen gesetzte, doppelte und entfernte Brücken.
+- Spielhinweis und Hashi-Regeln erklären beide Korrekturwege.
+- Undo und Zugzählung unterstützen auch das direkte Entfernen.
+- Zusätzliche Logiktests für das direkte Entfernen von Brücken.

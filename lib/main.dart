@@ -212,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                   const SizedBox(height: 28),
                   Text(
-                    'Version 0.8.1 · Erstes spielbares Hashi',
+                    'Version 0.8.2 · Hashi-Rätselkatalog',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),

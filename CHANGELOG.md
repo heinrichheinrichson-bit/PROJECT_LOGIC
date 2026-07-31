@@ -1,3 +1,28 @@
+# Changelog
+
+## v0.8.3
+
+### Changed
+- Hashi-Brücken lassen sich direkt durch Antippen entfernen.
+- Sichtbare Rückmeldung für einfache, doppelte und entfernte Brücken.
+- Spielhinweise und Regeln erklären die Korrektursteuerung deutlicher.
+
+### Tests
+- Logiktests für direktes Entfernen vorhandener Brücken ergänzt.
+
+# v0.8.2 – Hashi-Rätselkatalog
+
+### Added
+- Sechs handgebaute Hashi-Rätsel in drei Schwierigkeitsstufen.
+- Rätselkatalog mit dauerhaft gespeicherten Abschlussmarkierungen.
+- Timer, Zugzähler und hervorgehobene mögliche Zielinseln.
+- Abschlussdialog mit Zeit, Zügen und direkter Navigation zum nächsten Rätsel.
+- Logiktests für sämtliche Kataloglösungen.
+
+### Changed
+- Hashi-Hub zeigt den aktuellen Katalogfortschritt.
+- Paketversion auf 0.8.2+30 erhöht.
+
 # v0.8.0 – Hashi-Fundament
 
 ### Added
