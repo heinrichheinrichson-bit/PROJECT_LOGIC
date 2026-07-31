@@ -1,3 +1,14 @@
+## v0.8.8 – Hashi-Komfort
+
+- Redo ergänzt
+- optional zuschaltbare Fehleranzeige für gesetzte Brücken
+- Tipp-Funktion ergänzt automatisch einen korrekten Lösungsschritt
+- Undo/Redo und Debug-Zustände sauber synchronisiert
+- zusätzliche Tests für Hinweise und Lösungsabweichungen
+- Fehleranzeige korrigiert: Beim Ausschalten verschwinden rote Brücken und Inselmarkierungen vollständig
+- Inseln an fehlerhaften Verbindungen werden bei aktiver Prüfung gezielt markiert
+- klare Rückmeldung beim Ein- und Ausschalten der Fehleranzeige
+
 ## 0.8.7
 
 - Hashi-Debugmenü im Debug-Build ergänzt.

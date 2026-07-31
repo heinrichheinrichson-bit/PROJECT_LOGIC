@@ -423,6 +423,55 @@ class HashiGameState {
     );
   }
 
+  bool isSolutionConnection(HashiBridge bridge) {
+    for (final solutionBridge in puzzle.solution) {
+      if (_sameConnection(solutionBridge, bridge.from, bridge.to) &&
+          solutionBridge.count == bridge.count) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  List<HashiBridge> get incorrectBridges =>
+      bridges.where((bridge) => !isSolutionConnection(bridge)).toList();
+
+  Set<int> get incorrectIslandIndices {
+    final incorrect = <int>{};
+    for (final bridge in incorrectBridges) {
+      incorrect
+        ..add(bridge.from)
+        ..add(bridge.to);
+    }
+    for (var index = 0; index < puzzle.islands.length; index++) {
+      if (bridgeCountAt(index) > puzzle.islands[index].bridges) {
+        incorrect.add(index);
+      }
+    }
+    return incorrect;
+  }
+
+  HashiBridge? get nextHintBridge {
+    for (final solutionBridge in puzzle.solution) {
+      if (bridgeCountBetween(solutionBridge.from, solutionBridge.to) !=
+          solutionBridge.count) {
+        return solutionBridge;
+      }
+    }
+    return null;
+  }
+
+  HashiGameState applyHint() {
+    final hint = nextHintBridge;
+    if (hint == null) return this;
+    final updated = bridges
+        .where((bridge) =>
+            !_sameConnection(bridge, hint.from, hint.to))
+        .toList()
+      ..add(hint);
+    return HashiGameState(puzzle: puzzle, bridges: updated);
+  }
+
   bool get numbersAreSatisfied {
     for (var index = 0; index < puzzle.islands.length; index++) {
       if (bridgeCountAt(index) != puzzle.islands[index].bridges) return false;
@@ -849,6 +898,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   final HashiProgressStore _progressStore = HashiProgressStore();
   late HashiGameState _game;
   final List<HashiGameState> _history = [];
+  final List<HashiGameState> _redoHistory = [];
   Timer? _timer;
   Timer? _messageTimer;
   int? _selectedIsland;
@@ -856,6 +906,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   int _elapsedSeconds = 0;
   int _moves = 0;
   bool _completionShown = false;
+  bool _showMistakes = false;
 
   @override
   void initState() {
@@ -906,6 +957,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
     setState(() {
       if (!identical(previous, next)) {
         _history.add(previous);
+        _redoHistory.clear();
         _game = next;
         _moves++;
       }
@@ -1004,6 +1056,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
             bridges: almostSolved,
           );
           _history.clear();
+          _redoHistory.clear();
           _selectedIsland = null;
           _completionShown = false;
           _moves = 0;
@@ -1017,6 +1070,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
             bridges: widget.puzzle.solution,
           );
           _history.clear();
+          _redoHistory.clear();
           _selectedIsland = null;
           _completionShown = false;
           _moves = 0;
@@ -1036,6 +1090,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
         setState(() {
           _game = HashiGameState(puzzle: widget.puzzle, bridges: invalid);
           _history.clear();
+          _redoHistory.clear();
           _selectedIsland = null;
           _completionShown = false;
           _moves = 0;
@@ -1064,6 +1119,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
     if (identical(previous, next)) return;
     setState(() {
       _history.add(previous);
+      _redoHistory.clear();
       _game = next;
       _moves++;
       _selectedIsland = null;
@@ -1080,6 +1136,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   void _undo() {
     if (_history.isEmpty) return;
     setState(() {
+      _redoHistory.add(_game);
       _game = _history.removeLast();
       _selectedIsland = null;
       _actionMessage = null;
@@ -1088,10 +1145,41 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
     });
   }
 
+  void _redo() {
+    if (_redoHistory.isEmpty) return;
+    setState(() {
+      _history.add(_game);
+      _game = _redoHistory.removeLast();
+      _selectedIsland = null;
+      _actionMessage = null;
+      _completionShown = false;
+      _moves++;
+    });
+    _showCompletionIfSolved();
+  }
+
+  Future<void> _useHint() async {
+    final next = _game.applyHint();
+    if (identical(next, _game)) {
+      _showActionMessage('Kein weiterer Tipp nötig');
+      return;
+    }
+    setState(() {
+      _history.add(_game);
+      _redoHistory.clear();
+      _game = next;
+      _selectedIsland = null;
+      _moves++;
+    });
+    _showActionMessage('Eine passende Brücke wurde ergänzt');
+    await _showCompletionIfSolved();
+  }
+
   void _restart() {
     setState(() {
       _game = HashiGameState(puzzle: widget.puzzle);
       _history.clear();
+      _redoHistory.clear();
       _selectedIsland = null;
       _actionMessage = null;
       _completionShown = false;
@@ -1146,9 +1234,37 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
               ],
             ),
           IconButton(
+            tooltip: 'Tipp',
+            onPressed: _useHint,
+            icon: const Icon(Icons.lightbulb_outline_rounded),
+          ),
+          IconButton(
             tooltip: 'Rückgängig',
             onPressed: _history.isEmpty ? null : _undo,
             icon: const Icon(Icons.undo_rounded),
+          ),
+          IconButton(
+            tooltip: 'Wiederholen',
+            onPressed: _redoHistory.isEmpty ? null : _redo,
+            icon: const Icon(Icons.redo_rounded),
+          ),
+          IconButton(
+            tooltip: _showMistakes
+                ? 'Fehleranzeige ausschalten'
+                : 'Fehleranzeige einschalten',
+            onPressed: () {
+              setState(() => _showMistakes = !_showMistakes);
+              _showActionMessage(
+                _showMistakes
+                    ? 'Fehleranzeige aktiviert'
+                    : 'Fehleranzeige deaktiviert',
+              );
+            },
+            icon: Icon(
+              _showMistakes
+                  ? Icons.fact_check_rounded
+                  : Icons.fact_check_outlined,
+            ),
           ),
           IconButton(
             tooltip: 'Neu starten',
@@ -1250,6 +1366,12 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
                               selectedIsland: _selectedIsland,
                               possibleTargets: _possibleTargets,
                               bridgeCounts: bridgeCounts,
+                              incorrectBridges: _showMistakes
+                                  ? _game.incorrectBridges
+                                  : const [],
+                              incorrectIslands: _showMistakes
+                                  ? _game.incorrectIslandIndices
+                                  : const <int>{},
                               onIslandTap: _handleIslandTap,
                               onBridgeTap: _handleBridgeTap,
                             ),
@@ -1279,7 +1401,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            '1× verbinden, 2× doppeln, 3× entfernen. Eine Brücke kannst du auch direkt antippen.',
+                            '1× verbinden, 2× doppeln, 3× entfernen. Tipp, Undo, Redo und optionale Fehleranzeige helfen beim Lösen.',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: colors.onSurfaceVariant,
                                 ),
@@ -1394,6 +1516,8 @@ class HashiBoard extends StatelessWidget {
     this.selectedIsland,
     this.possibleTargets = const [],
     this.bridgeCounts,
+    this.incorrectBridges = const [],
+    this.incorrectIslands = const <int>{},
     this.onIslandTap,
     this.onBridgeTap,
     super.key,
@@ -1404,6 +1528,8 @@ class HashiBoard extends StatelessWidget {
   final int? selectedIsland;
   final List<int> possibleTargets;
   final List<int>? bridgeCounts;
+  final List<HashiBridge> incorrectBridges;
+  final Set<int> incorrectIslands;
   final ValueChanged<int>? onIslandTap;
   final ValueChanged<HashiBridge>? onBridgeTap;
 
@@ -1478,6 +1604,8 @@ class HashiBoard extends StatelessWidget {
                       selectedIsland: selectedIsland,
                       possibleTargets: possibleTargets,
                       bridgeCounts: bridgeCounts,
+                      incorrectBridges: incorrectBridges,
+                      incorrectIslands: incorrectIslands,
                       colorScheme: Theme.of(context).colorScheme,
                     ),
                   ),
@@ -1521,6 +1649,8 @@ class _HashiBoardPainter extends CustomPainter {
     required this.selectedIsland,
     required this.possibleTargets,
     required this.bridgeCounts,
+    required this.incorrectBridges,
+    required this.incorrectIslands,
     required this.colorScheme,
   });
 
@@ -1529,6 +1659,8 @@ class _HashiBoardPainter extends CustomPainter {
   final int? selectedIsland;
   final List<int> possibleTargets;
   final List<int>? bridgeCounts;
+  final List<HashiBridge> incorrectBridges;
+  final Set<int> incorrectIslands;
   final ColorScheme colorScheme;
 
   @override
@@ -1565,27 +1697,34 @@ class _HashiBoardPainter extends CustomPainter {
       ..strokeWidth = bridgeWidth +
           (cell * 0.075).clamp(2.0, 4.5).toDouble()
       ..strokeCap = StrokeCap.round;
-    final bridgePaint = Paint()
-      ..color = colorScheme.primary
-      ..strokeWidth = bridgeWidth
-      ..strokeCap = StrokeCap.round;
-
-    void drawBridgeLine(Offset start, Offset end) {
+    void drawBridgeLine(Offset start, Offset end, Color color) {
+      final bridgePaint = Paint()
+        ..color = color
+        ..strokeWidth = bridgeWidth
+        ..strokeCap = StrokeCap.round;
       canvas.drawLine(start, end, bridgeUnderlay);
       canvas.drawLine(start, end, bridgePaint);
     }
 
     for (final bridge in bridges) {
+      final isIncorrect = incorrectBridges.any(
+        (candidate) => HashiGameState._sameConnection(
+          candidate,
+          bridge.from,
+          bridge.to,
+        ),
+      );
+      final bridgeColor = isIncorrect ? colorScheme.error : colorScheme.primary;
       final start = point(puzzle.islands[bridge.from]);
       final end = point(puzzle.islands[bridge.to]);
       if (bridge.count == 1) {
-        drawBridgeLine(start, end);
+        drawBridgeLine(start, end, bridgeColor);
       } else {
         final horizontal = (start.dy - end.dy).abs() < 0.01;
         final shift = cell * 0.095;
         final delta = horizontal ? Offset(0, shift) : Offset(shift, 0);
-        drawBridgeLine(start - delta, end - delta);
-        drawBridgeLine(start + delta, end + delta);
+        drawBridgeLine(start - delta, end - delta, bridgeColor);
+        drawBridgeLine(start + delta, end + delta, bridgeColor);
       }
     }
 
@@ -1594,7 +1733,7 @@ class _HashiBoardPainter extends CustomPainter {
       final center = point(island);
       final current = bridgeCounts?[index];
       final fulfilled = current == island.bridges;
-      final exceeded = current != null && current > island.bridges;
+      final incorrect = incorrectIslands.contains(index);
       final selected = selectedIsland == index;
       final possibleTarget = possibleTargets.contains(index);
       final radius = cell * 0.32;
@@ -1622,7 +1761,7 @@ class _HashiBoardPainter extends CustomPainter {
         ..shader = RadialGradient(
           center: const Alignment(-0.25, -0.35),
           radius: 1.15,
-          colors: exceeded
+          colors: incorrect
               ? [colorScheme.errorContainer, colorScheme.errorContainer]
               : fulfilled
                   ? [
@@ -1639,7 +1778,7 @@ class _HashiBoardPainter extends CustomPainter {
             ? colorScheme.primary
             : possibleTarget
                 ? colorScheme.tertiary
-                : exceeded
+                : incorrect
                     ? colorScheme.error
                     : fulfilled
                         ? colorScheme.primary
@@ -1652,7 +1791,7 @@ class _HashiBoardPainter extends CustomPainter {
       canvas.drawCircle(center, radius, islandPaint);
       canvas.drawCircle(center, radius, outlinePaint);
 
-      if (fulfilled && !exceeded) {
+      if (fulfilled && !incorrect) {
         final checkPaint = Paint()
           ..color = colorScheme.primary
           ..style = PaintingStyle.stroke
@@ -1676,7 +1815,7 @@ class _HashiBoardPainter extends CustomPainter {
         text: TextSpan(
           text: '${island.bridges}',
           style: TextStyle(
-            color: exceeded
+            color: incorrect
                 ? colorScheme.onErrorContainer
                 : fulfilled
                     ? colorScheme.onPrimaryContainer
@@ -1702,6 +1841,7 @@ class _HashiBoardPainter extends CustomPainter {
         oldDelegate.selectedIsland != selectedIsland ||
         oldDelegate.possibleTargets != possibleTargets ||
         oldDelegate.bridgeCounts != bridgeCounts ||
+        oldDelegate.incorrectBridges != incorrectBridges ||
         oldDelegate.colorScheme != colorScheme;
   }
 }

@@ -75,6 +75,44 @@ void main() {
   });
 
 
+  test('hint applies the next missing solution bridge', () {
+    final game = HashiGameState(puzzle: hashiTutorialPuzzle);
+
+    final hinted = game.applyHint();
+
+    expect(hinted.bridges, hasLength(1));
+    expect(hinted.bridges.first.from, hashiPreviewBridges.first.from);
+    expect(hinted.bridges.first.to, hashiPreviewBridges.first.to);
+  });
+
+  test('incorrect bridges are detected against the stored solution', () {
+    final game = HashiGameState(
+      puzzle: hashiTutorialPuzzle,
+      bridges: const [HashiBridge(from: 0, to: 1, count: 2)],
+    );
+
+    expect(game.incorrectBridges, hasLength(1));
+  });
+
+  test('islands touching an incorrect bridge are identified', () {
+    final game = HashiGameState(
+      puzzle: hashiTutorialPuzzle,
+      bridges: const [HashiBridge(from: 0, to: 1, count: 2)],
+    );
+
+    expect(game.incorrectIslandIndices, containsAll(<int>{0, 1}));
+  });
+
+  test('correct bridges do not mark islands as incorrect', () {
+    final firstSolutionBridge = hashiPreviewBridges.first;
+    final game = HashiGameState(
+      puzzle: hashiTutorialPuzzle,
+      bridges: <HashiBridge>[firstSolutionBridge],
+    );
+
+    expect(game.incorrectIslandIndices, isEmpty);
+  });
+
   test('catalog puzzle ids are unique', () {
     final ids = hashiPuzzleCatalog.map((puzzle) => puzzle.id).toSet();
 
