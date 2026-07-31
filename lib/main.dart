@@ -10,6 +10,7 @@ import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/statistics/game_statistics.dart';
 import 'core/statistics/puzzle_attempt.dart';
 import 'daily_challenge.dart';
+import 'data_backup.dart';
 import 'game_logic.dart';
 import 'game_storage.dart';
 import 'hint_engine.dart';
@@ -2136,6 +2137,65 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     Text(
+                      'Sicherung & Wiederherstellung',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    Card(
+                      child: Column(
+                        children: [
+                          const ListTile(
+                            leading: Icon(Icons.cloud_done_outlined),
+                            title: Text('Android-Gerätesicherung aktiv'),
+                            subtitle: Text(
+                              'Android kann deine lokalen App-Daten geschützt mit deinem Google-Konto sichern.',
+                            ),
+                          ),
+                          const Divider(height: 1),
+                          ListTile(
+                            leading: const Icon(Icons.copy_all_outlined),
+                            title: const Text('Sicherung kopieren'),
+                            subtitle: const Text(
+                              'Erstellt eine vollständige, versionierte Sicherung in der Zwischenablage',
+                            ),
+                            onTap: () => _copyBackup(context),
+                          ),
+                          const Divider(height: 1),
+                          ListTile(
+                            leading: const Icon(Icons.settings_backup_restore),
+                            title: const Text('Sicherung wiederherstellen'),
+                            subtitle: const Text(
+                              'Prüft die Sicherung vollständig vor dem Import',
+                            ),
+                            onTap: () => _restoreBackup(context),
+                          ),
+                          const Divider(height: 1),
+                          ListTile(
+                            leading: const Icon(Icons.undo_rounded),
+                            title: const Text('Import rückgängig machen'),
+                            subtitle: const Text(
+                              'Stellt den lokalen Stand vor dem letzten Import wieder her',
+                            ),
+                            onTap: () => _restoreRecoveryBackup(context),
+                          ),
+                          const Divider(height: 1),
+                          const ListTile(
+                            leading: Icon(Icons.cloud_sync_outlined),
+                            title: Text('Google-Cloud-Synchronisierung'),
+                            subtitle: Text(
+                              'Vorbereitet · folgt mit der endgültigen App-ID und Google-Anmeldung',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Importierte Daten ersetzen den aktuellen Stand. Vorher wird automatisch eine lokale Sicherheitskopie erstellt.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
                       'Lokale Daten',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
@@ -2198,6 +2258,141 @@ class SettingsScreen extends StatelessWidget {
           content: Text('Deine gespeicherten Daten wurden gelöscht.')),
     );
   }
+
+  Future<void> _copyBackup(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final backup = await const DataBackupService().createBackup();
+      await Clipboard.setData(ClipboardData(text: backup));
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Vollständige Sicherung wurde kopiert.'),
+        ),
+      );
+    } on Object {
+      if (!context.mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+            content: Text('Sicherung konnte nicht erstellt werden.')),
+      );
+    }
+  }
+
+  Future<void> _restoreBackup(BuildContext context) async {
+    final controller = TextEditingController();
+    final backup = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.settings_backup_restore),
+        title: const Text('Sicherung einfügen'),
+        content: TextField(
+          controller: controller,
+          minLines: 5,
+          maxLines: 10,
+          decoration: const InputDecoration(
+            hintText: 'Project-Logic-Sicherung hier einfügen',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            child: const Text('Prüfen'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (backup == null || backup.trim().isEmpty || !context.mounted) return;
+
+    const service = DataBackupService();
+    try {
+      final summary = service.inspect(backup.trim());
+      if (!context.mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          icon: const Icon(Icons.verified_outlined),
+          title: const Text('Gültige Sicherung gefunden'),
+          content: Text(
+            '${summary.entryCount} Datenbereiche vom ${_backupDate(summary.createdAt)} wiederherstellen? Der aktuelle Stand wird vorher lokal gesichert.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Abbrechen'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Wiederherstellen'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+      await service.restoreBackup(backup.trim());
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sicherung wiederhergestellt. App bitte neu öffnen.'),
+        ),
+      );
+    } on BackupValidationException catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    }
+  }
+
+  Future<void> _restoreRecoveryBackup(BuildContext context) async {
+    const service = DataBackupService();
+    if (!await service.hasRecoveryBackup()) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Keine Sicherheitskopie vorhanden.')),
+      );
+      return;
+    }
+    if (!context.mounted) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.undo_rounded),
+        title: const Text('Import rückgängig machen?'),
+        content: const Text(
+          'Der lokale Stand vor dem letzten Import wird wiederhergestellt.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Wiederherstellen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await service.restoreRecoveryBackup();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content:
+            Text('Vorheriger Stand wiederhergestellt. App bitte neu öffnen.'),
+      ),
+    );
+  }
+
+  static String _backupDate(DateTime value) =>
+      '${value.day.toString().padLeft(2, '0')}.${value.month.toString().padLeft(2, '0')}.${value.year} um ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
 }
 
 int _dailyStreak(List<PuzzleResult> results, {DateTime? now}) {
