@@ -19,7 +19,7 @@ void main() {
     );
   });
 
-  test('identifies legacy catalog puzzles that need replacement', () {
+  test('every current catalog puzzle has exactly one solution', () {
     final nonUnique = <String, int>{};
     for (final puzzle in hashiPuzzleCatalog) {
       final result = solver.solve(puzzle);
@@ -27,11 +27,6 @@ void main() {
         nonUnique[puzzle.id] = result.solutionCount;
       }
     }
-    expect(nonUnique, {
-      'hashi_04': 2,
-      'hashi_07': 2,
-      'hashi_10': 2,
-      'hashi_12': 2,
-    });
+    expect(nonUnique, isEmpty);
   });
 }

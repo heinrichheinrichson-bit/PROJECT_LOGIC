@@ -12,6 +12,8 @@ import 'app_preferences.dart';
 import 'game_storage.dart';
 import 'features/hashi/domain/hashi_generator.dart';
 
+part 'generated_hashi_catalog.dart';
+
 @immutable
 class HashiIsland {
   const HashiIsland({
@@ -97,7 +99,7 @@ const hashiTutorialPuzzle = HashiPuzzle(
   solution: hashiPreviewBridges,
 );
 
-const hashiPuzzleCatalog = <HashiPuzzle>[
+const _originalHashiPuzzleCatalog = <HashiPuzzle>[
   hashiTutorialPuzzle,
   HashiPuzzle(
     id: 'hashi_02',
@@ -352,6 +354,20 @@ const hashiPuzzleCatalog = <HashiPuzzle>[
     ],
   ),
 ];
+
+const _replacedHashiPuzzleIds = {
+  'hashi_04',
+  'hashi_07',
+  'hashi_10',
+  'hashi_12'
+};
+
+final hashiPuzzleCatalog = <HashiPuzzle>[
+  ..._originalHashiPuzzleCatalog.where(
+    (puzzle) => !_replacedHashiPuzzleIds.contains(puzzle.id),
+  ),
+  ...generatedHashiPuzzleCatalog,
+]..sort((first, second) => first.id.compareTo(second.id));
 
 class HashiProgressStore {
   static const _key = 'hashi_completed_puzzles';

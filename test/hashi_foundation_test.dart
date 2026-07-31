@@ -119,7 +119,7 @@ void main() {
   });
 
   test('all catalog solutions satisfy numbers and connectivity', () {
-    expect(hashiPuzzleCatalog, hasLength(12));
+    expect(hashiPuzzleCatalog, hasLength(50));
     for (final puzzle in hashiPuzzleCatalog) {
       final game = HashiGameState(puzzle: puzzle, bridges: puzzle.solution);
       expect(game.isSolved, isTrue, reason: puzzle.title);
