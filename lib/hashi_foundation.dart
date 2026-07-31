@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -827,6 +828,14 @@ class HashiTutorialScreen extends StatelessWidget {
   }
 }
 
+
+enum _HashiDeveloperAction {
+  almostSolved,
+  solve,
+  error,
+  reset,
+}
+
 class HashiGameScreen extends StatefulWidget {
   const HashiGameScreen({required this.puzzle, super.key});
 
@@ -913,64 +922,130 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
       );
     }
 
-    if (_game.isSolved && !_completionShown) {
-      _completionShown = true;
-      await _progressStore.markCompleted(widget.puzzle.id);
-      if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) => AlertDialog(
-          icon: const Icon(Icons.celebration_rounded),
-          title: const Text('Brückennetz vollendet!'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Alle Zahlen stimmen und jede Insel gehört zum selben Netz.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 18),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _ResultValue(icon: Icons.timer_outlined, value: _timeLabel),
-                  _ResultValue(
-                    icon: Icons.touch_app_outlined,
-                    value: '$_moves Züge',
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                Navigator.of(context).pop();
-              },
-              child: const Text('Zum Katalog'),
+    await _showCompletionIfSolved();
+  }
+
+
+  Future<void> _showCompletionIfSolved() async {
+    if (!_game.isSolved || _completionShown) return;
+    _completionShown = true;
+    await _progressStore.markCompleted(widget.puzzle.id);
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.celebration_rounded),
+        title: const Text('Brückennetz vollendet!'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Alle Zahlen stimmen und jede Insel gehört zum selben Netz.',
+              textAlign: TextAlign.center,
             ),
-            if (_nextPuzzle != null)
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(dialogContext).pop();
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute<void>(
-                      builder: (_) => HashiGameScreen(puzzle: _nextPuzzle!),
-                    ),
-                  );
-                },
-                child: const Text('Nächstes Rätsel'),
-              )
-            else
-              FilledButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Geschafft'),
-              ),
+            const SizedBox(height: 18),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _ResultValue(icon: Icons.timer_outlined, value: _timeLabel),
+                _ResultValue(
+                  icon: Icons.touch_app_outlined,
+                  value: '$_moves Züge',
+                ),
+              ],
+            ),
           ],
         ),
-      );
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              Navigator.of(context).pop();
+            },
+            child: const Text('Zum Katalog'),
+          ),
+          if (_nextPuzzle != null)
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute<void>(
+                    builder: (_) => HashiGameScreen(puzzle: _nextPuzzle!),
+                  ),
+                );
+              },
+              child: const Text('Nächstes Rätsel'),
+            )
+          else
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Geschafft'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _runDeveloperAction(_HashiDeveloperAction action) async {
+    switch (action) {
+      case _HashiDeveloperAction.almostSolved:
+        final solution = widget.puzzle.solution;
+        setState(() {
+          final almostSolved = solution.isEmpty
+              ? const <HashiBridge>[]
+              : <HashiBridge>[
+                  ...solution.take(solution.length - 1),
+                  if (solution.last.count == 2)
+                    solution.last.copyWith(count: 1),
+                ];
+          _game = HashiGameState(
+            puzzle: widget.puzzle,
+            bridges: almostSolved,
+          );
+          _history.clear();
+          _selectedIsland = null;
+          _completionShown = false;
+          _moves = 0;
+        });
+        _showActionMessage('Bis auf eine Brücke gelöst');
+        return;
+      case _HashiDeveloperAction.solve:
+        setState(() {
+          _game = HashiGameState(
+            puzzle: widget.puzzle,
+            bridges: widget.puzzle.solution,
+          );
+          _history.clear();
+          _selectedIsland = null;
+          _completionShown = false;
+          _moves = 0;
+        });
+        await _showCompletionIfSolved();
+        return;
+      case _HashiDeveloperAction.error:
+        final solution = widget.puzzle.solution;
+        final invalid = solution.isEmpty
+            ? const <HashiBridge>[]
+            : <HashiBridge>[
+                solution.first.copyWith(
+                  count: solution.first.count == 1 ? 2 : 1,
+                ),
+                ...solution.skip(1),
+              ];
+        setState(() {
+          _game = HashiGameState(puzzle: widget.puzzle, bridges: invalid);
+          _history.clear();
+          _selectedIsland = null;
+          _completionShown = false;
+          _moves = 0;
+        });
+        _showActionMessage('Fehlerzustand erzeugt');
+        return;
+      case _HashiDeveloperAction.reset:
+        _restart();
+        _showActionMessage('Testzustand gelöscht');
+        return;
     }
   }
 
@@ -1046,6 +1121,30 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
       appBar: AppBar(
         title: Text(widget.puzzle.title),
         actions: [
+          if (kDebugMode)
+            PopupMenuButton<_HashiDeveloperAction>(
+              tooltip: 'Testwerkzeuge',
+              icon: const Icon(Icons.bug_report_outlined),
+              onSelected: _runDeveloperAction,
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: _HashiDeveloperAction.almostSolved,
+                  child: Text('Bis auf 1 Brücke lösen'),
+                ),
+                PopupMenuItem(
+                  value: _HashiDeveloperAction.solve,
+                  child: Text('Sofort lösen'),
+                ),
+                PopupMenuItem(
+                  value: _HashiDeveloperAction.error,
+                  child: Text('Fehlerzustand erzeugen'),
+                ),
+                PopupMenuItem(
+                  value: _HashiDeveloperAction.reset,
+                  child: Text('Testzustand löschen'),
+                ),
+              ],
+            ),
           IconButton(
             tooltip: 'Rückgängig',
             onPressed: _history.isEmpty ? null : _undo,

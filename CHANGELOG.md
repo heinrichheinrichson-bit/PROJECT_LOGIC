@@ -1,3 +1,10 @@
+## 0.8.7
+
+- Hashi-Debugmenü im Debug-Build ergänzt.
+- Rätsel können bis auf eine Brücke oder vollständig gelöst werden.
+- Fehlerzustand und schneller Test-Reset ergänzt.
+- Abschlussdialog lässt sich dadurch ohne manuelles Durchspielen prüfen.
+
 # Changelog
 
 ## v0.8.6 – Hashi-Katalog erweitert
