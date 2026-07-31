@@ -1,3 +1,7 @@
+export 'core/domain/game_identity.dart' show PuzzleDifficulty;
+
+import 'core/domain/game_identity.dart';
+
 enum CellValue {
   zero,
   one;
@@ -19,17 +23,6 @@ enum BinaryPuzzleSize {
 
   final int value;
   final String label;
-}
-
-enum PuzzleDifficulty {
-  easy('Leicht', 'Zum Kennenlernen'),
-  medium('Mittel', 'Weniger Vorgaben'),
-  hard('Schwer', 'Nur wenige Vorgaben');
-
-  const PuzzleDifficulty(this.label, this.description);
-
-  final String label;
-  final String description;
 }
 
 class CellPosition {
@@ -133,10 +126,8 @@ class BinaryPuzzle {
     return count;
   }
 
-  double get progress => editableCellCount == 0
-      ? 1
-      : filledEditableCellCount / editableCellCount;
-
+  double get progress =>
+      editableCellCount == 0 ? 1 : filledEditableCellCount / editableCellCount;
 
   List<int?> exportEditableValues() {
     final values = <int?>[];
@@ -223,8 +214,7 @@ class BinaryPuzzle {
   void reset() {
     for (var row = 0; row < size; row++) {
       for (var column = 0; column < size; column++) {
-        board[row][column] =
-            isClue(row, column) ? solution[row][column] : null;
+        board[row][column] = isClue(row, column) ? solution[row][column] : null;
       }
     }
     _undoStack.clear();
@@ -395,17 +385,62 @@ class BinaryPuzzle {
 }
 
 const _baseSolution = [
-  [CellValue.zero, CellValue.zero, CellValue.one, CellValue.zero, CellValue.one, CellValue.one],
-  [CellValue.zero, CellValue.zero, CellValue.one, CellValue.one, CellValue.zero, CellValue.one],
-  [CellValue.one, CellValue.one, CellValue.zero, CellValue.zero, CellValue.one, CellValue.zero],
-  [CellValue.zero, CellValue.one, CellValue.zero, CellValue.zero, CellValue.one, CellValue.one],
-  [CellValue.one, CellValue.zero, CellValue.one, CellValue.one, CellValue.zero, CellValue.zero],
-  [CellValue.one, CellValue.one, CellValue.zero, CellValue.one, CellValue.zero, CellValue.zero],
+  [
+    CellValue.zero,
+    CellValue.zero,
+    CellValue.one,
+    CellValue.zero,
+    CellValue.one,
+    CellValue.one
+  ],
+  [
+    CellValue.zero,
+    CellValue.zero,
+    CellValue.one,
+    CellValue.one,
+    CellValue.zero,
+    CellValue.one
+  ],
+  [
+    CellValue.one,
+    CellValue.one,
+    CellValue.zero,
+    CellValue.zero,
+    CellValue.one,
+    CellValue.zero
+  ],
+  [
+    CellValue.zero,
+    CellValue.one,
+    CellValue.zero,
+    CellValue.zero,
+    CellValue.one,
+    CellValue.one
+  ],
+  [
+    CellValue.one,
+    CellValue.zero,
+    CellValue.one,
+    CellValue.one,
+    CellValue.zero,
+    CellValue.zero
+  ],
+  [
+    CellValue.one,
+    CellValue.one,
+    CellValue.zero,
+    CellValue.one,
+    CellValue.zero,
+    CellValue.zero
+  ],
 ];
 
 List<List<CellValue>> _invert(List<List<CellValue>> source) => [
       for (final row in source)
-        [for (final value in row) value == CellValue.zero ? CellValue.one : CellValue.zero],
+        [
+          for (final value in row)
+            value == CellValue.zero ? CellValue.one : CellValue.zero
+        ],
     ];
 
 List<List<CellValue>> _transpose(List<List<CellValue>> source) => [
@@ -421,51 +456,140 @@ Set<CellPosition> _positions(List<(int, int)> values) =>
 
 final List<BinaryPuzzleDefinition> binaryPuzzleCatalog = [
   BinaryPuzzleDefinition(
-    id: 'easy-01', number: 1, difficulty: PuzzleDifficulty.easy,
+    id: 'easy-01',
+    number: 1,
+    difficulty: PuzzleDifficulty.easy,
     solution: _baseSolution,
-    clues: _positions([(0,0),(0,2),(0,4),(1,1),(1,3),(2,2),(2,5),(3,0),(3,3),(4,1),(4,4),(5,5)]),
+    clues: _positions([
+      (0, 0),
+      (0, 2),
+      (0, 4),
+      (1, 1),
+      (1, 3),
+      (2, 2),
+      (2, 5),
+      (3, 0),
+      (3, 3),
+      (4, 1),
+      (4, 4),
+      (5, 5)
+    ]),
   ),
   BinaryPuzzleDefinition(
-    id: 'easy-02', number: 2, difficulty: PuzzleDifficulty.easy,
+    id: 'easy-02',
+    number: 2,
+    difficulty: PuzzleDifficulty.easy,
     solution: _invert(_baseSolution),
-    clues: _positions([(0,1),(0,5),(1,0),(1,2),(1,4),(2,1),(2,3),(3,2),(3,5),(4,0),(4,3),(5,4)]),
+    clues: _positions([
+      (0, 1),
+      (0, 5),
+      (1, 0),
+      (1, 2),
+      (1, 4),
+      (2, 1),
+      (2, 3),
+      (3, 2),
+      (3, 5),
+      (4, 0),
+      (4, 3),
+      (5, 4)
+    ]),
   ),
   BinaryPuzzleDefinition(
-    id: 'easy-03', number: 3, difficulty: PuzzleDifficulty.easy,
+    id: 'easy-03',
+    number: 3,
+    difficulty: PuzzleDifficulty.easy,
     solution: _transpose(_baseSolution),
-    clues: _positions([(0,0),(0,3),(1,1),(1,4),(2,0),(2,2),(2,5),(3,1),(3,4),(4,2),(5,0),(5,5)]),
+    clues: _positions([
+      (0, 0),
+      (0, 3),
+      (1, 1),
+      (1, 4),
+      (2, 0),
+      (2, 2),
+      (2, 5),
+      (3, 1),
+      (3, 4),
+      (4, 2),
+      (5, 0),
+      (5, 5)
+    ]),
   ),
   BinaryPuzzleDefinition(
-    id: 'medium-01', number: 1, difficulty: PuzzleDifficulty.medium,
+    id: 'medium-01',
+    number: 1,
+    difficulty: PuzzleDifficulty.medium,
     solution: _reverseRows(_baseSolution),
-    clues: _positions([(0,0),(0,5),(1,2),(2,1),(2,4),(3,3),(4,0),(4,5),(5,2)]),
+    clues: _positions([
+      (0, 0),
+      (0, 5),
+      (1, 2),
+      (2, 1),
+      (2, 4),
+      (3, 3),
+      (4, 0),
+      (4, 5),
+      (5, 2)
+    ]),
   ),
   BinaryPuzzleDefinition(
-    id: 'medium-02', number: 2, difficulty: PuzzleDifficulty.medium,
+    id: 'medium-02',
+    number: 2,
+    difficulty: PuzzleDifficulty.medium,
     solution: _transpose(_invert(_baseSolution)),
-    clues: _positions([(0,2),(1,0),(1,5),(2,3),(3,1),(3,4),(4,2),(5,0),(5,5)]),
+    clues: _positions([
+      (0, 2),
+      (1, 0),
+      (1, 5),
+      (2, 3),
+      (3, 1),
+      (3, 4),
+      (4, 2),
+      (5, 0),
+      (5, 5)
+    ]),
   ),
   BinaryPuzzleDefinition(
-    id: 'medium-03', number: 3, difficulty: PuzzleDifficulty.medium,
+    id: 'medium-03',
+    number: 3,
+    difficulty: PuzzleDifficulty.medium,
     solution: _invert(_reverseRows(_baseSolution)),
-    clues: _positions([(0,1),(0,4),(1,3),(2,0),(2,5),(3,2),(4,1),(4,4),(5,3)]),
+    clues: _positions([
+      (0, 1),
+      (0, 4),
+      (1, 3),
+      (2, 0),
+      (2, 5),
+      (3, 2),
+      (4, 1),
+      (4, 4),
+      (5, 3)
+    ]),
   ),
   BinaryPuzzleDefinition(
-    id: 'hard-01', number: 1, difficulty: PuzzleDifficulty.hard,
+    id: 'hard-01',
+    number: 1,
+    difficulty: PuzzleDifficulty.hard,
     solution: _baseSolution,
-    clues: _positions([(0,4),(1,1),(2,3),(3,0),(4,5),(5,2),(5,4)]),
+    clues: _positions([(0, 4), (1, 1), (2, 3), (3, 0), (4, 5), (5, 2), (5, 4)]),
   ),
   BinaryPuzzleDefinition(
-    id: 'hard-02', number: 2, difficulty: PuzzleDifficulty.hard,
+    id: 'hard-02',
+    number: 2,
+    difficulty: PuzzleDifficulty.hard,
     solution: _transpose(_baseSolution),
-    clues: _positions([(0,0),(1,4),(2,2),(3,5),(4,1),(5,3),(5,5)]),
+    clues: _positions([(0, 0), (1, 4), (2, 2), (3, 5), (4, 1), (5, 3), (5, 5)]),
   ),
   BinaryPuzzleDefinition(
-    id: 'hard-03', number: 3, difficulty: PuzzleDifficulty.hard,
+    id: 'hard-03',
+    number: 3,
+    difficulty: PuzzleDifficulty.hard,
     solution: _invert(_baseSolution),
-    clues: _positions([(0,5),(1,2),(2,0),(3,4),(4,1),(5,3),(5,4)]),
+    clues: _positions([(0, 5), (1, 2), (2, 0), (3, 4), (4, 1), (5, 3), (5, 4)]),
   ),
 ];
 
 List<BinaryPuzzleDefinition> puzzlesFor(PuzzleDifficulty difficulty) =>
-    binaryPuzzleCatalog.where((puzzle) => puzzle.difficulty == difficulty).toList();
+    binaryPuzzleCatalog
+        .where((puzzle) => puzzle.difficulty == difficulty)
+        .toList();

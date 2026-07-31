@@ -74,6 +74,33 @@ void main() {
     expect(restored.completedAt, original.completedAt);
   });
 
+  test('PuzzleResult preserves its game identity', () {
+    final original = PuzzleResult(
+      puzzleId: 'hashi-easy-01',
+      bestSeconds: 42,
+      completedAt: DateTime(2026, 7, 31),
+      gameType: GameType.hashi,
+      source: GameMode.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 7,
+    );
+
+    final restored = PuzzleResult.fromJson(original.toJson());
+
+    expect(restored.gameType, GameType.hashi);
+    expect(restored.source, GameMode.catalog);
+  });
+
+  test('legacy PuzzleResult defaults to Binairo', () {
+    final restored = PuzzleResult.fromJson({
+      'puzzleId': 'easy-01',
+      'bestSeconds': 42,
+      'completedAt': '2026-07-31T00:00:00.000',
+    });
+
+    expect(restored.gameType, GameType.binairo);
+  });
+
   test('SavedGame writes the current schema version', () {
     final game = SavedGame(
       puzzleId: 'easy-01',
@@ -149,8 +176,6 @@ void main() {
     expect(() => SavedGame.fromJson(json), throwsFormatException);
   });
 
-
-  
   // v0.6.7 player-progress metadata regression tests.
   test('PuzzleResult preserves progress metadata and completion count', () {
     final original = PuzzleResult(
@@ -162,28 +187,28 @@ void main() {
       boardSize: 8,
       completionCount: 3,
     );
-  
+
     final restored = PuzzleResult.fromJson(original.toJson());
-  
+
     expect(restored.source, PuzzleSource.generated);
     expect(restored.difficulty, PuzzleDifficulty.hard);
     expect(restored.boardSize, 8);
     expect(restored.completionCount, 3);
   });
-  
+
   test('legacy generated result infers size and difficulty from puzzle id', () {
     final restored = PuzzleResult.fromJson({
       'puzzleId': 'binary-6-medium-12345',
       'bestSeconds': 90,
       'completedAt': '2026-07-30T16:00:00.000',
     });
-  
+
     expect(restored.effectiveSource, PuzzleSource.generated);
     expect(restored.effectiveBoardSize, 6);
     expect(restored.effectiveDifficulty, PuzzleDifficulty.medium);
     expect(restored.completionCount, 1);
   });
-  
+
   test('recordAnotherCompletion keeps best time and increments count', () {
     final original = PuzzleResult(
       puzzleId: 'easy-01',
@@ -192,7 +217,7 @@ void main() {
       difficulty: PuzzleDifficulty.easy,
       boardSize: 6,
     );
-  
+
     final updated = original.recordAnotherCompletion(
       elapsedSeconds: 120,
       completedAt: DateTime(2026, 7, 30, 17, 0),
@@ -200,7 +225,7 @@ void main() {
       difficulty: PuzzleDifficulty.easy,
       boardSize: 6,
     );
-  
+
     expect(updated.bestSeconds, 100);
     expect(updated.completionCount, 2);
     expect(updated.completedAt, DateTime(2026, 7, 30, 17, 0));
@@ -227,10 +252,22 @@ void main() {
       totalCompleted: 5,
       totalPlaySeconds: 300,
       completedDays: [
-        day.subtract(const Duration(days: 6)).toIso8601String().substring(0, 10),
-        day.subtract(const Duration(days: 5)).toIso8601String().substring(0, 10),
-        day.subtract(const Duration(days: 2)).toIso8601String().substring(0, 10),
-        day.subtract(const Duration(days: 1)).toIso8601String().substring(0, 10),
+        day
+            .subtract(const Duration(days: 6))
+            .toIso8601String()
+            .substring(0, 10),
+        day
+            .subtract(const Duration(days: 5))
+            .toIso8601String()
+            .substring(0, 10),
+        day
+            .subtract(const Duration(days: 2))
+            .toIso8601String()
+            .substring(0, 10),
+        day
+            .subtract(const Duration(days: 1))
+            .toIso8601String()
+            .substring(0, 10),
         day.toIso8601String().substring(0, 10),
       ],
     );
@@ -239,7 +276,8 @@ void main() {
     expect(progress.bestStreak, 3);
   });
 
-  test('recordCompletion updates results, playtime and streak only once', () async {
+  test('recordCompletion updates results, playtime and streak only once',
+      () async {
     SharedPreferences.setMockInitialValues({});
     final storage = GameStorage();
     final today = DateTime.now();
@@ -271,52 +309,50 @@ void main() {
     expect(progress.completedDays, hasLength(1));
   });
 
-
   // v0.6.9 daily challenge persistence regression tests.
-test('daily SavedGame preserves its puzzle source', () {
-  final definition = BinaryPuzzleDefinition(
-    id: 'daily-binary-2026-07-30',
-    number: 1,
-    difficulty: PuzzleDifficulty.medium,
-    solution: const [
-      [CellValue.zero, CellValue.zero, CellValue.one, CellValue.one],
-      [CellValue.zero, CellValue.one, CellValue.zero, CellValue.one],
-      [CellValue.one, CellValue.zero, CellValue.one, CellValue.zero],
-      [CellValue.one, CellValue.one, CellValue.zero, CellValue.zero],
-    ],
-    clues: {
-      const CellPosition(0, 0),
-      const CellPosition(1, 1),
-      const CellPosition(2, 2),
-      const CellPosition(3, 3),
-    },
-  );
-  final game = SavedGame(
-    puzzleId: definition.id,
-    elapsedSeconds: 12,
-    values: List<int?>.filled(12, null),
-    savedAt: DateTime(2026, 7, 30),
-    definition: definition,
-    source: PuzzleSource.daily,
-  );
+  test('daily SavedGame preserves its puzzle source', () {
+    final definition = BinaryPuzzleDefinition(
+      id: 'daily-binary-2026-07-30',
+      number: 1,
+      difficulty: PuzzleDifficulty.medium,
+      solution: const [
+        [CellValue.zero, CellValue.zero, CellValue.one, CellValue.one],
+        [CellValue.zero, CellValue.one, CellValue.zero, CellValue.one],
+        [CellValue.one, CellValue.zero, CellValue.one, CellValue.zero],
+        [CellValue.one, CellValue.one, CellValue.zero, CellValue.zero],
+      ],
+      clues: {
+        const CellPosition(0, 0),
+        const CellPosition(1, 1),
+        const CellPosition(2, 2),
+        const CellPosition(3, 3),
+      },
+    );
+    final game = SavedGame(
+      puzzleId: definition.id,
+      elapsedSeconds: 12,
+      values: List<int?>.filled(12, null),
+      savedAt: DateTime(2026, 7, 30),
+      definition: definition,
+      source: PuzzleSource.daily,
+    );
 
-  final restored = SavedGame.fromJson(game.toJson());
+    final restored = SavedGame.fromJson(game.toJson());
 
-  expect(restored.source, PuzzleSource.daily);
-  expect(restored.definition?.id, definition.id);
-});
+    expect(restored.source, PuzzleSource.daily);
+    expect(restored.definition?.id, definition.id);
+  });
 
-test('explicit daily result is not classified as generated', () {
-  final result = PuzzleResult(
-    puzzleId: 'daily-binary-2026-07-30',
-    bestSeconds: 90,
-    completedAt: DateTime(2026, 7, 30),
-    source: PuzzleSource.daily,
-    difficulty: PuzzleDifficulty.medium,
-    boardSize: 6,
-  );
+  test('explicit daily result is not classified as generated', () {
+    final result = PuzzleResult(
+      puzzleId: 'daily-binary-2026-07-30',
+      bestSeconds: 90,
+      completedAt: DateTime(2026, 7, 30),
+      source: PuzzleSource.daily,
+      difficulty: PuzzleDifficulty.medium,
+      boardSize: 6,
+    );
 
-  expect(result.effectiveSource, PuzzleSource.daily);
-});
-
+    expect(result.effectiveSource, PuzzleSource.daily);
+  });
 }

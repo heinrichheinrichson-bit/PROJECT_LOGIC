@@ -8,6 +8,8 @@ lib/
 ├── app/
 │   └── project_logic_app.dart
 ├── core/
+│   ├── domain/
+│   │   └── game_identity.dart
 │   └── formatters/
 │       └── duration_formatter.dart
 ├── features/
@@ -32,6 +34,16 @@ lib/
 - `features/` owns screens and feature-specific widgets.
 - `core/` contains reusable, feature-neutral helpers.
 - Existing puzzle domain and persistence files stay stable during this refactor.
+
+## Shared game identity
+
+`core/domain/game_identity.dart` owns the stable identifiers shared by every
+game: `GameType`, `GameMode`, and `PuzzleDifficulty`. Enum names are persisted
+and must not be renamed after release.
+
+The historic name `PuzzleSource` remains as a compatibility alias for
+`GameMode`. Likewise, results without a stored `gameType` are interpreted as
+Binairo results so existing installations remain readable.
 
 Future solver and generator work should live below
 `features/binary_puzzle/domain/` and `features/binary_puzzle/data/`

@@ -2,7 +2,10 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/domain/game_identity.dart';
 import 'game_logic.dart';
+
+export 'core/domain/game_identity.dart' show GameMode, GameType, PuzzleSource;
 
 class SavedGame {
   static const int currentSchemaVersion = 3;
@@ -93,15 +96,14 @@ class SavedGame {
       puzzleId: puzzleId,
       elapsedSeconds: elapsedSeconds,
       values: values,
-      savedAt: DateTime.tryParse(json['savedAt'] as String? ?? '') ??
-          DateTime.now(),
+      savedAt:
+          DateTime.tryParse(json['savedAt'] as String? ?? '') ?? DateTime.now(),
       definition: definition,
       titleOverride: rawTitle as String?,
       source: PuzzleSource.values.firstWhere(
         (value) => value.name == json['source'],
-        orElse: () => definition != null
-            ? PuzzleSource.generated
-            : PuzzleSource.catalog,
+        orElse: () =>
+            definition != null ? PuzzleSource.generated : PuzzleSource.catalog,
       ),
     );
   }
@@ -202,29 +204,24 @@ class SavedGame {
   }
 }
 
-enum PuzzleSource {
-  catalog,
-  generated,
-  daily,
-  event,
-  tutorial,
-}
-
 class PuzzleResult {
   const PuzzleResult({
     required this.puzzleId,
     required this.bestSeconds,
     required this.completedAt,
+    this.gameType = GameType.binairo,
     this.source = PuzzleSource.catalog,
     this.difficulty,
     this.boardSize,
     this.completionCount = 1,
     int? totalElapsedSeconds,
-  }) : totalElapsedSeconds = totalElapsedSeconds ?? bestSeconds * completionCount;
+  }) : totalElapsedSeconds =
+            totalElapsedSeconds ?? bestSeconds * completionCount;
 
   final String puzzleId;
   final int bestSeconds;
   final DateTime completedAt;
+  final GameType gameType;
   final PuzzleSource source;
   final PuzzleDifficulty? difficulty;
   final int? boardSize;
@@ -263,6 +260,7 @@ class PuzzleResult {
         'puzzleId': puzzleId,
         'bestSeconds': bestSeconds,
         'completedAt': completedAt.toIso8601String(),
+        'gameType': gameType.name,
         'source': source.name,
         if (difficulty != null) 'difficulty': difficulty!.name,
         if (boardSize != null) 'boardSize': boardSize,
@@ -272,6 +270,7 @@ class PuzzleResult {
 
   factory PuzzleResult.fromJson(Map<String, Object?> json) {
     final sourceName = json['source'] as String?;
+    final gameTypeName = json['gameType'] as String?;
     final difficultyName = json['difficulty'] as String?;
     final rawBoardSize = json['boardSize'];
     final rawCompletionCount = json['completionCount'];
@@ -280,9 +279,12 @@ class PuzzleResult {
     return PuzzleResult(
       puzzleId: json['puzzleId'] as String,
       bestSeconds: json['bestSeconds'] as int,
-      completedAt:
-          DateTime.tryParse(json['completedAt'] as String? ?? '') ??
-              DateTime.now(),
+      completedAt: DateTime.tryParse(json['completedAt'] as String? ?? '') ??
+          DateTime.now(),
+      gameType: GameType.values.firstWhere(
+        (value) => value.name == gameTypeName,
+        orElse: () => GameType.binairo,
+      ),
       source: PuzzleSource.values.firstWhere(
         (value) => value.name == sourceName,
         orElse: () => PuzzleSource.catalog,
@@ -298,10 +300,10 @@ class PuzzleResult {
           rawCompletionCount is num && rawCompletionCount.toInt() > 0
               ? rawCompletionCount.toInt()
               : 1,
-      totalElapsedSeconds: rawTotalElapsedSeconds is num &&
-              rawTotalElapsedSeconds.toInt() >= 0
-          ? rawTotalElapsedSeconds.toInt()
-          : null,
+      totalElapsedSeconds:
+          rawTotalElapsedSeconds is num && rawTotalElapsedSeconds.toInt() >= 0
+              ? rawTotalElapsedSeconds.toInt()
+              : null,
     );
   }
 
@@ -314,9 +316,9 @@ class PuzzleResult {
   }) {
     return PuzzleResult(
       puzzleId: puzzleId,
-      bestSeconds:
-          elapsedSeconds < bestSeconds ? elapsedSeconds : bestSeconds,
+      bestSeconds: elapsedSeconds < bestSeconds ? elapsedSeconds : bestSeconds,
       completedAt: completedAt,
+      gameType: gameType,
       source: source,
       difficulty: difficulty,
       boardSize: boardSize,
@@ -325,7 +327,6 @@ class PuzzleResult {
     );
   }
 }
-
 
 class PlayerProgress {
   const PlayerProgress({
