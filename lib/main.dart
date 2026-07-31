@@ -2405,10 +2405,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     const SizedBox(height: 24),
                     _PerformanceStatisticsSection(
                       statistics: selectedStatistics,
+                      legacyBestSeconds: _bestResultSeconds(binairoResults),
                     ),
                     const SizedBox(height: 24),
                     _DifficultyPerformanceSection(
                       statistics: selectedStatistics,
+                      legacyResults: binairoResults,
                     ),
                     const SizedBox(height: 24),
                     Text(
@@ -2459,11 +2461,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     const SizedBox(height: 24),
                     _PerformanceStatisticsSection(
                       statistics: hashiStatistics,
+                      legacyBestSeconds: _bestResultSeconds(
+                        results.values.where(
+                          (result) => result.gameType == GameType.hashi,
+                        ),
+                      ),
                       showMoves: true,
                     ),
                     const SizedBox(height: 24),
                     _DifficultyPerformanceSection(
                       statistics: hashiStatistics,
+                      legacyResults: results.values
+                          .where(
+                            (result) => result.gameType == GameType.hashi,
+                          )
+                          .toList(growable: false),
                       showMoves: true,
                     ),
                   ] else ...[
@@ -2556,6 +2568,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     }
     return '$minutes:${rest.toString().padLeft(2, '0')}';
   }
+
+  static int? _bestResultSeconds(Iterable<PuzzleResult> results) {
+    final values = results.map((result) => result.bestSeconds);
+    if (values.isEmpty) return null;
+    return values.reduce((best, value) => value < best ? value : best);
+  }
 }
 
 class _StatisticsHero extends StatelessWidget {
@@ -2611,16 +2629,26 @@ class _StatisticListCard extends StatelessWidget {
 class _PerformanceStatisticsSection extends StatelessWidget {
   const _PerformanceStatisticsSection({
     required this.statistics,
+    this.legacyBestSeconds,
     this.showMoves = false,
   });
 
   final GameStatistics statistics;
+  final int? legacyBestSeconds;
   final bool showMoves;
 
   @override
   Widget build(BuildContext context) {
     String time(int? seconds) =>
         seconds == null ? '–' : _StatisticsScreenState._formatLongTime(seconds);
+    final recordedBest = statistics.bestSeconds;
+    final bestSeconds = recordedBest == null
+        ? legacyBestSeconds
+        : legacyBestSeconds == null
+            ? recordedBest
+            : recordedBest < legacyBestSeconds!
+                ? recordedBest
+                : legacyBestSeconds;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -2636,7 +2664,7 @@ class _PerformanceStatisticsSection extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _CompactStatistic(
-                        value: time(statistics.bestSeconds),
+                        value: time(bestSeconds),
                         label: 'Bestzeit',
                       ),
                     ),
@@ -2683,7 +2711,7 @@ class _PerformanceStatisticsSection extends StatelessWidget {
             ),
           ),
         ),
-        if (statistics.completedCount == 0) ...[
+        if (statistics.completedCount == 0 && legacyBestSeconds == null) ...[
           const SizedBox(height: 6),
           Text(
             'Deine Rekorde erscheinen nach dem nächsten abgeschlossenen Rätsel.',
@@ -2700,10 +2728,12 @@ class _PerformanceStatisticsSection extends StatelessWidget {
 class _DifficultyPerformanceSection extends StatelessWidget {
   const _DifficultyPerformanceSection({
     required this.statistics,
+    this.legacyResults = const [],
     this.showMoves = false,
   });
 
   final GameStatistics statistics;
+  final List<PuzzleResult> legacyResults;
   final bool showMoves;
 
   @override
@@ -2720,10 +2750,28 @@ class _DifficultyPerformanceSection extends StatelessWidget {
           _DifficultyPerformanceCard(
             difficulty: difficulty,
             statistics: statistics.filtered(difficulty: difficulty),
+            legacyBestSeconds: _bestForDifficulty(difficulty),
+            completedCount: _completedForDifficulty(difficulty),
             showMoves: showMoves,
           ),
       ],
     );
+  }
+
+  int? _bestForDifficulty(PuzzleDifficulty difficulty) {
+    final values = legacyResults
+        .where((result) => result.effectiveDifficulty == difficulty)
+        .map((result) => result.bestSeconds);
+    if (values.isEmpty) return null;
+    return values.reduce((best, value) => value < best ? value : best);
+  }
+
+  int _completedForDifficulty(PuzzleDifficulty difficulty) {
+    final recorded = statistics.completedForDifficulty(difficulty);
+    final legacy = legacyResults
+        .where((result) => result.effectiveDifficulty == difficulty)
+        .fold<int>(0, (sum, result) => sum + result.completionCount);
+    return recorded > legacy ? recorded : legacy;
   }
 }
 
@@ -2731,17 +2779,29 @@ class _DifficultyPerformanceCard extends StatelessWidget {
   const _DifficultyPerformanceCard({
     required this.difficulty,
     required this.statistics,
+    required this.legacyBestSeconds,
+    required this.completedCount,
     required this.showMoves,
   });
 
   final PuzzleDifficulty difficulty;
   final GameStatistics statistics;
+  final int? legacyBestSeconds;
+  final int completedCount;
   final bool showMoves;
 
   @override
   Widget build(BuildContext context) {
     String time(int? seconds) =>
         seconds == null ? '–' : _StatisticsScreenState._formatLongTime(seconds);
+    final recordedBest = statistics.bestSeconds;
+    final bestSeconds = recordedBest == null
+        ? legacyBestSeconds
+        : legacyBestSeconds == null
+            ? recordedBest
+            : recordedBest < legacyBestSeconds!
+                ? recordedBest
+                : legacyBestSeconds;
     return Card(
       child: ExpansionTile(
         leading: Icon(switch (difficulty) {
@@ -2750,14 +2810,14 @@ class _DifficultyPerformanceCard extends StatelessWidget {
           PuzzleDifficulty.hard => Icons.local_fire_department_outlined,
         }),
         title: Text(difficulty.label),
-        subtitle: Text('${statistics.completedCount} abgeschlossen'),
+        subtitle: Text('$completedCount abgeschlossen'),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
           Row(
             children: [
               Expanded(
                 child: _CompactStatistic(
-                  value: time(statistics.bestSeconds),
+                  value: time(bestSeconds),
                   label: 'Bestzeit',
                 ),
               ),
@@ -2977,9 +3037,7 @@ class _GeneratedSizeStatistic extends StatelessWidget {
                       width: 82,
                       child: Text(
                         _formatBestTime(
-                          statistics
-                              .filtered(difficulty: difficulty)
-                              .bestSeconds,
+                          _bestSecondsFor(difficulty),
                         ),
                         textAlign: TextAlign.end,
                       ),
@@ -2995,6 +3053,20 @@ class _GeneratedSizeStatistic extends StatelessWidget {
 
   static String _formatBestTime(int? seconds) =>
       seconds == null ? '–' : _StatisticsScreenState._formatLongTime(seconds);
+
+  int? _bestSecondsFor(PuzzleDifficulty difficulty) {
+    final recorded = statistics.filtered(difficulty: difficulty).bestSeconds;
+    final legacy = results
+        .where((result) =>
+            result.effectiveBoardSize == size.value &&
+            result.effectiveDifficulty == difficulty)
+        .map((result) => result.bestSeconds);
+    if (legacy.isEmpty) return recorded;
+    final legacyBest =
+        legacy.reduce((best, value) => value < best ? value : best);
+    if (recorded == null) return legacyBest;
+    return recorded < legacyBest ? recorded : legacyBest;
+  }
 }
 
 class _DifficultyStatistic extends StatelessWidget {
