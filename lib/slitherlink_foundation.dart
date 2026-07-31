@@ -1,7 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
+import 'app_preferences.dart';
+import 'core/domain/game_identity.dart';
+import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
+import 'game_storage.dart';
 
 enum SlitherEdgeMark { empty, line, blocked }
 
@@ -234,11 +240,27 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
   final List<SlitherlinkState> _redo = [];
   bool _completionShown = false;
   bool _developerCompletion = false;
+  Timer? _timer;
+  int _elapsedSeconds = 0;
+  int _moves = 0;
+  int _hintsUsed = 0;
+  HintBudget _hintBudget = const HintBudget();
 
   @override
   void initState() {
     super.initState();
     _state = SlitherlinkState(puzzle: widget.puzzle);
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && !_completionShown) {
+        setState(() => _elapsedSeconds++);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   void _cycle(SlitherEdge edge) {
@@ -247,6 +269,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
       _history.add(_state);
       _state = _state.cycle(edge);
       _redo.clear();
+      _moves++;
     });
     if (_state.isSolved) _showCompletion();
   }
@@ -256,6 +279,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
     setState(() {
       _redo.add(_state);
       _state = _history.removeLast();
+      if (_moves > 0) _moves--;
     });
   }
 
@@ -264,11 +288,19 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
     setState(() {
       _history.add(_state);
       _state = _redo.removeLast();
+      _moves++;
     });
     if (_state.isSolved) _showCompletion();
   }
 
   void _hint() {
+    final premium = PreferencesScope.of(context).premiumSimulationEnabled;
+    if (!premium && !_hintBudget.canUseHint) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Keine Hinweise mehr verfügbar.')),
+      );
+      return;
+    }
     for (final edge in _allEdges(widget.puzzle)) {
       final expected = widget.puzzle.solution.contains(edge.id)
           ? SlitherEdgeMark.line
@@ -280,6 +312,9 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
           ..[edge.id] = expected;
         _state = SlitherlinkState(puzzle: widget.puzzle, marks: updated);
         _redo.clear();
+        _moves++;
+        _hintsUsed++;
+        if (!premium) _hintBudget = _hintBudget.useHint();
       });
       if (_state.isSolved) _showCompletion();
       return;
@@ -293,12 +328,30 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
       _state = SlitherlinkState(puzzle: widget.puzzle);
       _redo.clear();
       _completionShown = false;
+      _elapsedSeconds = 0;
+      _moves = 0;
+      _hintsUsed = 0;
+      _hintBudget = const HintBudget();
     });
   }
 
   Future<void> _showCompletion() async {
     if (_completionShown) return;
     _completionShown = true;
+    if (!_developerCompletion) {
+      await GameStorage().recordCompletion(
+        puzzleId: widget.puzzle.id,
+        elapsedSeconds: _elapsedSeconds,
+        source: GameMode.tutorial,
+        difficulty: PuzzleDifficulty.easy,
+        boardSize: widget.puzzle.rows,
+        gameType: GameType.slitherlink,
+        moves: _moves,
+        hintsUsed: _hintsUsed,
+        rewardedHints: _hintBudget.rewardedHints,
+      );
+    }
+    if (!mounted) return;
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -317,6 +370,12 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
               const Chip(
                 avatar: Icon(Icons.science_outlined),
                 label: Text('Testabschluss · keine Statistik'),
+              ),
+            ] else ...[
+              const SizedBox(height: 16),
+              Text(
+                '${_formatTime(_elapsedSeconds)} · $_moves Züge · $_hintsUsed Hinweise',
+                textAlign: TextAlign.center,
               ),
             ],
           ],
@@ -354,6 +413,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
           _redo.clear();
           _completionShown = false;
           _developerCompletion = true;
+          _moves = 0;
         });
         return;
       case _SlitherDeveloperAction.solve:
@@ -371,6 +431,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
           _redo.clear();
           _completionShown = false;
           _developerCompletion = true;
+          _moves = 0;
         });
         await _showCompletion();
         return;
@@ -390,6 +451,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
           _redo.clear();
           _completionShown = false;
           _developerCompletion = true;
+          _moves = 0;
         });
         return;
       case _SlitherDeveloperAction.reset:
@@ -399,9 +461,19 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
           _redo.clear();
           _completionShown = false;
           _developerCompletion = false;
+          _elapsedSeconds = 0;
+          _moves = 0;
+          _hintsUsed = 0;
+          _hintBudget = const HintBudget();
         });
         return;
     }
+  }
+
+  static String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final rest = seconds % 60;
+    return '$minutes:${rest.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -448,6 +520,31 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
         body: SafeArea(
           child: Column(
             children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _SlitherStatus(
+                      icon: Icons.timer_outlined,
+                      label: _formatTime(_elapsedSeconds),
+                    ),
+                    const SizedBox(width: 8),
+                    _SlitherStatus(
+                      icon: Icons.touch_app_outlined,
+                      label: '$_moves Züge',
+                    ),
+                    const SizedBox(width: 8),
+                    _SlitherStatus(
+                      icon: Icons.lightbulb_outline,
+                      label:
+                          PreferencesScope.of(context).premiumSimulationEnabled
+                              ? 'Premium'
+                              : '${_hintBudget.remainingHints} Tipps',
+                    ),
+                  ],
+                ),
+              ),
               const Padding(
                 padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Text(
@@ -494,6 +591,31 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
               ),
             ],
           ),
+        ),
+      );
+}
+
+class _SlitherStatus extends StatelessWidget {
+  const _SlitherStatus({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          border:
+              Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18),
+            const SizedBox(width: 5),
+            Text(label),
+          ],
         ),
       );
 }

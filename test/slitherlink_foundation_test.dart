@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/slitherlink_foundation.dart';
+import 'package:project_logic_prototype/app_preferences.dart';
+import 'package:project_logic_prototype/game_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('tutorial solution satisfies clues and forms one loop', () {
@@ -41,9 +44,14 @@ void main() {
 
   testWidgets('debug solve is clearly marked as a test completion',
       (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await AppPreferences.load();
     await tester.pumpWidget(
-      const MaterialApp(
-        home: SlitherlinkGameScreen(puzzle: slitherlinkTutorialPuzzle),
+      PreferencesScope(
+        preferences: preferences,
+        child: const MaterialApp(
+          home: SlitherlinkGameScreen(puzzle: slitherlinkTutorialPuzzle),
+        ),
       ),
     );
 
@@ -57,5 +65,6 @@ void main() {
 
     expect(find.text('Schleife vollendet!'), findsOneWidget);
     expect(find.text('Testabschluss · keine Statistik'), findsOneWidget);
+    expect(await GameStorage().loadResults(), isEmpty);
   });
 }
