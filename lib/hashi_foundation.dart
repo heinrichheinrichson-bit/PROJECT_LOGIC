@@ -749,6 +749,50 @@ class HashiCatalogScreen extends StatefulWidget {
   State<HashiCatalogScreen> createState() => _HashiCatalogScreenState();
 }
 
+class HashiPuzzleChapter {
+  const HashiPuzzleChapter({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.puzzles,
+  });
+
+  final String id;
+  final String title;
+  final String description;
+  final List<HashiPuzzle> puzzles;
+}
+
+List<HashiPuzzleChapter> hashiChaptersFor({int difficulty = 0}) {
+  const chapterSize = 10;
+  final difficulties = difficulty == 0 ? const [1, 2, 3] : [difficulty];
+  final chapters = <HashiPuzzleChapter>[];
+  for (final level in difficulties) {
+    final puzzles = hashiPuzzleCatalog
+        .where((puzzle) => puzzle.difficulty == level)
+        .toList(growable: false);
+    for (var start = 0; start < puzzles.length; start += chapterSize) {
+      final part = start ~/ chapterSize + 1;
+      final baseTitle = switch (level) {
+        1 => 'Brücken bauen',
+        2 => 'Netze planen',
+        _ => 'Inselmeister',
+      };
+      chapters.add(HashiPuzzleChapter(
+        id: 'hashi-$level-$part',
+        title: part == 1 ? baseTitle : '$baseTitle · Kapitel $part',
+        description: switch (level) {
+          1 => 'Klare Verbindungen und kleine Inselgruppen',
+          2 => 'Mehrere Wege und größere zusammenhängende Netze',
+          _ => 'Komplexe Abhängigkeiten und anspruchsvolle Brückennetze',
+        },
+        puzzles: List.unmodifiable(puzzles.skip(start).take(chapterSize)),
+      ));
+    }
+  }
+  return List.unmodifiable(chapters);
+}
+
 class _HashiCatalogScreenState extends State<HashiCatalogScreen> {
   final HashiProgressStore _progressStore = HashiProgressStore();
   Set<String> _completed = <String>{};
@@ -775,12 +819,6 @@ class _HashiCatalogScreenState extends State<HashiCatalogScreen> {
     await _refresh();
   }
 
-  List<HashiPuzzle> get _visiblePuzzles => _difficultyFilter == 0
-      ? hashiPuzzleCatalog
-      : hashiPuzzleCatalog
-          .where((puzzle) => puzzle.difficulty == _difficultyFilter)
-          .toList();
-
   String _difficultyName(int difficulty) => switch (difficulty) {
         1 => 'Leicht',
         2 => 'Mittel',
@@ -791,7 +829,7 @@ class _HashiCatalogScreenState extends State<HashiCatalogScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final visiblePuzzles = _visiblePuzzles;
+    final chapters = hashiChaptersFor(difficulty: _difficultyFilter);
     return Scaffold(
       appBar: AppBar(title: const Text('Hashi-Rätsel')),
       body: Center(
@@ -799,7 +837,7 @@ class _HashiCatalogScreenState extends State<HashiCatalogScreen> {
           constraints: const BoxConstraints(maxWidth: 680),
           child: ListView.separated(
             padding: const EdgeInsets.all(20),
-            itemCount: visiblePuzzles.length + 1,
+            itemCount: chapters.length + 1,
             separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               if (index == 0) {
@@ -857,34 +895,77 @@ class _HashiCatalogScreenState extends State<HashiCatalogScreen> {
                 );
               }
 
-              final puzzle = visiblePuzzles[index - 1];
-              final catalogIndex = hashiPuzzleCatalog.indexOf(puzzle);
-              final completed = _completed.contains(puzzle.id);
+              final chapter = chapters[index - 1];
+              final completed = chapter.puzzles
+                  .where((puzzle) => _completed.contains(puzzle.id))
+                  .length;
               return Card(
-                child: ListTile(
-                  onTap: () => _open(puzzle),
+                clipBehavior: Clip.antiAlias,
+                child: ExpansionTile(
+                  initiallyExpanded: index == 1,
                   leading: CircleAvatar(
-                    backgroundColor: completed
-                        ? colors.primaryContainer
-                        : colors.surfaceContainerHighest,
-                    child: completed
-                        ? Icon(Icons.check_rounded, color: colors.primary)
-                        : Text('${catalogIndex + 1}'),
+                    child: Text('$index'),
                   ),
                   title: Text(
-                    puzzle.title,
+                    chapter.title,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   subtitle: Text(
-                    '${List.filled(puzzle.difficulty, '★').join()}${List.filled(3 - puzzle.difficulty, '☆').join()}  ·  ${puzzle.islands.length} Inseln',
+                    '${chapter.description}\n$completed von ${chapter.puzzles.length} gelöst',
                   ),
-                  trailing: const Icon(Icons.chevron_right_rounded),
+                  children: [
+                    const Divider(height: 1),
+                    for (final puzzle in chapter.puzzles)
+                      _HashiCatalogPuzzleTile(
+                        puzzle: puzzle,
+                        completed: _completed.contains(puzzle.id),
+                        onTap: () => _open(puzzle),
+                      ),
+                  ],
                 ),
               );
             },
           ),
         ),
       ),
+    );
+  }
+}
+
+class _HashiCatalogPuzzleTile extends StatelessWidget {
+  const _HashiCatalogPuzzleTile({
+    required this.puzzle,
+    required this.completed,
+    required this.onTap,
+  });
+
+  final HashiPuzzle puzzle;
+  final bool completed;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final catalogIndex = hashiPuzzleCatalog.indexOf(puzzle);
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      leading: CircleAvatar(
+        backgroundColor: completed
+            ? colors.primaryContainer
+            : colors.surfaceContainerHighest,
+        child: completed
+            ? Icon(Icons.check_rounded, color: colors.primary)
+            : Text('${catalogIndex + 1}'),
+      ),
+      title: Text(
+        puzzle.title,
+        style: const TextStyle(fontWeight: FontWeight.w700),
+      ),
+      subtitle: Text(
+        '${puzzle.size} × ${puzzle.size} · ${puzzle.islands.length} Inseln',
+      ),
+      trailing: const Icon(Icons.chevron_right_rounded),
     );
   }
 }

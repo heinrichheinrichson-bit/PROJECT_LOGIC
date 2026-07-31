@@ -74,7 +74,6 @@ void main() {
     expect(game.isSolved, isTrue);
   });
 
-
   test('hint applies the next missing solution bridge', () {
     final game = HashiGameState(puzzle: hashiTutorialPuzzle);
 
@@ -126,5 +125,24 @@ void main() {
       expect(game.isSolved, isTrue, reason: puzzle.title);
     }
   });
-}
 
+  test('Hashi chapters preserve every puzzle and difficulty filter', () {
+    final all = hashiChaptersFor();
+    final medium = hashiChaptersFor(difficulty: 2);
+
+    expect(
+      all
+          .expand((chapter) => chapter.puzzles)
+          .map((puzzle) => puzzle.id)
+          .toSet(),
+      hashiPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
+    );
+    expect(
+      medium.expand((chapter) => chapter.puzzles),
+      hashiPuzzleCatalog.where((puzzle) => puzzle.difficulty == 2),
+    );
+    expect(all.map((chapter) => chapter.title), contains('Brücken bauen'));
+    expect(all.map((chapter) => chapter.title), contains('Netze planen'));
+    expect(all.map((chapter) => chapter.title), contains('Inselmeister'));
+  });
+}

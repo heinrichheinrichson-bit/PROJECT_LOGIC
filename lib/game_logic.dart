@@ -627,11 +627,13 @@ class BinaryPuzzleChapter {
   const BinaryPuzzleChapter({
     required this.index,
     required this.title,
+    required this.description,
     required this.puzzles,
   });
 
   final int index;
   final String title;
+  final String description;
   final List<BinaryPuzzleDefinition> puzzles;
 }
 
@@ -642,12 +644,20 @@ List<BinaryPuzzleChapter> chaptersFor(
   if (chapterSize <= 0) throw ArgumentError.value(chapterSize, 'chapterSize');
   final puzzles = puzzlesFor(difficulty);
   const titles = [
-    'Erste Schritte',
-    'Sicher kombiniert',
-    'Neue Muster',
+    'Grundlagen',
+    'Kombinationen',
+    'Fortgeschrittene Muster',
     'Vorausgedacht',
     'Große Herausforderungen',
     'Meisterrunde',
+  ];
+  const descriptions = [
+    'Direkte Regeln und kompakte Raster',
+    'Mehrere Schlüsse über Zeilen und Spalten',
+    'Größere Raster und anspruchsvollere Muster',
+    'Längere logische Ketten sicher erkennen',
+    'Wenige Vorgaben und komplexe Abhängigkeiten',
+    'Die anspruchsvollsten Rätsel der Sammlung',
   ];
   return [
     for (var start = 0; start < puzzles.length; start += chapterSize)
@@ -656,6 +666,9 @@ List<BinaryPuzzleChapter> chaptersFor(
         title: start ~/ chapterSize < titles.length
             ? titles[start ~/ chapterSize]
             : 'Kapitel ${start ~/ chapterSize + 1}',
+        description: start ~/ chapterSize < descriptions.length
+            ? descriptions[start ~/ chapterSize]
+            : 'Weitere Herausforderungen',
         puzzles: List.unmodifiable(
           puzzles.skip(start).take(chapterSize),
         ),

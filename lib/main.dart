@@ -1063,7 +1063,9 @@ class _BinaryChapterCard extends StatelessWidget {
           chapter.title,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
-        subtitle: Text('$completed von ${chapter.puzzles.length} gelöst'),
+        subtitle: Text(
+          '${chapter.description}\n$completed von ${chapter.puzzles.length} gelöst',
+        ),
         children: [
           const Divider(height: 1),
           for (final definition in chapter.puzzles)

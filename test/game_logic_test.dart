@@ -152,7 +152,8 @@ void main() {
 
       expect(chapters, hasLength((puzzles.length / 2).ceil()));
       expect(chapters.expand((chapter) => chapter.puzzles), puzzles);
-      expect(chapters.first.title, 'Erste Schritte');
+      expect(chapters.first.title, 'Grundlagen');
+      expect(chapters.first.description, contains('Direkte Regeln'));
     });
   });
 
