@@ -37,4 +37,17 @@ void main() {
     expect(analysis.inferredDifficulty, PuzzleDifficulty.easy);
     expect(analysis.combinedSteps, 0);
   });
+
+  test('every generated collection puzzle matches its displayed difficulty',
+      () {
+    for (final definition in generatedBinaryPuzzleCatalog) {
+      final analysis = rater.analyze(definition);
+      expect(analysis.solvedLogically, isTrue, reason: definition.id);
+      expect(
+        analysis.inferredDifficulty,
+        definition.difficulty,
+        reason: definition.id,
+      );
+    }
+  });
 }

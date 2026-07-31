@@ -111,10 +111,15 @@ void main() {
   });
 
   group('Puzzle catalog', () {
-    test('contains three puzzles per difficulty', () {
-      for (final difficulty in PuzzleDifficulty.values) {
-        expect(puzzlesFor(difficulty), hasLength(3));
-      }
+    test('contains the planned 80-puzzle launch collection', () {
+      expect(binaryPuzzleCatalog, hasLength(80));
+      expect(puzzlesFor(PuzzleDifficulty.easy), hasLength(26));
+      expect(puzzlesFor(PuzzleDifficulty.medium), hasLength(28));
+      expect(puzzlesFor(PuzzleDifficulty.hard), hasLength(26));
+      expect(
+        binaryPuzzleCatalog.map((puzzle) => puzzle.size).toSet(),
+        {4, 6, 8, 10},
+      );
     });
 
     test('all catalog solutions satisfy the rules', () {
@@ -145,7 +150,7 @@ void main() {
         chapterSize: 2,
       );
 
-      expect(chapters, hasLength(2));
+      expect(chapters, hasLength((puzzles.length / 2).ceil()));
       expect(chapters.expand((chapter) => chapter.puzzles), puzzles);
       expect(chapters.first.title, 'Erste Schritte');
     });

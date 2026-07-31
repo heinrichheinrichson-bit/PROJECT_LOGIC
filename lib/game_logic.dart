@@ -2,6 +2,8 @@ export 'core/domain/game_identity.dart' show PuzzleDifficulty;
 
 import 'core/domain/game_identity.dart';
 
+part 'generated_binary_catalog.dart';
+
 enum CellValue {
   zero,
   one;
@@ -476,7 +478,7 @@ List<List<CellValue>> _reverseRows(List<List<CellValue>> source) =>
 Set<CellPosition> _positions(List<(int, int)> values) =>
     {for (final value in values) CellPosition(value.$1, value.$2)};
 
-final List<BinaryPuzzleDefinition> binaryPuzzleCatalog = [
+final List<BinaryPuzzleDefinition> _originalBinaryPuzzleCatalog = [
   BinaryPuzzleDefinition(
     id: 'easy-01',
     number: 1,
@@ -610,6 +612,11 @@ final List<BinaryPuzzleDefinition> binaryPuzzleCatalog = [
     clues: _positions([(0, 5), (1, 2), (2, 0), (3, 4), (4, 1), (5, 3), (5, 4)]),
   ),
 ];
+
+final binaryPuzzleCatalog = List<BinaryPuzzleDefinition>.unmodifiable([
+  ..._originalBinaryPuzzleCatalog,
+  ...generatedBinaryPuzzleCatalog,
+]);
 
 List<BinaryPuzzleDefinition> puzzlesFor(PuzzleDifficulty difficulty) =>
     binaryPuzzleCatalog
