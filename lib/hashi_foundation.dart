@@ -1184,6 +1184,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   }
 
   Future<void> _handleIslandTap(int index) async {
+    if (_completionShown) return;
     if (_selectedIsland == null) {
       setState(() => _selectedIsland = index);
       return;
@@ -1266,6 +1267,10 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
           ],
         ),
         actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Brett ansehen'),
+          ),
           TextButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
@@ -1379,6 +1384,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   }
 
   void _handleBridgeTap(HashiBridge bridge) {
+    if (_completionShown) return;
     final previous = _game;
     final next = previous.removeConnection(bridge.from, bridge.to);
     if (identical(previous, next)) return;
@@ -1447,7 +1453,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   }
 
   void _undo() {
-    if (_history.isEmpty) return;
+    if (_completionShown || _history.isEmpty) return;
     final restoresRestart = _restartUndoPending && _history.length == 1;
     setState(() {
       _redoHistory.add(_game);
@@ -1467,7 +1473,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   }
 
   void _redo() {
-    if (_redoHistory.isEmpty) return;
+    if (_completionShown || _redoHistory.isEmpty) return;
     final reappliesRestart = _restartRedoPending && _redoHistory.length == 1;
     setState(() {
       _history.add(_game);
@@ -1488,6 +1494,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   }
 
   Future<void> _useHint() async {
+    if (_completionShown) return;
     final next = _game.applyHint();
     if (identical(next, _game)) {
       _showActionMessage('Kein weiterer Tipp nötig');
@@ -1637,17 +1644,17 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
             ),
           IconButton(
             tooltip: hintLabel,
-            onPressed: _useHint,
+            onPressed: _completionShown ? null : _useHint,
             icon: const Icon(Icons.lightbulb_outline_rounded),
           ),
           IconButton(
             tooltip: 'Rückgängig',
-            onPressed: _history.isEmpty ? null : _undo,
+            onPressed: _completionShown || _history.isEmpty ? null : _undo,
             icon: const Icon(Icons.undo_rounded),
           ),
           IconButton(
             tooltip: 'Wiederholen',
-            onPressed: _redoHistory.isEmpty ? null : _redo,
+            onPressed: _completionShown || _redoHistory.isEmpty ? null : _redo,
             icon: const Icon(Icons.redo_rounded),
           ),
           IconButton(
