@@ -25,17 +25,20 @@ class AppPreferences extends ChangeNotifier {
     required this.animationsEnabled,
     required this.hapticsEnabled,
     required this.showRuleIssues,
+    required this.premiumSimulationEnabled,
   });
 
   static const _themeKey = 'setting_theme_v1';
   static const _animationsKey = 'setting_animations_v1';
   static const _hapticsKey = 'setting_haptics_v1';
   static const _showRuleIssuesKey = 'setting_rule_issues_v1';
+  static const _premiumSimulationKey = 'debug_premium_simulation_v1';
 
   AppThemePreference themePreference;
   bool animationsEnabled;
   bool hapticsEnabled;
   bool showRuleIssues;
+  bool premiumSimulationEnabled;
 
   static Future<AppPreferences> load() async {
     final preferences = await SharedPreferences.getInstance();
@@ -51,6 +54,8 @@ class AppPreferences extends ChangeNotifier {
       animationsEnabled: preferences.getBool(_animationsKey) ?? true,
       hapticsEnabled: preferences.getBool(_hapticsKey) ?? true,
       showRuleIssues: preferences.getBool(_showRuleIssuesKey) ?? true,
+      premiumSimulationEnabled:
+          preferences.getBool(_premiumSimulationKey) ?? false,
     );
   }
 
@@ -84,6 +89,14 @@ class AppPreferences extends ChangeNotifier {
     notifyListeners();
     final preferences = await SharedPreferences.getInstance();
     await preferences.setBool(_showRuleIssuesKey, value);
+  }
+
+  Future<void> setPremiumSimulationEnabled(bool value) async {
+    if (premiumSimulationEnabled == value) return;
+    premiumSimulationEnabled = value;
+    notifyListeners();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(_premiumSimulationKey, value);
   }
 }
 

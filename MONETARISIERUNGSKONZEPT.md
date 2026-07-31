@@ -11,14 +11,17 @@ wird vor Veröffentlichung anhand des tatsächlichen Umfangs und der Store-Koste
 
 - Alle grundlegenden Logikspiele bleiben sinnvoll spielbar.
 - Katalog-, Generator- und Tagesrätsel bleiben zugänglich.
-- Freiwillige Werbung darf später gegen klar erkennbare Extras getauscht werden,
-  zum Beispiel einen zusätzlichen Hinweis.
+- Pro Rätselversuch stehen zunächst drei Hinweise zur Verfügung.
+- Nach dem Verbrauch kann freiwillig eine kurze Rewarded-Werbung angesehen
+  werden, um genau einen zusätzlichen Hinweis zu erhalten.
+- Keine erzwungene Werbung während eines Rätsels.
 - Keine Energie, keine Wartezeiten und keine künstlichen Spielsperren.
 
 ## Premium
 
 - Einmaliger Kauf statt Abonnement.
 - Werbefrei.
+- Hinweise stehen ohne Werbe- oder Kaufdialog zur Verfügung.
 - Zusätzlicher Komfort, beispielsweise mehr verfügbare Streak-Freezes.
 - Kosmetische Themes und ein Unterstützerhinweis sind möglich.
 - Bereits kostenlos veröffentlichte Kerninhalte werden nicht nachträglich
@@ -35,7 +38,8 @@ wird vor Veröffentlichung anhand des tatsächlichen Umfangs und der Store-Koste
 
 ## Technische Reihenfolge
 
-1. Entitlement- und Produktmodell ohne echten Kauf.
-2. Testbare Premium-Vorschau in Entwicklungs-Builds.
-3. Store-Anbindung pro Plattform.
-4. Werbung und Käufe erst nach Datenschutz-, Einwilligungs- und Store-Prüfung.
+1. Lokales Entitlement- und Hinweisbudget ohne echten Kauf.
+2. Testbare Premium- und Rewarded-Ad-Simulation in Entwicklungs-Builds.
+3. Hinweise und Werbebelohnungen in der Versuchshistorie erfassen.
+4. Store-Anbindung pro Plattform.
+5. Werbung und Käufe erst nach Datenschutz-, Einwilligungs- und Store-Prüfung.

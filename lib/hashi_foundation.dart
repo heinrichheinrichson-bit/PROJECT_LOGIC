@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/domain/game_identity.dart';
+import 'core/monetization/hint_economy.dart';
+import 'app_preferences.dart';
 import 'game_storage.dart';
 
 @immutable
@@ -917,6 +919,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   int _moves = 0;
   bool _completionShown = false;
   bool _showMistakes = false;
+  HintBudget _hintBudget = const HintBudget();
 
   @override
   void initState() {
@@ -1182,6 +1185,14 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
       _showActionMessage('Kein weiterer Tipp nötig');
       return;
     }
+    final preferences = PreferencesScope.of(context);
+    if (!preferences.premiumSimulationEnabled && !_hintBudget.canUseHint) {
+      await _showHashiHintRewardDialog();
+      return;
+    }
+    if (!preferences.premiumSimulationEnabled) {
+      setState(() => _hintBudget = _hintBudget.useHint());
+    }
     setState(() {
       _history.add(_game);
       _redoHistory.clear();
@@ -1191,6 +1202,53 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
     });
     _showActionMessage('Eine passende Brücke wurde ergänzt');
     await _showCompletionIfSolved();
+  }
+
+  Future<void> _showHashiHintRewardDialog() async {
+    final simulateAd = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.ondemand_video_outlined),
+        title: const Text('Keine Tipps mehr'),
+        content: const Text(
+          'Sieh dir in der kostenlosen Version freiwillig eine kurze Werbung an, um einen weiteren Tipp zu erhalten.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Später'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(context).pop(true),
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: const Text('Werbung simulieren'),
+          ),
+        ],
+      ),
+    );
+    if (simulateAd != true || !mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.smart_display_outlined),
+        title: const Text('Simulierte Werbung'),
+        content: const Text(
+          'Die echte Werbeintegration folgt erst später. Im Prototyp wird der zusätzliche Tipp sofort vergeben.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Werbung abschließen'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _hintBudget = _hintBudget.earnRewardedHint());
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Ein zusätzlicher Tipp wurde freigeschaltet.')),
+    );
   }
 
   void _restart() {
@@ -1209,6 +1267,10 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final premium = PreferencesScope.of(context).premiumSimulationEnabled;
+    final hintLabel = premium
+        ? 'Tipp · Premium'
+        : 'Tipp · ${_hintBudget.remainingHints} übrig';
     final bridgeCounts = List<int>.generate(
       _game.puzzle.islands.length,
       _game.bridgeCountAt,
@@ -1252,7 +1314,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
               ],
             ),
           IconButton(
-            tooltip: 'Tipp',
+            tooltip: hintLabel,
             onPressed: _useHint,
             icon: const Icon(Icons.lightbulb_outline_rounded),
           ),
@@ -1316,6 +1378,12 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
                         icon: Icons.hub_outlined,
                         label:
                             '$fulfilledIslands/${_game.puzzle.islands.length} Inseln',
+                      ),
+                      _StatusChip(
+                        icon: Icons.lightbulb_outline_rounded,
+                        label: premium
+                            ? 'Tipps · Premium'
+                            : '${_hintBudget.remainingHints} Tipps',
                       ),
                     ],
                   ),

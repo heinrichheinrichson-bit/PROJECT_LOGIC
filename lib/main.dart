@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_preferences.dart';
+import 'core/monetization/hint_economy.dart';
 import 'daily_challenge.dart';
 import 'game_logic.dart';
 import 'game_storage.dart';
@@ -1123,6 +1124,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   CellPosition? _selectedCell;
   CellPosition? _hintCell;
   Set<CellPosition> _hintRelatedCells = const {};
+  HintBudget _hintBudget = const HintBudget();
 
   @override
   void initState() {
@@ -1175,6 +1177,10 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
     final issueCells = {
       for (final issue in issues) ...issue.cells,
     };
+    final premium = PreferencesScope.of(context).premiumSimulationEnabled;
+    final hintLabel = premium
+        ? 'Logischer Hinweis · Premium'
+        : 'Logischer Hinweis · ${_hintBudget.remainingHints} übrig';
 
     return PopScope(
       canPop: false,
@@ -1217,7 +1223,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
               ],
             ),
           IconButton(
-            tooltip: 'Logischer Hinweis',
+            tooltip: hintLabel,
             onPressed: puzzle.isSolved ? null : _showHint,
             icon: const Icon(Icons.lightbulb_outline_rounded),
           ),
@@ -1287,7 +1293,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                   OutlinedButton.icon(
                     onPressed: puzzle.isSolved ? null : _showHint,
                     icon: const Icon(Icons.lightbulb_outline_rounded),
-                    label: const Text('Logischen Hinweis anzeigen'),
+                    label: Text(hintLabel),
                   ),
                   const SizedBox(height: 12),
                   SwitchListTile(
@@ -1354,6 +1360,16 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       return;
     }
 
+    final preferences = PreferencesScope.of(context);
+    if (!preferences.premiumSimulationEnabled && !_hintBudget.canUseHint) {
+      await _showHintRewardDialog();
+      return;
+    }
+
+    if (!preferences.premiumSimulationEnabled) {
+      setState(() => _hintBudget = _hintBudget.useHint());
+    }
+
     setState(() {
       _selectedCell = hint.position;
       _hintCell = hint.position;
@@ -1417,6 +1433,54 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       await _saveGame();
       if (puzzle.isSolved) _showSolvedDialog();
     }
+  }
+
+  Future<void> _showHintRewardDialog() async {
+    final simulateAd = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.ondemand_video_outlined),
+        title: const Text('Keine Hinweise mehr'),
+        content: const Text(
+          'In der kostenlosen Version kannst du eine kurze Werbung ansehen und dafür einen weiteren Hinweis erhalten.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Später'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(context).pop(true),
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: const Text('Werbung simulieren'),
+          ),
+        ],
+      ),
+    );
+    if (simulateAd != true || !mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.smart_display_outlined),
+        title: const Text('Simulierte Werbung'),
+        content: const Text(
+          'Hier wird später ein freiwilliges Rewarded-Ad eingeblendet. Für den Prototyp wird die Belohnung sofort vergeben.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Werbung abschließen'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    setState(() => _hintBudget = _hintBudget.earnRewardedHint());
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Ein zusätzlicher Hinweis wurde freigeschaltet.')),
+    );
   }
 
   void _runDeveloperAction(_DeveloperAction action) {
@@ -1767,6 +1831,25 @@ class SettingsScreen extends StatelessWidget {
                             onChanged: preferences.setShowRuleIssues,
                           ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Monetarisierung testen',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    Card(
+                      child: SwitchListTile(
+                        secondary: const Icon(Icons.workspace_premium_outlined),
+                        title: const Text('Premium simulieren'),
+                        subtitle: Text(
+                          preferences.premiumSimulationEnabled
+                              ? 'Werbefrei und Hinweise ohne Begrenzung'
+                              : 'Kostenlose Version mit drei Hinweisen pro Rätsel',
+                        ),
+                        value: preferences.premiumSimulationEnabled,
+                        onChanged: preferences.setPremiumSimulationEnabled,
                       ),
                     ),
                     const SizedBox(height: 24),
