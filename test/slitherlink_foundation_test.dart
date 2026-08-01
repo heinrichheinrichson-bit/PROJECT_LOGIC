@@ -20,6 +20,18 @@ void main() {
     expect(state.isSolved, isTrue);
   });
 
+  test('every collection puzzle contains a valid advertised solution', () {
+    for (final puzzle in slitherlinkPuzzleCatalog) {
+      final state = SlitherlinkState(
+        puzzle: puzzle,
+        marks: {
+          for (final id in puzzle.solution) id: SlitherEdgeMark.line,
+        },
+      );
+      expect(state.isSolved, isTrue, reason: puzzle.id);
+    }
+  });
+
   test('exact clues without a closed loop are not solved', () {
     final state = SlitherlinkState(
       puzzle: slitherlinkTutorialPuzzle,

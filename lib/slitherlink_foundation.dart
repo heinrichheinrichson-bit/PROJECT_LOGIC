@@ -36,6 +36,7 @@ class SlitherlinkPuzzle {
     required this.columns,
     required this.clues,
     required this.solution,
+    this.difficulty = PuzzleDifficulty.easy,
   });
 
   final String id;
@@ -44,6 +45,7 @@ class SlitherlinkPuzzle {
   final int columns;
   final List<List<int?>> clues;
   final Set<String> solution;
+  final PuzzleDifficulty difficulty;
 }
 
 const slitherlinkTutorialPuzzle = SlitherlinkPuzzle(
@@ -68,6 +70,117 @@ const slitherlinkTutorialPuzzle = SlitherlinkPuzzle(
     'v:2:3',
   },
 );
+
+final slitherlinkPuzzleCatalog = <SlitherlinkPuzzle>[
+  _rectanglePuzzle(
+    id: 'slither_easy_01',
+    title: 'Rundherum',
+    rows: 4,
+    columns: 4,
+    top: 0,
+    left: 0,
+    bottom: 4,
+    right: 4,
+    difficulty: PuzzleDifficulty.easy,
+  ),
+  _rectanglePuzzle(
+    id: 'slither_easy_02',
+    title: 'Kleiner Rahmen',
+    rows: 4,
+    columns: 4,
+    top: 1,
+    left: 1,
+    bottom: 3,
+    right: 3,
+    difficulty: PuzzleDifficulty.easy,
+  ),
+  _rectanglePuzzle(
+    id: 'slither_easy_03',
+    title: 'Breiter Weg',
+    rows: 5,
+    columns: 5,
+    top: 1,
+    left: 0,
+    bottom: 4,
+    right: 5,
+    difficulty: PuzzleDifficulty.easy,
+  ),
+  _rectanglePuzzle(
+    id: 'slither_medium_01',
+    title: 'Im Zentrum',
+    rows: 5,
+    columns: 5,
+    top: 1,
+    left: 1,
+    bottom: 4,
+    right: 4,
+    difficulty: PuzzleDifficulty.medium,
+  ),
+  _rectanglePuzzle(
+    id: 'slither_medium_02',
+    title: 'Große Runde',
+    rows: 6,
+    columns: 6,
+    top: 0,
+    left: 1,
+    bottom: 6,
+    right: 5,
+    difficulty: PuzzleDifficulty.medium,
+  ),
+  _rectanglePuzzle(
+    id: 'slither_hard_01',
+    title: 'Weiter Rahmen',
+    rows: 7,
+    columns: 7,
+    top: 1,
+    left: 1,
+    bottom: 6,
+    right: 6,
+    difficulty: PuzzleDifficulty.hard,
+  ),
+];
+
+SlitherlinkPuzzle _rectanglePuzzle({
+  required String id,
+  required String title,
+  required int rows,
+  required int columns,
+  required int top,
+  required int left,
+  required int bottom,
+  required int right,
+  required PuzzleDifficulty difficulty,
+}) {
+  final solution = <String>{};
+  for (var column = left; column < right; column++) {
+    solution.add('h:$top:$column');
+    solution.add('h:$bottom:$column');
+  }
+  for (var row = top; row < bottom; row++) {
+    solution.add('v:$row:$left');
+    solution.add('v:$row:$right');
+  }
+  final clues = List.generate(rows, (row) {
+    return List<int?>.generate(columns, (column) {
+      final ids = [
+        'h:$row:$column',
+        'h:${row + 1}:$column',
+        'v:$row:$column',
+        'v:$row:${column + 1}',
+      ];
+      return ids.where(solution.contains).length;
+    });
+  });
+  return SlitherlinkPuzzle(
+    id: id,
+    title: title,
+    rows: rows,
+    columns: columns,
+    clues: clues,
+    solution: solution,
+    difficulty: difficulty,
+  );
+}
 
 class SlitherlinkState {
   const SlitherlinkState({required this.puzzle, this.marks = const {}});
@@ -176,6 +289,7 @@ class SavedSlitherlinkGame {
           'title': puzzle.title,
           'rows': puzzle.rows,
           'columns': puzzle.columns,
+          'difficulty': puzzle.difficulty.name,
           'clues': puzzle.clues,
           'solution': puzzle.solution.toList()..sort(),
         },
@@ -198,6 +312,9 @@ class SavedSlitherlinkGame {
       title: puzzleJson['title']! as String,
       rows: puzzleJson['rows']! as int,
       columns: puzzleJson['columns']! as int,
+      difficulty: PuzzleDifficulty.values.byName(
+        puzzleJson['difficulty'] as String? ?? PuzzleDifficulty.easy.name,
+      ),
       clues: (puzzleJson['clues']! as List)
           .map((row) => (row as List).map((value) => value as int?).toList())
           .toList(),
@@ -304,15 +421,21 @@ class SlitherlinkHubScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    const Card(
-                      child: ListTile(
-                        leading: Icon(Icons.construction_outlined),
-                        title: Text('Rätselsammlung im Aufbau'),
-                        subtitle: Text(
-                          'Als Nächstes folgen Kapitel, Schwierigkeitsgrade und Zufallsrätsel.',
-                        ),
-                      ),
+                    Text(
+                      'Rätselsammlung',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Erste Kapitel zum Kennenlernen verschiedener Rastergrößen.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    for (final difficulty in PuzzleDifficulty.values)
+                      _SlitherCollectionChapter(difficulty: difficulty),
                   ],
                 ),
               ),
@@ -320,6 +443,50 @@ class SlitherlinkHubScreen extends StatelessWidget {
           ),
         ),
       );
+}
+
+class _SlitherCollectionChapter extends StatelessWidget {
+  const _SlitherCollectionChapter({required this.difficulty});
+
+  final PuzzleDifficulty difficulty;
+
+  @override
+  Widget build(BuildContext context) {
+    final puzzles = slitherlinkPuzzleCatalog
+        .where((puzzle) => puzzle.difficulty == difficulty)
+        .toList(growable: false);
+    return Card(
+      child: ExpansionTile(
+        leading: CircleAvatar(
+          child: Icon(switch (difficulty) {
+            PuzzleDifficulty.easy => Icons.eco_outlined,
+            PuzzleDifficulty.medium => Icons.psychology_alt_outlined,
+            PuzzleDifficulty.hard => Icons.local_fire_department_outlined,
+          }),
+        ),
+        title: Text(difficulty.label),
+        subtitle: Text('${puzzles.length} Rätsel'),
+        children: [
+          for (var index = 0; index < puzzles.length; index++) ...[
+            if (index > 0) const Divider(height: 1),
+            ListTile(
+              leading: CircleAvatar(child: Text('${index + 1}')),
+              title: Text(puzzles[index].title),
+              subtitle: Text(
+                '${puzzles[index].rows} × ${puzzles[index].columns}',
+              ),
+              trailing: const Icon(Icons.play_arrow_rounded),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => SlitherlinkGameScreen(puzzle: puzzles[index]),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class SlitherlinkGameScreen extends StatefulWidget {
@@ -474,8 +641,10 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
       await GameStorage().recordCompletion(
         puzzleId: widget.puzzle.id,
         elapsedSeconds: _elapsedSeconds,
-        source: GameMode.tutorial,
-        difficulty: PuzzleDifficulty.easy,
+        source: widget.puzzle.id == slitherlinkTutorialPuzzle.id
+            ? GameMode.tutorial
+            : GameMode.catalog,
+        difficulty: widget.puzzle.difficulty,
         boardSize: widget.puzzle.rows,
         gameType: GameType.slitherlink,
         moves: _moves,
