@@ -23,7 +23,7 @@ class SavedTentsGame {
     this.hintsRemaining = 3,
     this.hintsUsed = 0,
     this.rewardedHints = 0,
-    this.autoGrass = true,
+    this.autoGrass = false,
     this.mode = GameMode.generated,
   });
   final TentsPuzzle puzzle;
@@ -90,7 +90,7 @@ class SavedTentsGame {
       hintsRemaining: json['hintsRemaining'] as int? ?? 3,
       hintsUsed: json['hintsUsed'] as int? ?? 0,
       rewardedHints: json['rewardedHints'] as int? ?? 0,
-      autoGrass: json['autoGrass'] as bool? ?? true,
+      autoGrass: json['autoGrass'] as bool? ?? false,
       mode: GameMode.values
           .byName(json['mode'] as String? ?? GameMode.generated.name),
     );
@@ -323,7 +323,7 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
   int _moves = 0;
   bool _completed = false;
   bool _showConflicts = true;
-  bool _autoGrass = true;
+  bool _autoGrass = false;
   int _hintsRemaining = 3;
   int _hintsUsed = 0;
   int _rewardedHints = 0;
@@ -336,7 +336,7 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
     _state = TentsState(puzzle: widget.puzzle, marks: widget.savedGame?.marks);
     _elapsed = widget.savedGame?.elapsedSeconds ?? 0;
     _moves = widget.savedGame?.moves ?? 0;
-    _autoGrass = widget.savedGame?.autoGrass ?? true;
+    _autoGrass = widget.savedGame?.autoGrass ?? false;
     _hintsRemaining = widget.savedGame?.hintsRemaining ?? 3;
     _hintsUsed = widget.savedGame?.hintsUsed ?? 0;
     _rewardedHints = widget.savedGame?.rewardedHints ?? 0;
@@ -370,9 +370,6 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
     setState(() {
       _history.add(_state);
       _state = _state.cycle(row, column);
-      if (_autoGrass && _state.isTent(row, column)) {
-        _state = _withAutomaticGrass(_state);
-      }
       _redo.clear();
       _moves++;
     });
@@ -417,8 +414,8 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
     await _save();
   }
 
-  TentsState _withAutomaticGrass(TentsState state) {
-    final marks = Map<TentsCell, TentsCellMark>.from(state.marks);
+  Set<TentsCell> _automaticGrassFor(TentsState state) {
+    final grass = <TentsCell>{};
     final size = widget.puzzle.size;
     for (final tent in state.tents) {
       for (var row = tent.$1 - 1; row <= tent.$1 + 1; row++) {
@@ -430,8 +427,8 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
               column < size &&
               cell != tent &&
               !widget.puzzle.trees.contains(cell) &&
-              marks[cell] != TentsCellMark.tent) {
-            marks[cell] = TentsCellMark.grass;
+              state.markAt(row, column) == TentsCellMark.unknown) {
+            grass.add(cell);
           }
         }
       }
@@ -446,17 +443,18 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
         final columnCell = (other, index);
         if (rowFull &&
             !widget.puzzle.trees.contains(rowCell) &&
-            marks[rowCell] != TentsCellMark.tent) {
-          marks[rowCell] = TentsCellMark.grass;
+            state.markAt(rowCell.$1, rowCell.$2) == TentsCellMark.unknown) {
+          grass.add(rowCell);
         }
         if (columnFull &&
             !widget.puzzle.trees.contains(columnCell) &&
-            marks[columnCell] != TentsCellMark.tent) {
-          marks[columnCell] = TentsCellMark.grass;
+            state.markAt(columnCell.$1, columnCell.$2) ==
+                TentsCellMark.unknown) {
+          grass.add(columnCell);
         }
       }
     }
-    return TentsState(puzzle: widget.puzzle, marks: marks);
+    return grass;
   }
 
   Future<void> _hint() async {
@@ -507,9 +505,6 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
         final marks = Map<TentsCell, TentsCellMark>.from(_state.marks)
           ..[hint.cell] = hint.mark;
         _state = TentsState(puzzle: widget.puzzle, marks: marks);
-        if (_autoGrass && hint.mark == TentsCellMark.tent) {
-          _state = _withAutomaticGrass(_state);
-        }
         _redo.clear();
         _moves++;
       }
@@ -705,6 +700,8 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
             ..._state.orphanTentConflicts
           }
         : <TentsCell>{};
+    final automaticGrass =
+        _autoGrass ? _automaticGrassFor(_state) : const <TentsCell>{};
     return Scaffold(
         appBar: AppBar(
             title: Text(
@@ -767,6 +764,7 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                               child: _TentsBoard(
                                   state: _state,
                                   completed: _completed,
+                                  automaticGrass: automaticGrass,
                                   conflicts: conflicts,
                                   hintHighlight: _hintHighlight,
                                   onTap: _tap))),
@@ -809,9 +807,9 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                                         : 'Noch ein R\u00e4tsel')))),
                       SwitchListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: const Text('Gras automatisch markieren'),
+                          title: const Text('Hilfsgras automatisch anzeigen'),
                           subtitle: const Text(
-                              'Markiert sichere Ausschlussfelder nach einem gesetzten Zelt.'),
+                              'Blendet sichere Ausschlussfelder dynamisch ein. Beim Entfernen eines Zelts verschwinden sie wieder.'),
                           value: _autoGrass,
                           onChanged: (value) {
                             setState(() => _autoGrass = value);
@@ -849,11 +847,13 @@ class _TentsBoard extends StatelessWidget {
   const _TentsBoard(
       {required this.state,
       required this.completed,
+      required this.automaticGrass,
       required this.conflicts,
       required this.hintHighlight,
       required this.onTap});
   final TentsState state;
   final bool completed;
+  final Set<TentsCell> automaticGrass;
   final Set<TentsCell> conflicts;
   final TentsCell? hintHighlight;
   final void Function(int, int) onTap;
@@ -903,6 +903,7 @@ class _TentsBoard extends StatelessWidget {
             final cell = (row - 1, column - 1),
                 tree = state.puzzle.trees.contains(cell),
                 mark = state.markAt(cell.$1, cell.$2);
+            final automaticallyExcluded = automaticGrass.contains(cell);
             final conflict = conflicts.contains(cell);
             final highlighted = hintHighlight == cell;
             return Padding(
@@ -914,7 +915,9 @@ class _TentsBoard extends StatelessWidget {
                             ? treeBackground
                             : mark == TentsCellMark.grass
                                 ? scheme.surfaceContainerLowest
-                                : scheme.surfaceContainer,
+                                : automaticallyExcluded
+                                    ? scheme.surfaceContainerLow
+                                    : scheme.surfaceContainer,
                     shape: RoundedRectangleBorder(
                         side: BorderSide(
                             color: highlighted
@@ -941,13 +944,18 @@ class _TentsBoard extends StatelessWidget {
                                       ? Icons.park_rounded
                                       : mark == TentsCellMark.grass
                                           ? Icons.grass_rounded
-                                          : null,
+                                          : automaticallyExcluded
+                                              ? Icons.grass_outlined
+                                              : null,
                                   size: size >= 10 ? 20 : 28,
                                   color: conflict
                                       ? scheme.onErrorContainer
                                       : tree
                                           ? treeForeground
-                                          : null,
+                                          : automaticallyExcluded
+                                              ? scheme.onSurfaceVariant
+                                                  .withValues(alpha: 0.48)
+                                              : null,
                                 ),
                         ))));
           });
