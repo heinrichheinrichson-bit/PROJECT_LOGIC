@@ -59,6 +59,10 @@ void main() {
       MaterialApp(home: FutoshikiGameScreen(puzzle: puzzle)),
     );
     await tester.pumpAndSettle();
+    expect(find.text('So liest du die Zeichen'), findsOneWidget);
+    expect(find.textContaining('offene Seite'), findsOneWidget);
+    await tester.tap(find.text('Verstanden'));
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.text('Jede Zahl genau einmal pro Zeile und Spalte.'),
         findsOneWidget);

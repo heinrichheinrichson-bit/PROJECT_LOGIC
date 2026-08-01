@@ -284,6 +284,7 @@ class FutoshikiGameScreen extends StatefulWidget {
 }
 
 class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
+  static const _guideSeenKey = 'futoshiki_inequality_guide_seen_v1';
   late FutoshikiState _state;
   final _history = <FutoshikiState>[];
   final _redo = <FutoshikiState>[];
@@ -315,6 +316,9 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
       }
     });
     unawaited(_saveGame());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_showFirstRunGuide());
+    });
   }
 
   @override
@@ -341,6 +345,45 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
           hintsRemaining: _hintsRemaining,
         ),
       );
+
+  Future<void> _showFirstRunGuide() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (preferences.getBool(_guideSeenKey) ?? false) return;
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.compare_arrows_rounded),
+        title: const Text('So liest du die Zeichen'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const _InequalityExample(),
+            const SizedBox(height: 18),
+            const Text(
+              'Die offene Seite zeigt immer zur größeren Zahl. '
+              'Die Spitze zeigt zur kleineren Zahl.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Horizontal und vertikal gilt genau dieselbe Regel.',
+              textAlign: TextAlign.center,
+              style: Theme.of(dialogContext).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Verstanden'),
+          ),
+        ],
+      ),
+    );
+    await preferences.setBool(_guideSeenKey, true);
+  }
 
   void _setValue(int? value) {
     final selected = _selected;
@@ -474,28 +517,37 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
               const SizedBox(height: 12),
               const Text('Testabschluss · keine Statistik'),
             ],
+            const SizedBox(height: 22),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  _openNextPuzzle();
+                },
+                child: const Text('Noch eins'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 4,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Brett ansehen'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Futoshiki verlassen'),
+                ),
+              ],
+            ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Brett ansehen'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              Navigator.pop(context);
-            },
-            child: const Text('Futoshiki verlassen'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              _openNextPuzzle();
-            },
-            child: const Text('Noch eins'),
-          ),
-        ],
       ),
     );
   }
@@ -599,15 +651,29 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
                     constraints: const BoxConstraints(maxWidth: 560),
                     child: AspectRatio(
                       aspectRatio: 1,
-                      child: FutoshikiBoard(
-                        state: _state,
-                        selected: _selected,
-                        conflicts: conflicts,
-                        onSelect: (row, column) {
-                          if (!_state.isGiven(row, column)) {
-                            setState(() => _selected = (row, column));
-                          }
-                        },
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerLowest,
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: FutoshikiBoard(
+                            state: _state,
+                            selected: _selected,
+                            conflicts: conflicts,
+                            onSelect: (row, column) {
+                              if (!_state.isGiven(row, column)) {
+                                setState(() => _selected = (row, column));
+                              }
+                            },
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -716,7 +782,10 @@ class FutoshikiBoard extends StatelessWidget {
           for (var column = 0; column < state.puzzle.size; column++) ...[
             Expanded(child: _cell(context, row, column)),
             if (column < state.puzzle.size - 1)
-              SizedBox(width: 22, child: _horizontalSign(row, column)),
+              SizedBox(
+                width: 22,
+                child: _horizontalSign(context, row, column),
+              ),
           ],
         ],
       );
@@ -724,7 +793,9 @@ class FutoshikiBoard extends StatelessWidget {
   Widget _verticalSigns(BuildContext context, int row) => Row(
         children: [
           for (var column = 0; column < state.puzzle.size; column++) ...[
-            Expanded(child: Center(child: _verticalSign(row, column))),
+            Expanded(
+              child: Center(child: _verticalSign(context, row, column)),
+            ),
             if (column < state.puzzle.size - 1) const SizedBox(width: 22),
           ],
         ],
@@ -739,7 +810,10 @@ class FutoshikiBoard extends StatelessWidget {
       color: isConflict
           ? scheme.errorContainer
           : isSelected
-              ? scheme.primaryContainer
+              ? Color.alphaBlend(
+                  scheme.primary.withValues(alpha: 0.16),
+                  scheme.surfaceContainer,
+                )
               : state.isGiven(row, column)
                   ? scheme.surfaceContainerHighest
                   : scheme.surfaceContainer,
@@ -768,7 +842,7 @@ class FutoshikiBoard extends StatelessWidget {
     );
   }
 
-  Widget _horizontalSign(int row, int column) {
+  Widget _horizontalSign(BuildContext context, int row, int column) {
     final inequality = state.puzzle.inequalities
         .where((item) =>
             item.firstRow == row &&
@@ -777,10 +851,10 @@ class FutoshikiBoard extends StatelessWidget {
             item.secondColumn == column + 1)
         .firstOrNull;
     if (inequality == null) return const SizedBox.shrink();
-    return Center(child: Text(inequality.firstIsLess ? '<' : '>'));
+    return Center(child: _inequalitySign(context, inequality));
   }
 
-  Widget _verticalSign(int row, int column) {
+  Widget _verticalSign(BuildContext context, int row, int column) {
     final inequality = state.puzzle.inequalities
         .where((item) =>
             item.firstRow == row &&
@@ -789,7 +863,75 @@ class FutoshikiBoard extends StatelessWidget {
             item.secondColumn == column)
         .firstOrNull;
     if (inequality == null) return const SizedBox.shrink();
-    return Text(inequality.firstIsLess ? '∨' : '∧');
+    return RotatedBox(
+      quarterTurns: 1,
+      child: _inequalitySign(context, inequality),
+    );
+  }
+
+  Widget _inequalitySign(
+    BuildContext context,
+    FutoshikiInequality inequality,
+  ) {
+    final first = state.values[inequality.firstRow][inequality.firstColumn];
+    final second = state.values[inequality.secondRow][inequality.secondColumn];
+    final invalid = first != null &&
+        second != null &&
+        !inequality.isSatisfiedBy(first, second) &&
+        conflicts.contains((inequality.firstRow, inequality.firstColumn)) &&
+        conflicts.contains((inequality.secondRow, inequality.secondColumn));
+    final scheme = Theme.of(context).colorScheme;
+    return Text(
+      inequality.firstIsLess ? '<' : '>',
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            height: 1,
+            fontWeight: FontWeight.w900,
+            color: invalid ? scheme.error : scheme.onSurfaceVariant,
+          ),
+    );
+  }
+}
+
+class _InequalityExample extends StatelessWidget {
+  const _InequalityExample();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    Widget number(String value, {required bool larger}) => Container(
+          width: 58,
+          height: 58,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: larger
+                ? scheme.primaryContainer
+                : scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            value,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+        );
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        number('2', larger: false),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Text(
+            '<',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: scheme.primary,
+                ),
+          ),
+        ),
+        number('5', larger: true),
+      ],
+    );
   }
 }
 
