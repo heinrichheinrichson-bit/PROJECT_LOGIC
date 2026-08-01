@@ -19,6 +19,7 @@ import 'hitori_foundation.dart';
 import 'futoshiki_foundation.dart';
 import 'player_progress_system.dart';
 import 'slitherlink_foundation.dart';
+import 'tents_game.dart';
 import 'features/binary_puzzle/domain/binary_puzzle_generator.dart';
 import 'features/hashi/domain/hashi_generator.dart';
 import 'features/futoshiki/domain/futoshiki_generator.dart';
@@ -354,6 +355,19 @@ class _HomeScreenState extends State<HomeScreen> {
                               );
                             },
                           ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _HomeAction(
+                      icon: Icons.park_rounded,
+                      title: 'Zelte & B\u00e4ume',
+                      subtitle:
+                          'Neu \u00b7 Finde f\u00fcr jeden Baum das passende Zelt',
+                      enabled: true,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const TentsHubScreen(),
                         ),
                       ),
                     ),

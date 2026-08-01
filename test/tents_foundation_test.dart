@@ -1,11 +1,15 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/core/domain/game_identity.dart';
 import 'package:project_logic_prototype/features/tents/domain/tents_difficulty_rater.dart';
 import 'package:project_logic_prototype/features/tents/domain/tents_generator.dart';
 import 'package:project_logic_prototype/features/tents/domain/tents_puzzle.dart';
 import 'package:project_logic_prototype/features/tents/domain/tents_solver.dart';
+import 'package:project_logic_prototype/tents_game.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   test('generator is deterministic and uniquely solvable for all difficulties',
       () {
     const generator = TentsGenerator();
@@ -104,5 +108,51 @@ void main() {
     expect(ratings.map((rating) => rating.band), PuzzleDifficulty.values);
     expect(ratings[0].score, lessThan(ratings[1].score));
     expect(ratings[1].score, lessThan(ratings[2].score));
+  });
+
+  test('saved game preserves puzzle, marks, time, and moves', () async {
+    final puzzle = const TentsGenerator().generate(
+      seed: 19191,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    final editable = [
+      for (var row = 0; row < puzzle.size; row++)
+        for (var column = 0; column < puzzle.size; column++)
+          if (!puzzle.trees.contains((row, column))) (row, column),
+    ].first;
+    await TentsGameStore().save(SavedTentsGame(
+      puzzle: puzzle,
+      marks: {editable: TentsCellMark.grass},
+      elapsedSeconds: 83,
+      moves: 7,
+    ));
+    final restored = await TentsGameStore().load();
+    expect(restored, isNotNull);
+    expect(restored!.puzzle.trees, puzzle.trees);
+    expect(restored.marks[editable], TentsCellMark.grass);
+    expect(restored.elapsedSeconds, 83);
+    expect(restored.moves, 7);
+  });
+
+  testWidgets('game fits a narrow phone and supports test completion',
+      (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final puzzle = const TentsGenerator().generate(
+      seed: 20260801,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    await tester.pumpWidget(MaterialApp(home: TentsGameScreen(puzzle: puzzle)));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('Tippen: leer'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.bug_report_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sofort lösen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Lager vollständig!'), findsOneWidget);
+    expect(find.textContaining('Testabschluss'), findsOneWidget);
   });
 }
