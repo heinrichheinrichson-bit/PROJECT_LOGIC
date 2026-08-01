@@ -30,6 +30,11 @@ void main() {
         },
       );
       expect(state.isSolved, isTrue, reason: puzzle.id);
+      expect(
+        const SlitherlinkSolver().hasUniqueSolution(puzzle),
+        isTrue,
+        reason: '${puzzle.id} must be unique',
+      );
     }
   });
 
