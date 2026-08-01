@@ -132,6 +132,53 @@ void main() {
     expect(find.text('Noch eins'), findsOneWidget);
   });
 
+  for (final viewport in const [
+    (name: 'small phone', size: Size(320, 640)),
+    (name: 'tablet', size: Size(800, 1200)),
+  ]) {
+    testWidgets('Hitori board fits a ${viewport.name}', (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'hitori_rules_guide_seen_v1': true,
+      });
+      tester.view.physicalSize = viewport.size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final puzzle = const HitoriGenerator().generate(
+        seed: 19100 + viewport.size.width.toInt(),
+        difficulty: PuzzleDifficulty.hard,
+      );
+      await tester.pumpWidget(
+        MaterialApp(home: HitoriGameScreen(puzzle: puzzle)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('hitori-cell-6-6')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('Hitori collection hub shows persisted progress', (tester) async {
+    final puzzle = hitoriPuzzleCatalog.first;
+    await GameStorage().recordCompletion(
+      puzzleId: puzzle.id,
+      elapsedSeconds: 42,
+      source: GameMode.catalog,
+      difficulty: puzzle.difficulty,
+      boardSize: puzzle.size,
+      gameType: GameType.hitori,
+      moves: 8,
+    );
+    await tester.pumpWidget(const MaterialApp(home: HitoriHubScreen()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 von 28 Rätseln gelöst'), findsOneWidget);
+    expect(find.text('Doppelte entdecken'), findsOneWidget);
+  });
+
   testWidgets('completed Hitori can be viewed, restarted, and played again',
       (tester) async {
     SharedPreferences.setMockInitialValues({
@@ -221,6 +268,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Hinweis'));
     await tester.pumpAndSettle();
+    expect(find.textContaining('Doppelte'), findsWidgets);
     expect(find.text('Auf dem Brett zeigen'), findsOneWidget);
     await tester.tap(find.text('Auf dem Brett zeigen'));
     await tester.pump();

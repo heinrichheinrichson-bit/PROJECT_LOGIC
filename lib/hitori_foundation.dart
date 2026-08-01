@@ -565,15 +565,13 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
     if (target == null) return;
     final cell = target;
     final shade = widget.puzzle.solution.contains(cell);
+    final hintText = _hintExplanation(cell, shade: shade);
     final apply = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.lightbulb_outline_rounded),
-        title: Text(shade ? 'Doppelte Zahl betrachten' : 'Helles Feld sichern'),
-        content: Text(
-          'Prüfe Zeile ${cell.$1 + 1}, Spalte ${cell.$2 + 1}. '
-          '${shade ? 'Dieses Feld muss geschwärzt werden.' : 'Dieses Feld muss hell bleiben.'}',
-        ),
+        title: Text(hintText.title),
+        content: Text(hintText.explanation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -616,6 +614,41 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
     });
     unawaited(_save());
     if (_state.isSolved) unawaited(_complete());
+  }
+
+  ({String title, String explanation}) _hintExplanation(
+    HitoriCell cell, {
+    required bool shade,
+  }) {
+    final value = widget.puzzle.grid[cell.$1][cell.$2];
+    if (!shade) {
+      return (
+        title: 'Helles Feld sichern',
+        explanation: 'Feld ${cell.$1 + 1}/${cell.$2 + 1} darf nicht schwarz '
+            'bleiben. Andernfalls würden sich schwarze Felder berühren oder '
+            'der helle Bereich getrennt. Markiere es als sicher.',
+      );
+    }
+    final sameRow = <int>[
+      for (var column = 0; column < widget.puzzle.size; column++)
+        if (column != cell.$2 && widget.puzzle.grid[cell.$1][column] == value)
+          column,
+    ];
+    final sameColumn = <int>[
+      for (var row = 0; row < widget.puzzle.size; row++)
+        if (row != cell.$1 && widget.puzzle.grid[row][cell.$2] == value) row,
+    ];
+    final location = sameRow.isNotEmpty
+        ? 'Zeile ${cell.$1 + 1}'
+        : sameColumn.isNotEmpty
+            ? 'Spalte ${cell.$2 + 1}'
+            : 'diesem Bereich';
+    return (
+      title: 'Doppelte $value in $location',
+      explanation: 'Die Zahl $value kommt in $location mehrfach vor. Prüfe '
+          'zusätzlich die benachbarten Felder und die Verbindung der hellen '
+          'Fläche: Feld ${cell.$1 + 1}/${cell.$2 + 1} muss geschwärzt werden.',
+    );
   }
 
   void _debugSolve({required bool almost}) {
@@ -700,11 +733,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                 _openNextPuzzle();
               },
               child: Text(
-                widget.mode == GameMode.catalog
-                    ? (_nextCatalogPuzzle == null
-                        ? 'Zur Sammlung'
-                        : 'Nächstes Rätsel')
-                    : 'Noch eins',
+                _nextActionLabel,
               ),
             ),
         ],
@@ -718,6 +747,22 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
     if (index < 0 || index + 1 >= hitoriPuzzleCatalog.length) return null;
     return hitoriPuzzleCatalog[index + 1];
   }
+
+  String get _nextActionLabel {
+    if (widget.mode == GameMode.generated) return 'Noch eins';
+    final next = _nextCatalogPuzzle;
+    if (next == null) return 'Zur Sammlung';
+    return next.difficulty == widget.puzzle.difficulty
+        ? 'Nächstes Rätsel'
+        : 'Nächstes Kapitel';
+  }
+
+  String get _screenTitle => switch (widget.mode) {
+        GameMode.catalog =>
+          '${widget.puzzle.difficulty.label} · ${widget.puzzle.title}',
+        GameMode.daily => 'Tagesrätsel · ${widget.puzzle.difficulty.label}',
+        _ => '${widget.puzzle.difficulty.label} · Hitori',
+      };
 
   void _openNextPuzzle() {
     if (widget.mode == GameMode.catalog && _nextCatalogPuzzle == null) {
@@ -747,7 +792,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
         _showConflicts ? _state.adjacentShadeConflicts : <HitoriCell>{};
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.puzzle.difficulty.label} · Hitori'),
+        title: Text(_screenTitle),
         actions: [
           PopupMenuButton<String>(
             tooltip: 'Testwerkzeuge',
@@ -975,9 +1020,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                     label: Text(widget.mode == GameMode.daily
                         ? 'Zum Kalender'
                         : widget.mode == GameMode.catalog
-                            ? (_nextCatalogPuzzle == null
-                                ? 'Zur Sammlung'
-                                : 'Nächstes Rätsel')
+                            ? _nextActionLabel
                             : 'Noch ein Hitori'),
                   ),
                 ),
