@@ -24,6 +24,19 @@ void main() {
     );
     final open = HitoriState(puzzle: puzzle);
     expect(open.duplicateConflicts, isNotEmpty);
+    expect(open.protectedDuplicateConflicts, isEmpty);
+
+    final wronglyProtected = HitoriState(
+      puzzle: puzzle,
+      marks: const {
+        (0, 0): HitoriCellMark.protected,
+        (0, 1): HitoriCellMark.protected,
+      },
+    );
+    expect(
+      wronglyProtected.protectedDuplicateConflicts,
+      containsAll(const [(0, 0), (0, 1)]),
+    );
 
     final solved = HitoriState(
       puzzle: puzzle,
@@ -84,6 +97,39 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Hitori gelöst!'), findsOneWidget);
     expect(find.text('Testabschluss · keine Statistik'), findsOneWidget);
+  });
+
+  testWidgets('completed Hitori can be viewed, restarted, and played again',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'hitori_rules_guide_seen_v1': true,
+    });
+    final puzzle = const HitoriGenerator().generate(
+      seed: 9113,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: HitoriGameScreen(puzzle: puzzle)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.bug_report_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sofort lösen'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Brett ansehen'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.restart_alt_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Neu starten'));
+    await tester.pumpAndSettle();
+    expect(find.text('0 Züge'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('hitori-cell-0-0')));
+    await tester.pump();
+    expect(find.text('1 Züge'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   test('saved Hitori game preserves marks and time', () async {

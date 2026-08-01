@@ -388,6 +388,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
       _elapsedSeconds = 0;
       _moves = 0;
       _hintsRemaining = 3;
+      _completionShown = false;
     });
     unawaited(_save());
   }
@@ -514,7 +515,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
   @override
   Widget build(BuildContext context) {
     final duplicate =
-        _showConflicts ? _state.duplicateConflicts : <HitoriCell>{};
+        _showConflicts ? _state.protectedDuplicateConflicts : <HitoriCell>{};
     final adjacent =
         _showConflicts ? _state.adjacentShadeConflicts : <HitoriCell>{};
     return Scaffold(
@@ -602,6 +603,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                                       : scheme.surfaceContainer,
                           borderRadius: BorderRadius.circular(8),
                           child: InkWell(
+                            key: ValueKey('hitori-cell-$row-$column'),
                             borderRadius: BorderRadius.circular(8),
                             onTap: () => _cycle(row, column),
                             child: Stack(

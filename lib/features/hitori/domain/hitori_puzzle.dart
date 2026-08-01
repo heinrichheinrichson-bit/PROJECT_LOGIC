@@ -74,6 +74,38 @@ class HitoriState {
     return conflicts;
   }
 
+  Set<HitoriCell> get protectedDuplicateConflicts {
+    final conflicts = <HitoriCell>{};
+    for (var row = 0; row < puzzle.size; row++) {
+      _markProtectedDuplicates(
+        [for (var column = 0; column < puzzle.size; column++) (row, column)],
+        conflicts,
+      );
+    }
+    for (var column = 0; column < puzzle.size; column++) {
+      _markProtectedDuplicates(
+        [for (var row = 0; row < puzzle.size; row++) (row, column)],
+        conflicts,
+      );
+    }
+    return conflicts;
+  }
+
+  void _markProtectedDuplicates(
+    List<HitoriCell> cells,
+    Set<HitoriCell> conflicts,
+  ) {
+    final positions = <int, List<HitoriCell>>{};
+    for (final cell in cells) {
+      if (markAt(cell.$1, cell.$2) != HitoriCellMark.protected) continue;
+      positions.putIfAbsent(puzzle.grid[cell.$1][cell.$2], () => []).add(cell);
+    }
+    for (final duplicates
+        in positions.values.where((list) => list.length > 1)) {
+      conflicts.addAll(duplicates);
+    }
+  }
+
   void _markDuplicates(
     List<HitoriCell> cells,
     Set<HitoriCell> conflicts,
