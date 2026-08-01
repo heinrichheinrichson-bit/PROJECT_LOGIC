@@ -206,6 +206,29 @@ void main() {
     );
   });
 
+  testWidgets('hint explains a logical step before applying it',
+      (tester) async {
+    final preferences = await AppPreferences.load();
+    await tester.pumpWidget(
+      PreferencesScope(
+        preferences: preferences,
+        child: const MaterialApp(
+          home: SlitherlinkGameScreen(puzzle: slitherlinkTutorialPuzzle),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Hinweis'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hinweis anwenden'), findsOneWidget);
+    expect(find.text('Abbrechen'), findsOneWidget);
+
+    await tester.tap(find.text('Abbrechen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Hinweis anwenden'), findsNothing);
+  });
+
   test('saved Slitherlink game preserves puzzle and progress', () async {
     final store = SlitherlinkGameStore();
     const edge = SlitherEdge.horizontal(1, 1);

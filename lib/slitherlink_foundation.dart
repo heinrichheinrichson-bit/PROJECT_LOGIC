@@ -1065,7 +1065,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
     if (_state.isSolved) _showCompletion();
   }
 
-  void _hint() {
+  Future<void> _hint() async {
     final premium = PreferencesScope.of(context).premiumSimulationEnabled;
     if (!premium && !_hintBudget.canUseHint) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1073,25 +1073,99 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
       );
       return;
     }
-    for (final edge in _allEdges(widget.puzzle)) {
-      final expected = widget.puzzle.solution.contains(edge.id)
-          ? SlitherEdgeMark.line
-          : SlitherEdgeMark.blocked;
-      if (_state.markAt(edge) == expected) continue;
-      setState(() {
-        _history.add(_state);
-        final updated = Map<String, SlitherEdgeMark>.from(_state.marks)
-          ..[edge.id] = expected;
-        _state = SlitherlinkState(puzzle: widget.puzzle, marks: updated);
-        _redo.clear();
-        _moves++;
-        _hintsUsed++;
-        if (!premium) _hintBudget = _hintBudget.useHint();
-      });
-      unawaited(_saveGame());
-      if (_state.isSolved) _showCompletion();
-      return;
+    final logical = _findLogicalHint();
+    final edge = logical?.edge ??
+        _allEdges(widget.puzzle).where((candidate) {
+          final expected = widget.puzzle.solution.contains(candidate.id)
+              ? SlitherEdgeMark.line
+              : SlitherEdgeMark.blocked;
+          return _state.markAt(candidate) != expected;
+        }).firstOrNull;
+    if (edge == null) return;
+    final expected = logical?.mark ??
+        (widget.puzzle.solution.contains(edge.id)
+            ? SlitherEdgeMark.line
+            : SlitherEdgeMark.blocked);
+    final apply = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.lightbulb_outline_rounded),
+        title: Text(logical?.title ?? 'Sicherer nächster Schritt'),
+        content: Text(
+          logical?.explanation ??
+              'Aus der aktuellen Stellung lässt sich hier ein sicherer Schritt ableiten.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Hinweis anwenden'),
+          ),
+        ],
+      ),
+    );
+    if (apply != true || !mounted) return;
+    setState(() {
+      _history.add(_state);
+      final updated = Map<String, SlitherEdgeMark>.from(_state.marks)
+        ..[edge.id] = expected;
+      _state = SlitherlinkState(puzzle: widget.puzzle, marks: updated);
+      _redo.clear();
+      _moves++;
+      _hintsUsed++;
+      if (!premium) _hintBudget = _hintBudget.useHint();
+    });
+    unawaited(_saveGame());
+    if (_state.isSolved) _showCompletion();
+  }
+
+  ({
+    SlitherEdge edge,
+    SlitherEdgeMark mark,
+    String title,
+    String explanation,
+  })? _findLogicalHint() {
+    for (var row = 0; row < widget.puzzle.rows; row++) {
+      for (var column = 0; column < widget.puzzle.columns; column++) {
+        final clue = widget.puzzle.clues[row][column];
+        if (clue == null) continue;
+        final edges = [
+          SlitherEdge.horizontal(row, column),
+          SlitherEdge.horizontal(row + 1, column),
+          SlitherEdge.vertical(row, column),
+          SlitherEdge.vertical(row, column + 1),
+        ];
+        final lines = edges
+            .where((edge) => _state.markAt(edge) == SlitherEdgeMark.line)
+            .length;
+        final empty = edges
+            .where((edge) => _state.markAt(edge) == SlitherEdgeMark.empty)
+            .toList(growable: false);
+        if (empty.isEmpty) continue;
+        if (lines == clue) {
+          return (
+            edge: empty.first,
+            mark: SlitherEdgeMark.blocked,
+            title: 'Zahl bereits erfüllt',
+            explanation:
+                'Das Feld in Zeile ${row + 1}, Spalte ${column + 1} hat bereits $clue Linien. Die übrigen Seiten können ausgeschlossen werden.',
+          );
+        }
+        if (lines + empty.length == clue) {
+          return (
+            edge: empty.first,
+            mark: SlitherEdgeMark.line,
+            title: 'Alle freien Seiten werden gebraucht',
+            explanation:
+                'Beim Feld in Zeile ${row + 1}, Spalte ${column + 1} müssen alle noch freien Seiten zur Schleife gehören.',
+          );
+        }
+      }
     }
+    return null;
   }
 
   Future<void> _restart() async {
