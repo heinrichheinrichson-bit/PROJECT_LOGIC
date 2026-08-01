@@ -40,8 +40,22 @@ class ProgressSnapshot {
       .where((result) => (result.effectiveBoardSize ?? 0) >= 10)
       .fold(0, (sum, result) => sum + result.completionCount);
 
-  bool get dailyCompletedToday =>
-      results.containsKey(const DailyChallengeService().today().puzzleId);
+  bool get dailyCompletedToday {
+    const service = DailyChallengeService();
+    final ids = {
+      for (final gameType in const [
+        GameType.binairo,
+        GameType.hashi,
+        GameType.slitherlink,
+      ])
+        service.summaryForGame(DateTime.now(), gameType).puzzleId,
+    };
+    return results.values.any(
+      (result) =>
+          result.effectiveSource == PuzzleSource.daily &&
+          ids.contains(result.puzzleId),
+    );
+  }
 
   int completionsTodayBySource(PuzzleSource source, DateTime date) {
     final day = DateTime(date.year, date.month, date.day);
@@ -252,9 +266,20 @@ class PlayerProgressService {
     DateTime? date,
   }) {
     final today = date ?? DateTime.now();
-    final dailyPuzzleId =
-        const DailyChallengeService().challengeFor(today).puzzleId;
-    final completedDaily = snapshot.results.containsKey(dailyPuzzleId);
+    const dailyService = DailyChallengeService();
+    final dailyPuzzleIds = {
+      for (final gameType in const [
+        GameType.binairo,
+        GameType.hashi,
+        GameType.slitherlink,
+      ])
+        dailyService.summaryForGame(today, gameType).puzzleId,
+    };
+    final completedDaily = snapshot.results.values.any(
+      (result) =>
+          result.effectiveSource == PuzzleSource.daily &&
+          dailyPuzzleIds.contains(result.puzzleId),
+    );
     final generatedToday =
         snapshot.completionsTodayBySource(PuzzleSource.generated, today);
     final catalogToday =

@@ -22,6 +22,18 @@ void main() {
   });
 
   test('every collection puzzle contains a valid advertised solution', () {
+    expect(slitherlinkPuzzleCatalog, hasLength(36));
+    expect(
+      slitherlinkPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
+      hasLength(36),
+    );
+    for (final difficulty in PuzzleDifficulty.values) {
+      expect(
+        slitherlinkPuzzleCatalog
+            .where((puzzle) => puzzle.difficulty == difficulty),
+        hasLength(12),
+      );
+    }
     for (final puzzle in slitherlinkPuzzleCatalog) {
       final state = SlitherlinkState(
         puzzle: puzzle,

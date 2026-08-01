@@ -12,6 +12,8 @@ import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'game_storage.dart';
 
+part 'slitherlink_catalog.g.dart';
+
 enum SlitherEdgeMark { empty, line, blocked }
 
 enum _SlitherDeveloperAction { almostSolved, solve, error, reset }
@@ -72,113 +74,23 @@ const slitherlinkTutorialPuzzle = SlitherlinkPuzzle(
   },
 );
 
-final slitherlinkPuzzleCatalog = <SlitherlinkPuzzle>[
-  _rectanglePuzzle(
-    id: 'slither_easy_01',
-    title: 'Rundherum',
-    rows: 4,
-    columns: 4,
-    top: 0,
-    left: 0,
-    bottom: 4,
-    right: 4,
-    difficulty: PuzzleDifficulty.easy,
-  ),
-  _rectanglePuzzle(
-    id: 'slither_easy_02',
-    title: 'Kleiner Rahmen',
-    rows: 4,
-    columns: 4,
-    top: 1,
-    left: 1,
-    bottom: 3,
-    right: 3,
-    difficulty: PuzzleDifficulty.easy,
-  ),
-  _rectanglePuzzle(
-    id: 'slither_easy_03',
-    title: 'Breiter Weg',
-    rows: 5,
-    columns: 5,
-    top: 1,
-    left: 0,
-    bottom: 4,
-    right: 5,
-    difficulty: PuzzleDifficulty.easy,
-  ),
-  _rectanglePuzzle(
-    id: 'slither_medium_01',
-    title: 'Im Zentrum',
-    rows: 5,
-    columns: 5,
-    top: 1,
-    left: 1,
-    bottom: 4,
-    right: 4,
-    difficulty: PuzzleDifficulty.medium,
-  ),
-  _rectanglePuzzle(
-    id: 'slither_medium_02',
-    title: 'Große Runde',
-    rows: 6,
-    columns: 6,
-    top: 0,
-    left: 1,
-    bottom: 6,
-    right: 5,
-    difficulty: PuzzleDifficulty.medium,
-  ),
-  _rectanglePuzzle(
-    id: 'slither_hard_01',
-    title: 'Weiter Rahmen',
-    rows: 7,
-    columns: 7,
-    top: 1,
-    left: 1,
-    bottom: 6,
-    right: 6,
-    difficulty: PuzzleDifficulty.hard,
-  ),
-];
-
-SlitherlinkPuzzle _rectanglePuzzle({
+SlitherlinkPuzzle _catalogPuzzleFromSeed({
   required String id,
   required String title,
-  required int rows,
-  required int columns,
-  required int top,
-  required int left,
-  required int bottom,
-  required int right,
+  required int seed,
   required PuzzleDifficulty difficulty,
 }) {
-  final solution = <String>{};
-  for (var column = left; column < right; column++) {
-    solution.add('h:$top:$column');
-    solution.add('h:$bottom:$column');
-  }
-  for (var row = top; row < bottom; row++) {
-    solution.add('v:$row:$left');
-    solution.add('v:$row:$right');
-  }
-  final clues = List.generate(rows, (row) {
-    return List<int?>.generate(columns, (column) {
-      final ids = [
-        'h:$row:$column',
-        'h:${row + 1}:$column',
-        'v:$row:$column',
-        'v:$row:${column + 1}',
-      ];
-      return ids.where(solution.contains).length;
-    });
-  });
+  final generated = const SlitherlinkGenerator().generate(
+    seed: seed,
+    difficulty: difficulty,
+  );
   return SlitherlinkPuzzle(
     id: id,
     title: title,
-    rows: rows,
-    columns: columns,
-    clues: clues,
-    solution: solution,
+    rows: generated.rows,
+    columns: generated.columns,
+    clues: generated.clues,
+    solution: generated.solution,
     difficulty: difficulty,
   );
 }
@@ -603,8 +515,13 @@ class SlitherlinkGameStore {
 }
 
 class SlitherlinkHubScreen extends StatelessWidget {
-  const SlitherlinkHubScreen({this.onOpenStatistics, super.key});
+  const SlitherlinkHubScreen({
+    this.onOpenDaily,
+    this.onOpenStatistics,
+    super.key,
+  });
 
+  final Future<void> Function(BuildContext context)? onOpenDaily;
   final Future<void> Function(BuildContext context)? onOpenStatistics;
 
   @override
@@ -662,6 +579,20 @@ class SlitherlinkHubScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 18),
+                    if (onOpenDaily != null) ...[
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.calendar_today_outlined),
+                          title: const Text('Tagesrätsel & Kalender'),
+                          subtitle: const Text(
+                            'Heute spielen oder vergangene Schleifen nachholen',
+                          ),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () => onOpenDaily!(context),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                    ],
                     if (onOpenStatistics != null) ...[
                       Card(
                         child: ListTile(
@@ -682,7 +613,7 @@ class SlitherlinkHubScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Erste Kapitel zum Kennenlernen verschiedener Rastergrößen.',
+                      '36 eindeutig lösbare Rätsel in neun Kapiteln – vom Einstieg bis zur Meisterschleife.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -781,44 +712,141 @@ class SlitherlinkHubScreen extends StatelessWidget {
   }
 }
 
-class _SlitherCollectionChapter extends StatelessWidget {
+class _SlitherCollectionChapter extends StatefulWidget {
   const _SlitherCollectionChapter({required this.difficulty});
 
   final PuzzleDifficulty difficulty;
 
   @override
+  State<_SlitherCollectionChapter> createState() =>
+      _SlitherCollectionChapterState();
+}
+
+class _SlitherCollectionChapterState extends State<_SlitherCollectionChapter> {
+  Map<String, PuzzleResult> _results = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final results = await GameStorage().loadResults();
+    if (mounted) setState(() => _results = results);
+  }
+
+  PuzzleResult? _resultFor(SlitherlinkPuzzle puzzle) =>
+      _results['${GameType.slitherlink.name}:${puzzle.id}'];
+
+  String _formatTime(int seconds) =>
+      '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+
+  @override
   Widget build(BuildContext context) {
     final puzzles = slitherlinkPuzzleCatalog
-        .where((puzzle) => puzzle.difficulty == difficulty)
+        .where((puzzle) => puzzle.difficulty == widget.difficulty)
         .toList(growable: false);
+    final solved = puzzles.where((puzzle) => _resultFor(puzzle) != null).length;
+    final chapterNames = switch (widget.difficulty) {
+      PuzzleDifficulty.easy => const [
+          ('Grundlinien', 'Ecken, Ränder und sichere erste Schritte'),
+          ('Kurven lesen', 'Hinweise verbinden und Wege ausschließen'),
+          ('Sichere Schleifen', 'Das Gelernte selbstständig anwenden'),
+        ],
+      PuzzleDifficulty.medium => const [
+          ('Verdeckte Wege', 'Mehrere Hinweise gemeinsam betrachten'),
+          ('Wendepunkte', 'Längere Schlussketten sicher verfolgen'),
+          ('Kombinierte Logik', 'Verschiedene Muster geschickt verbinden'),
+        ],
+      PuzzleDifficulty.hard => const [
+          ('Wenige Spuren', 'Mit sparsamen Vorgaben Orientierung finden'),
+          ('Tiefe Schlüsse', 'Entscheidungen über mehrere Schritte absichern'),
+          ('Meisterschleifen', 'Die anspruchsvollsten Netze der Sammlung'),
+        ],
+    };
     return Card(
       child: ExpansionTile(
         leading: CircleAvatar(
-          child: Icon(switch (difficulty) {
+          child: Icon(switch (widget.difficulty) {
             PuzzleDifficulty.easy => Icons.eco_outlined,
             PuzzleDifficulty.medium => Icons.psychology_alt_outlined,
             PuzzleDifficulty.hard => Icons.local_fire_department_outlined,
           }),
         ),
-        title: Text(difficulty.label),
-        subtitle: Text('${puzzles.length} Rätsel'),
+        title: Text(widget.difficulty.label),
+        subtitle: Text('$solved von ${puzzles.length} Rätseln gelöst'),
         children: [
-          for (var index = 0; index < puzzles.length; index++) ...[
-            if (index > 0) const Divider(height: 1),
-            ListTile(
-              leading: CircleAvatar(child: Text('${index + 1}')),
-              title: Text(puzzles[index].title),
-              subtitle: Text(
-                '${puzzles[index].rows} × ${puzzles[index].columns}',
-              ),
-              trailing: const Icon(Icons.play_arrow_rounded),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => SlitherlinkGameScreen(puzzle: puzzles[index]),
-                ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: LinearProgressIndicator(
+              value: puzzles.isEmpty ? 0 : solved / puzzles.length,
+              minHeight: 5,
+              borderRadius: BorderRadius.circular(99),
+            ),
+          ),
+          for (var chapterIndex = 0;
+              chapterIndex < chapterNames.length;
+              chapterIndex++) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 14,
+                    child: Text('${chapterIndex + 1}'),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          chapterNames[chapterIndex].$1,
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        Text(
+                          chapterNames[chapterIndex].$2,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
+            for (var index = chapterIndex * 4;
+                index < math.min(chapterIndex * 4 + 4, puzzles.length);
+                index++) ...[
+              if (index > chapterIndex * 4)
+                const Divider(height: 1, indent: 72),
+              ListTile(
+                contentPadding: const EdgeInsets.only(left: 28, right: 16),
+                leading: CircleAvatar(
+                  child: _resultFor(puzzles[index]) == null
+                      ? Text('${index + 1}')
+                      : const Icon(Icons.check_rounded),
+                ),
+                title: Text(puzzles[index].title),
+                subtitle: Text(
+                  '${puzzles[index].rows} × ${puzzles[index].columns}'
+                  '${_resultFor(puzzles[index]) == null ? '' : ' · Bestzeit ${_formatTime(_resultFor(puzzles[index])!.bestSeconds)}'}',
+                ),
+                trailing: const Icon(Icons.play_arrow_rounded),
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          SlitherlinkGameScreen(puzzle: puzzles[index]),
+                    ),
+                  );
+                  await _refresh();
+                },
+              ),
+            ],
           ],
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -1030,11 +1058,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
       await GameStorage().recordCompletion(
         puzzleId: widget.puzzle.id,
         elapsedSeconds: _elapsedSeconds,
-        source: widget.puzzle.id == slitherlinkTutorialPuzzle.id
-            ? GameMode.tutorial
-            : widget.puzzle.id.startsWith('slither-generated-')
-                ? GameMode.generated
-                : GameMode.catalog,
+        source: _gameMode,
         difficulty: widget.puzzle.difficulty,
         boardSize: widget.puzzle.rows,
         gameType: GameType.slitherlink,
@@ -1186,6 +1210,16 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
   }
 
   bool get _isGenerated => widget.puzzle.id.startsWith('slither-generated-');
+
+  GameMode get _gameMode {
+    if (widget.puzzle.id == slitherlinkTutorialPuzzle.id) {
+      return GameMode.tutorial;
+    }
+    if (widget.puzzle.id.startsWith('daily-slitherlink-')) {
+      return GameMode.daily;
+    }
+    return _isGenerated ? GameMode.generated : GameMode.catalog;
+  }
 
   SlitherlinkPuzzle? get _nextCollectionPuzzle {
     final group = slitherlinkPuzzleCatalog

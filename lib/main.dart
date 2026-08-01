@@ -18,6 +18,7 @@ import 'hashi_foundation.dart';
 import 'player_progress_system.dart';
 import 'slitherlink_foundation.dart';
 import 'features/binary_puzzle/domain/binary_puzzle_generator.dart';
+import 'features/hashi/domain/hashi_generator.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -211,6 +212,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => HashiHubScreen(
+                            onOpenDaily: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const DailyArchiveScreen(
+                                  gameType: GameType.hashi,
+                                ),
+                              ),
+                            ),
                             onOpenStatistics: () async {
                               final storage = GameStorage();
                               final results = await storage.loadResults();
@@ -241,6 +249,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => SlitherlinkHubScreen(
+                            onOpenDaily: (slitherContext) =>
+                                Navigator.of(slitherContext).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const DailyArchiveScreen(
+                                  gameType: GameType.slitherlink,
+                                ),
+                              ),
+                            ),
                             onOpenStatistics: (slitherContext) async {
                               final storage = GameStorage();
                               final results = await storage.loadResults();
@@ -526,7 +542,9 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
 }
 
 class DailyArchiveScreen extends StatefulWidget {
-  const DailyArchiveScreen({super.key});
+  const DailyArchiveScreen({this.gameType = GameType.binairo, super.key});
+
+  final GameType gameType;
 
   @override
   State<DailyArchiveScreen> createState() => _DailyArchiveScreenState();
@@ -555,27 +573,87 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
   }
 
   Future<void> _openChallenge(DailyChallengeSummary summary) async {
-    final challenge = _service.challengeFor(summary.day);
+    final route = switch (widget.gameType) {
+      GameType.binairo => _binaryDailyRoute(summary),
+      GameType.hashi => _hashiDailyRoute(summary),
+      GameType.slitherlink => _slitherlinkDailyRoute(summary),
+      _ => throw UnsupportedError('Tagesrätsel noch nicht verfügbar'),
+    };
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => BinaryPuzzleScreen(
-          definition: challenge.definition,
-          storeDefinition: true,
-          source: PuzzleSource.daily,
-          titleOverride: challenge.title,
-        ),
-      ),
+      route,
     );
     await _refresh();
   }
 
+  MaterialPageRoute<void> _binaryDailyRoute(DailyChallengeSummary summary) {
+    final challenge = _service.challengeFor(summary.day);
+    return MaterialPageRoute<void>(
+      builder: (_) => BinaryPuzzleScreen(
+        definition: challenge.definition,
+        storeDefinition: true,
+        source: PuzzleSource.daily,
+        titleOverride: challenge.title,
+      ),
+    );
+  }
+
+  MaterialPageRoute<void> _hashiDailyRoute(DailyChallengeSummary summary) {
+    final generated = const HashiGenerator().generate(
+      seed: summary.seed,
+      number: 1,
+      difficulty: summary.difficulty.index + 1,
+    );
+    final source = generated.puzzle;
+    final puzzle = HashiPuzzle(
+      id: summary.puzzleId,
+      title: 'Tagesrätsel · ${DailyChallengeService.formatDate(summary.day)}',
+      size: source.size,
+      difficulty: source.difficulty,
+      islands: source.islands,
+      solution: source.solution,
+    );
+    return MaterialPageRoute<void>(
+      builder: (_) => HashiGameScreen(puzzle: puzzle, mode: GameMode.daily),
+    );
+  }
+
+  MaterialPageRoute<void> _slitherlinkDailyRoute(
+    DailyChallengeSummary summary,
+  ) {
+    final generated = const SlitherlinkGenerator().generate(
+      seed: summary.seed,
+      difficulty: summary.difficulty,
+    );
+    final puzzle = SlitherlinkPuzzle(
+      id: summary.puzzleId,
+      title: 'Tagesrätsel · ${DailyChallengeService.formatDate(summary.day)}',
+      rows: generated.rows,
+      columns: generated.columns,
+      clues: generated.clues,
+      solution: generated.solution,
+      difficulty: generated.difficulty,
+    );
+    return MaterialPageRoute<void>(
+      builder: (_) => SlitherlinkGameScreen(puzzle: puzzle),
+    );
+  }
+
+  String _resultKey(DailyChallengeSummary summary) =>
+      widget.gameType == GameType.binairo
+          ? summary.puzzleId
+          : '${widget.gameType.name}:${summary.puzzleId}';
+
   @override
   Widget build(BuildContext context) {
-    final challenges = _service.archiveSummaries(days: _archiveDays);
+    final challenges = _service.archiveSummariesForGame(
+      widget.gameType,
+      days: _archiveDays,
+    );
     final today = challenges.first;
-    final todayCompleted = _results.containsKey(today.puzzleId);
+    final todayCompleted = _results.containsKey(_resultKey(today));
+    final gameName = widget.gameType.label;
     return Scaffold(
-      appBar: AppBar(title: const Text('Tagesrätsel')),
+      appBar: AppBar(title: Text('$gameName-Tagesrätsel')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Center(
@@ -667,7 +745,7 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
                           itemBuilder: (context, index) {
                             final challenge = challenges[index];
                             final completed =
-                                _results.containsKey(challenge.puzzleId);
+                                _results.containsKey(_resultKey(challenge));
                             return _DailyCalendarTile(
                               challenge: challenge,
                               completed: completed,

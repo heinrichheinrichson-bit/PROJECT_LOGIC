@@ -1,5 +1,6 @@
 import 'game_logic.dart';
 import 'features/binary_puzzle/domain/binary_puzzle_generator.dart';
+import 'core/domain/game_identity.dart';
 
 class DailyChallengeSummary {
   const DailyChallengeSummary({
@@ -8,6 +9,7 @@ class DailyChallengeSummary {
     required this.size,
     required this.difficulty,
     required this.seed,
+    this.gameType = GameType.binairo,
   });
 
   final String dayKey;
@@ -15,8 +17,16 @@ class DailyChallengeSummary {
   final int size;
   final PuzzleDifficulty difficulty;
   final int seed;
+  final GameType gameType;
 
-  String get puzzleId => 'daily-binary-$dayKey';
+  String get puzzleId => 'daily-${_gamePrefix(gameType)}-$dayKey';
+
+  static String _gamePrefix(GameType gameType) => switch (gameType) {
+        GameType.binairo => 'binary',
+        GameType.hashi => 'hashi',
+        GameType.slitherlink => 'slitherlink',
+        _ => gameType.name,
+      };
 }
 
 class DailyBinaryChallenge {
@@ -78,10 +88,19 @@ class DailyChallengeService {
   DailyBinaryChallenge today() => challengeFor(DateTime.now());
 
   DailyChallengeSummary summaryFor(DateTime date) {
+    return summaryForGame(date, GameType.binairo);
+  }
+
+  DailyChallengeSummary summaryForGame(DateTime date, GameType gameType) {
     final day = DateTime(date.year, date.month, date.day);
     final dayKey = _dayKey(day);
     final dayNumber = day.difference(DateTime(2020)).inDays;
-    const sizes = <int>[4, 6, 8];
+    final sizes = switch (gameType) {
+      GameType.binairo => const <int>[4, 6, 8],
+      GameType.hashi => const <int>[6, 8, 9],
+      GameType.slitherlink => const <int>[5, 6, 7],
+      _ => const <int>[6, 7, 8],
+    };
     const difficulties = PuzzleDifficulty.values;
     return DailyChallengeSummary(
       dayKey: dayKey,
@@ -89,11 +108,26 @@ class DailyChallengeService {
       size: sizes[dayNumber % sizes.length],
       difficulty:
           difficulties[(dayNumber ~/ sizes.length) % difficulties.length],
-      seed: _stableSeed(dayKey),
+      seed: _stableSeed(
+        gameType == GameType.binairo ? dayKey : '${gameType.name}:$dayKey',
+      ),
+      gameType: gameType,
     );
   }
 
   List<DailyChallengeSummary> archiveSummaries({
+    DateTime? through,
+    int days = 30,
+  }) {
+    return archiveSummariesForGame(
+      GameType.binairo,
+      through: through,
+      days: days,
+    );
+  }
+
+  List<DailyChallengeSummary> archiveSummariesForGame(
+    GameType gameType, {
     DateTime? through,
     int days = 30,
   }) {
@@ -104,7 +138,10 @@ class DailyChallengeService {
     final end = DateTime(endValue.year, endValue.month, endValue.day);
     return List<DailyChallengeSummary>.generate(
       days,
-      (index) => summaryFor(end.subtract(Duration(days: index))),
+      (index) => summaryForGame(
+        end.subtract(Duration(days: index)),
+        gameType,
+      ),
       growable: false,
     );
   }

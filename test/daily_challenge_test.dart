@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:project_logic_prototype/core/domain/game_identity.dart';
 import 'package:project_logic_prototype/daily_challenge.dart';
 
 void main() {
@@ -42,7 +43,8 @@ void main() {
     expect(archive, hasLength(30));
     expect(archive.first.dayKey, '2026-07-30');
     expect(archive.last.dayKey, '2026-07-01');
-    expect(archive.map((challenge) => challenge.puzzleId).toSet(), hasLength(30));
+    expect(
+        archive.map((challenge) => challenge.puzzleId).toSet(), hasLength(30));
   });
 
   test('archive rejects an empty lookback window', () {
@@ -59,4 +61,17 @@ void main() {
     expect(challenge.title, contains('${challenge.size} × ${challenge.size}'));
   });
 
+  test('every game receives an independent deterministic daily calendar', () {
+    final date = DateTime(2026, 8, 1);
+    final hashi = service.summaryForGame(date, GameType.hashi);
+    final slitherlink = service.summaryForGame(date, GameType.slitherlink);
+
+    expect(hashi.puzzleId, 'daily-hashi-2026-08-01');
+    expect(slitherlink.puzzleId, 'daily-slitherlink-2026-08-01');
+    expect(hashi.seed, isNot(slitherlink.seed));
+    expect(
+      service.archiveSummariesForGame(GameType.hashi, through: date, days: 30),
+      hasLength(30),
+    );
+  });
 }

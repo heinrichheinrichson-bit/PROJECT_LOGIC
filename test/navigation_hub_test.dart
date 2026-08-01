@@ -43,6 +43,7 @@ void main() {
     expect(find.text('Erste Herausforderung'), findsOneWidget);
     expect(find.text('Hashi-Statistik'), findsOneWidget);
     expect(find.text('Zufallsrätsel'), findsOneWidget);
+    expect(find.text('Tagesrätsel & Kalender'), findsOneWidget);
 
     await tester.ensureVisible(find.text('Zufallsrätsel'));
     await tester.tap(find.text('Zufallsrätsel'));

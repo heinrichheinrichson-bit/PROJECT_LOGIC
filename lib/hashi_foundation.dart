@@ -719,8 +719,9 @@ class HashiGameState {
 }
 
 class HashiHubScreen extends StatefulWidget {
-  const HashiHubScreen({this.onOpenStatistics, super.key});
+  const HashiHubScreen({this.onOpenDaily, this.onOpenStatistics, super.key});
 
+  final AsyncCallback? onOpenDaily;
   final AsyncCallback? onOpenStatistics;
 
   @override
@@ -878,6 +879,14 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                   icon: const Icon(Icons.auto_awesome_rounded),
                   label: const Text('Zufallsrätsel'),
                 ),
+                if (widget.onOpenDaily != null) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: widget.onOpenDaily,
+                    icon: const Icon(Icons.calendar_today_outlined),
+                    label: const Text('Tagesrätsel & Kalender'),
+                  ),
+                ],
                 if (widget.onOpenStatistics != null) ...[
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
