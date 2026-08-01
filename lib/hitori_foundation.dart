@@ -331,7 +331,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
               ),
               SizedBox(height: 18),
               Text(
-                'Tippen: unverändert → schwarz → sicher hell → unverändert',
+                'Tippen: offen → schwärzen → als sicher markieren → offen',
               ),
             ],
           ),
@@ -572,7 +572,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              const Text('Tippen: unverändert → schwarz → sicher hell'),
+              const Text('Tippen: offen → schwärzen → als sicher markieren'),
               const SizedBox(height: 18),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 560),
@@ -591,47 +591,84 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                       final conflict = duplicate.contains((row, column)) ||
                           adjacent.contains((row, column));
                       final scheme = Theme.of(context).colorScheme;
+                      final isDark =
+                          Theme.of(context).brightness == Brightness.dark;
+                      final cellColor = conflict
+                          ? scheme.errorContainer
+                          : switch (mark) {
+                              HitoriCellMark.shaded => const Color(0xFF101419),
+                              HitoriCellMark.protected => Color.alphaBlend(
+                                  scheme.primary.withValues(alpha: 0.18),
+                                  scheme.surfaceContainerHigh,
+                                ),
+                              HitoriCellMark.open => isDark
+                                  ? scheme.surfaceContainerHigh
+                                  : scheme.surfaceContainer,
+                            };
+                      final borderColor = conflict
+                          ? scheme.error
+                          : switch (mark) {
+                              HitoriCellMark.shaded => isDark
+                                  ? const Color(0xFF566572)
+                                  : const Color(0xFF303840),
+                              HitoriCellMark.protected => scheme.primary,
+                              HitoriCellMark.open => scheme.outlineVariant
+                                  .withValues(alpha: isDark ? 0.42 : 0.28),
+                            };
                       return Padding(
                         padding: const EdgeInsets.all(2),
-                        child: Material(
-                          color: conflict
-                              ? scheme.errorContainer
-                              : mark == HitoriCellMark.shaded
-                                  ? Colors.black
-                                  : mark == HitoriCellMark.protected
-                                      ? scheme.primaryContainer
-                                      : scheme.surfaceContainer,
-                          borderRadius: BorderRadius.circular(8),
-                          child: InkWell(
-                            key: ValueKey('hitori-cell-$row-$column'),
-                            borderRadius: BorderRadius.circular(8),
-                            onTap: () => _cycle(row, column),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Text(
-                                  '${widget.puzzle.grid[row][column]}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleLarge
-                                      ?.copyWith(
-                                        color: mark == HitoriCellMark.shaded
-                                            ? Colors.white24
-                                            : null,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                ),
-                                if (mark == HitoriCellMark.protected)
-                                  Positioned(
-                                    right: 5,
-                                    top: 5,
-                                    child: Icon(
-                                      Icons.circle_outlined,
-                                      size: 12,
-                                      color: scheme.primary,
+                        child: Semantics(
+                          label: switch (mark) {
+                            HitoriCellMark.open => 'Feld offen',
+                            HitoriCellMark.shaded => 'Feld geschwärzt',
+                            HitoriCellMark.protected =>
+                              'Feld als sicher markiert',
+                          },
+                          button: true,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: cellColor,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: borderColor,
+                                width: mark == HitoriCellMark.open ? 1 : 1.5,
+                              ),
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                key: ValueKey('hitori-cell-$row-$column'),
+                                onTap: () => _cycle(row, column),
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    Text(
+                                      '${widget.puzzle.grid[row][column]}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                            color: mark == HitoriCellMark.shaded
+                                                ? Colors.white54
+                                                : null,
+                                            fontWeight: FontWeight.w700,
+                                          ),
                                     ),
-                                  ),
-                              ],
+                                    if (mark == HitoriCellMark.protected)
+                                      Positioned(
+                                        right: 5,
+                                        top: 5,
+                                        child: Icon(
+                                          Icons.check_circle_outline_rounded,
+                                          size: 14,
+                                          color: scheme.primary,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -681,7 +718,9 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                       'Schwärze so viele doppelte Zahlen, dass jede Zahl pro '
                       'Zeile und Spalte nur einmal hell bleibt. Schwarze Felder '
                       'dürfen sich nicht seitlich berühren. Die übrigen hellen '
-                      'Felder müssen vollständig miteinander verbunden bleiben.',
+                      'Felder müssen vollständig miteinander verbunden bleiben. '
+                      'Felder, die sicher hell bleiben, kannst du zur Orientierung '
+                      'als sicher markieren.',
                     ),
                     const SizedBox(height: 12),
                     Align(

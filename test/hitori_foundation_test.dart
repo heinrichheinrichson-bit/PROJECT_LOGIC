@@ -89,7 +89,7 @@ void main() {
     await tester.tap(find.text('Verstanden'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.textContaining('Tippen: unverändert'), findsOneWidget);
+    expect(find.textContaining('Tippen: offen'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.bug_report_outlined));
     await tester.pumpAndSettle();
@@ -129,6 +129,17 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('hitori-cell-0-0')));
     await tester.pump();
     expect(find.text('1 Züge'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp('Feld geschwärzt')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('hitori-cell-0-0')));
+    await tester.pump();
+    expect(
+      find.bySemanticsLabel(RegExp('Feld als sicher markiert')),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
