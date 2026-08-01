@@ -175,7 +175,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: HitoriHubScreen()));
     await tester.pumpAndSettle();
 
-    expect(find.text('1 von 28 Rätseln gelöst'), findsOneWidget);
+    expect(find.text('Sammlungsfortschritt: 1 von 28'), findsOneWidget);
     expect(find.text('Doppelte entdecken'), findsOneWidget);
   });
 

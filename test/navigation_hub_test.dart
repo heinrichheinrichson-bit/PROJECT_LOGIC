@@ -22,8 +22,8 @@ void main() {
 
     expect(find.text('Rätselsammlung'), findsOneWidget);
     expect(find.text('Zufallsrätsel'), findsOneWidget);
-    expect(find.text('Tagesrätsel'), findsOneWidget);
-    expect(find.text('Deine Binärpuzzle-Statistik'), findsOneWidget);
+    expect(find.text('Tagesrätsel & Kalender'), findsOneWidget);
+    expect(find.text('Binärpuzzle-Statistik'), findsOneWidget);
   });
 
   testWidgets('home opens the Hashi foundation', (tester) async {
@@ -171,8 +171,8 @@ void main() {
     await tester.tap(find.text('Zelte & B\u00e4ume'));
     await tester.pumpAndSettle();
     expect(find.text('Zufallsr\u00e4tsel'), findsOneWidget);
-    expect(find.text('Tagesr\u00e4tsel'), findsOneWidget);
-    expect(find.text('Statistik'), findsOneWidget);
+    expect(find.text('Tagesr\u00e4tsel & Kalender'), findsOneWidget);
+    expect(find.text('Zelte-&-B\u00e4ume-Statistik'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('R\u00e4tselsammlung'),
       280,
@@ -180,8 +180,11 @@ void main() {
     expect(find.text('R\u00e4tselsammlung'), findsOneWidget);
     expect(find.textContaining('60 feste Expeditionen'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Statistik'));
-    await tester.tap(find.text('Statistik'));
+    await tester.scrollUntilVisible(
+      find.text('Zelte-&-B\u00e4ume-Statistik'),
+      -280,
+    );
+    await tester.tap(find.text('Zelte-&-B\u00e4ume-Statistik'));
     await tester.pumpAndSettle();
     expect(find.text('Zelte & B\u00e4ume-Statistik'), findsOneWidget);
     expect(find.text('Nach Rastergr\u00f6\u00dfe'), findsOneWidget);

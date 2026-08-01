@@ -771,7 +771,6 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     final accent = AppTheme.gameColors['hashi']!;
     final progress = _completed.length / hashiPuzzleCatalog.length;
     return Scaffold(
@@ -793,38 +792,6 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                   progress: progress,
                   progressLabel:
                       '${_completed.length} von ${hashiPuzzleCatalog.length} Rätseln gelöst',
-                ),
-                const SizedBox(height: 20),
-                Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Eine kleine Inselwelt',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Verbinde sichtbare Inseln – ohne Kreuzungen.',
-                          style: TextStyle(color: colors.onSurfaceVariant),
-                        ),
-                        const SizedBox(height: 16),
-                        const AspectRatio(
-                          aspectRatio: 1,
-                          child: HashiBoard(
-                            puzzle: hashiTutorialPuzzle,
-                            bridges: hashiPreviewBridges,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
                 const SizedBox(height: 20),
                 PuzzleHubAction(

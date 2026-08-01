@@ -311,7 +311,7 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
           const SizedBox(height: 12),
           PuzzleHubAction(
             icon: Icons.calendar_today_outlined,
-            title: 'Tagesrätsel',
+            title: 'Tagesrätsel & Kalender',
             subtitle: 'Heute spielen oder vergangene Tage nachholen',
             accent: accent,
             onTap: widget.onOpenDaily == null
@@ -1186,6 +1186,30 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
                     ),
                     value: _autoAdvance,
                     onChanged: (value) => setState(() => _autoAdvance = value),
+                  ),
+                  const Card(
+                    child: ExpansionTile(
+                      leading: Icon(Icons.menu_book_outlined),
+                      title: Text('So funktioniert es'),
+                      childrenPadding: EdgeInsets.fromLTRB(18, 0, 18, 18),
+                      children: [
+                        Text(
+                          'Trage in jede Zeile und Spalte jede Zahl genau '
+                          'einmal ein. Bei einem 5 × 5-Raster sind das die '
+                          'Zahlen 1 bis 5.',
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Das Ungleichheitszeichen zeigt immer zur kleineren '
+                          'Zahl. Beispiel: 2 < 4 und 5 > 3.',
+                        ),
+                        SizedBox(height: 10),
+                        Text(
+                          'Nutze bereits gesetzte Zahlen und die Zeichen '
+                          'gemeinsam, um mögliche Werte auszuschließen.',
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

@@ -274,15 +274,6 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
           ],
           const SizedBox(height: 24),
           Text('Rätselsammlung', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 6),
-          Text(
-            '$solved von ${hitoriPuzzleCatalog.length} Rätseln gelöst',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 10),
-          LinearProgressIndicator(
-            value: solved / hitoriPuzzleCatalog.length,
-          ),
           const SizedBox(height: 12),
           for (final chapter in hitoriChapters) ...[
             Card(

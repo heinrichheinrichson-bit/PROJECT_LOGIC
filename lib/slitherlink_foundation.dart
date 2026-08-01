@@ -1517,11 +1517,32 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
                   ],
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: Text(
-                  'Tippen: leer → Linie → ausgeschlossen',
-                  textAlign: TextAlign.center,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 2),
+                child: TextButton.icon(
+                  onPressed: () => showDialog<void>(
+                    context: context,
+                    builder: (dialogContext) => AlertDialog(
+                      icon: const Icon(Icons.menu_book_outlined),
+                      title: const Text('So funktioniert Slitherlink'),
+                      content: const Text(
+                        'Zeichne entlang der Punkte genau eine geschlossene '
+                        'Schleife – ohne Abzweigungen oder getrennte Ringe.\n\n'
+                        'Eine Zahl gibt an, wie viele ihrer vier Feldseiten '
+                        'zur Schleife gehören. Felder ohne Zahl liefern keine '
+                        'direkte Vorgabe.\n\n'
+                        'Tippe eine Kante: leer → Linie → ausgeschlossen.',
+                      ),
+                      actions: [
+                        FilledButton(
+                          onPressed: () => Navigator.pop(dialogContext),
+                          child: const Text('Verstanden'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  icon: const Icon(Icons.help_outline_rounded, size: 19),
+                  label: const Text('Spielregeln und Bedienung'),
                 ),
               ),
               Expanded(

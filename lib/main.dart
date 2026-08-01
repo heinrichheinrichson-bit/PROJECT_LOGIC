@@ -8,6 +8,7 @@ import 'app_preferences.dart';
 import 'app_theme.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
+import 'core/presentation/puzzle_hub_components.dart';
 import 'core/statistics/game_statistics.dart';
 import 'core/statistics/puzzle_attempt.dart';
 import 'daily_challenge.dart';
@@ -515,7 +516,8 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
     final savedDefinition = _savedDefinition;
     return Scaffold(
       appBar: AppBar(title: const Text('Binärpuzzle')),
-      body: Center(
+      body: Align(
+        alignment: Alignment.topCenter,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
@@ -523,18 +525,16 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Binärpuzzle',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Setze 0 und 1 so, dass jede Reihe und Spalte aufgeht.',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                PuzzleHubHeader(
+                  icon: Icons.grid_4x4_rounded,
+                  title: 'Zwei Zahlen, klare Regeln',
+                  description: 'Setze 0 und 1 so, dass jede Reihe und Spalte '
+                      'aufgeht – ohne Dreiergruppen oder gleiche Reihen.',
+                  accent: AppTheme.gameColors['binairo']!,
+                  progress: _catalogCompletedCount(_results) /
+                      binaryPuzzleCatalog.length,
+                  progressLabel:
+                      '${_catalogCompletedCount(_results)} von ${binaryPuzzleCatalog.length} Rätseln gelöst',
                 ),
                 const SizedBox(height: 24),
                 if (_loading)
@@ -543,10 +543,12 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   if (_savedGame != null && savedDefinition != null) ...[
                     _HomeAction(
                       icon: Icons.play_circle_outline_rounded,
-                      title: 'Weiterspielen',
+                      title: 'Rätsel fortsetzen',
                       subtitle:
                           '${_savedGame!.titleOverride ?? '${savedDefinition.difficulty.label} · ${savedDefinition.displayName}'} · ${_formatHomeTime(_savedGame!.elapsedSeconds)}',
                       enabled: true,
+                      accent: AppTheme.gameColors['binairo'],
+                      emphasized: true,
                       onTap: () async {
                         await Navigator.of(context).push(
                           MaterialPageRoute<void>(
@@ -569,6 +571,7 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                     title: 'Rätselsammlung',
                     subtitle: 'Wähle ein handverlesenes Rätsel',
                     enabled: true,
+                    accent: AppTheme.gameColors['binairo'],
                     onTap: () async {
                       await Navigator.of(context).push(
                         MaterialPageRoute<void>(
@@ -584,6 +587,7 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                     title: 'Zufallsrätsel',
                     subtitle: 'Erstelle ein neues Rätsel nach deinen Wünschen',
                     enabled: true,
+                    accent: AppTheme.gameColors['binairo'],
                     onTap: () async {
                       await Navigator.of(context).push(
                         MaterialPageRoute<void>(
@@ -596,11 +600,12 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   const SizedBox(height: 12),
                   _HomeAction(
                     icon: Icons.calendar_today_outlined,
-                    title: 'Tagesrätsel',
+                    title: 'Tagesrätsel & Kalender',
                     subtitle: _results.containsKey(_dailyChallenge!.puzzleId)
                         ? 'Heute gelöst · ${_dailyChallenge!.difficulty.label} · ${_dailyChallenge!.size} × ${_dailyChallenge!.size}'
                         : 'Heute offen · ${_dailyChallenge!.difficulty.label} · ${_dailyChallenge!.size} × ${_dailyChallenge!.size}',
                     enabled: true,
+                    accent: AppTheme.gameColors['binairo'],
                     onTap: () async {
                       await Navigator.of(context).push(
                         MaterialPageRoute<void>(
@@ -613,10 +618,11 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   const SizedBox(height: 12),
                   _HomeAction(
                     icon: Icons.bar_chart_rounded,
-                    title: 'Deine Binärpuzzle-Statistik',
+                    title: 'Binärpuzzle-Statistik',
                     subtitle:
                         '${_catalogCompletedCount(_results)} von ${binaryPuzzleCatalog.length} Rätseln gelöst',
                     enabled: true,
+                    accent: AppTheme.gameColors['binairo'],
                     onTap: () async {
                       await Navigator.of(context).push(
                         MaterialPageRoute<void>(
@@ -1371,7 +1377,8 @@ class DifficultyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Binärpuzzle')),
-      body: Center(
+      body: Align(
+        alignment: Alignment.topCenter,
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
@@ -1379,42 +1386,31 @@ class DifficultyScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Schwierigkeit',
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 8),
-                Text('Wähle die Schwierigkeit, die heute zu dir passt.',
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                const SizedBox(height: 20),
+                PuzzleHubHeader(
+                  icon: Icons.tune_rounded,
+                  title: 'Deine Rätselsammlung',
+                  description:
+                      'Wähle die Schwierigkeit, die heute zu dir passt.',
+                  accent: AppTheme.gameColors['binairo']!,
+                ),
+                const SizedBox(height: 24),
                 for (final difficulty in PuzzleDifficulty.values) ...[
-                  Card(
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                      leading: Icon(
-                          switch (difficulty) {
-                            PuzzleDifficulty.easy => Icons.eco_outlined,
-                            PuzzleDifficulty.medium =>
-                              Icons.psychology_alt_outlined,
-                            PuzzleDifficulty.hard =>
-                              Icons.local_fire_department_outlined,
-                          },
-                          size: 32),
-                      title: Text(difficulty.label,
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
-                      subtitle: Text(
-                          '${difficulty.description} · ${puzzlesFor(difficulty).length} Rätsel'),
-                      trailing:
-                          const Icon(Icons.arrow_forward_ios_rounded, size: 17),
-                      onTap: () =>
-                          Navigator.of(context).push(MaterialPageRoute<void>(
-                        builder: (_) =>
-                            PuzzleSelectionScreen(difficulty: difficulty),
-                      )),
-                    ),
+                  PuzzleHubAction(
+                    icon: switch (difficulty) {
+                      PuzzleDifficulty.easy => Icons.eco_outlined,
+                      PuzzleDifficulty.medium => Icons.psychology_alt_outlined,
+                      PuzzleDifficulty.hard =>
+                        Icons.local_fire_department_outlined,
+                    },
+                    title: difficulty.label,
+                    subtitle:
+                        '${difficulty.description} · ${puzzlesFor(difficulty).length} Rätsel',
+                    accent: AppTheme.gameColors['binairo']!,
+                    onTap: () =>
+                        Navigator.of(context).push(MaterialPageRoute<void>(
+                      builder: (_) =>
+                          PuzzleSelectionScreen(difficulty: difficulty),
+                    )),
                   ),
                   const SizedBox(height: 12),
                 ],

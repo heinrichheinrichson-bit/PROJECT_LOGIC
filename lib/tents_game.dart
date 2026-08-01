@@ -209,15 +209,16 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
       appBar: AppBar(title: const Text('Zelte & B\u00e4ume')),
       body: ListView(padding: const EdgeInsets.all(20), children: [
         if (_saved case final saved?) ...[
-          Card(
-              child: ListTile(
-                  leading: const Icon(Icons.play_circle_outline),
-                  title: const Text('R\u00e4tsel fortsetzen'),
-                  subtitle: Text(
-                      '${saved.puzzle.difficulty.label} \u00b7 ${saved.puzzle.size}\u00d7${saved.puzzle.size}'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => _open(saved.puzzle.difficulty,
-                      saved: saved, mode: saved.mode))),
+          PuzzleHubAction(
+            icon: Icons.play_circle_outline_rounded,
+            title: 'Rätsel fortsetzen',
+            subtitle:
+                '${saved.puzzle.difficulty.label} · ${saved.puzzle.size} × ${saved.puzzle.size}',
+            accent: accent,
+            prominent: true,
+            onTap: () =>
+                _open(saved.puzzle.difficulty, saved: saved, mode: saved.mode),
+          ),
           const SizedBox(height: 16),
         ],
         PuzzleHubHeader(
@@ -231,31 +232,29 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
               '${_completedIds.length} von ${tentsPuzzleCatalog.length} Expeditionen gelöst',
         ),
         const SizedBox(height: 20),
+        if (widget.onOpenDaily != null) ...[
+          PuzzleHubAction(
+            icon: Icons.calendar_today_outlined,
+            title: 'Tagesrätsel & Kalender',
+            subtitle: 'Heute spielen oder vergangene Tage nachholen',
+            accent: accent,
+            onTap: () => widget.onOpenDaily!(context),
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (widget.onOpenStatistics != null) ...[
+          PuzzleHubAction(
+            icon: Icons.query_stats_outlined,
+            title: 'Zelte-&-Bäume-Statistik',
+            subtitle: 'Bestzeiten, Spielzeit und Expeditionen',
+            accent: accent,
+            onTap: () => widget.onOpenStatistics!(context),
+          ),
+          const SizedBox(height: 24),
+        ],
         Text('Zufallsr\u00e4tsel',
             style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 12),
-        Row(children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: widget.onOpenDaily == null
-                  ? null
-                  : () => widget.onOpenDaily!(context),
-              icon: const Icon(Icons.calendar_today_outlined),
-              label: const Text('Tagesr\u00e4tsel'),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: widget.onOpenStatistics == null
-                  ? null
-                  : () => widget.onOpenStatistics!(context),
-              icon: const Icon(Icons.query_stats_outlined),
-              label: const Text('Statistik'),
-            ),
-          ),
-        ]),
-        const SizedBox(height: 16),
         for (final difficulty in PuzzleDifficulty.values)
           Card(
               child: ListTile(
