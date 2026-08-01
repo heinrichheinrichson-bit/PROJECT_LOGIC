@@ -1113,7 +1113,11 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
               Navigator.of(dialogContext).pop();
               Navigator.of(context).pop();
             },
-            child: const Text('Slitherlink verlassen'),
+            child: Text(
+              _gameMode == GameMode.daily
+                  ? 'Zum Kalender'
+                  : 'Slitherlink verlassen',
+            ),
           ),
           if (_isGenerated)
             FilledButton(
@@ -1311,6 +1315,12 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
                             onPressed: _openNextCollectionPuzzle,
                             icon: const Icon(Icons.arrow_forward_rounded),
                             label: const Text('Nächstes Rätsel'),
+                          ),
+                        if (_gameMode == GameMode.daily)
+                          FilledButton.icon(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.calendar_month_outlined),
+                            label: const Text('Zum Kalender'),
                           ),
                         OutlinedButton.icon(
                           onPressed: _restart,

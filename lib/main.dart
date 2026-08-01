@@ -1715,6 +1715,12 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                             icon: const Icon(Icons.arrow_forward_rounded),
                             label: const Text('Nächstes Rätsel'),
                           ),
+                        if (widget.source == PuzzleSource.daily)
+                          FilledButton.icon(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: const Icon(Icons.calendar_month_outlined),
+                            label: const Text('Zum Kalender'),
+                          ),
                         OutlinedButton.icon(
                           onPressed: _reset,
                           icon: const Icon(Icons.replay_rounded),
@@ -2210,6 +2216,15 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                     },
                     child: const Text('Zur Sammlung'),
                   ),
+              if (widget.source == PuzzleSource.daily)
+                FilledButton.tonalIcon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(this.context).pop();
+                  },
+                  icon: const Icon(Icons.calendar_month_outlined),
+                  label: const Text('Zum Kalender'),
+                ),
               FilledButton(
                 onPressed: () {
                   Navigator.of(context).pop();

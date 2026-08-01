@@ -198,6 +198,7 @@ void main() {
       find.text('Testabschluss · im Kalender gewertet'),
       findsOneWidget,
     );
+    expect(find.text('Zum Kalender'), findsWidgets);
     expect(
       (await GameStorage().loadResults())
           .containsKey('slitherlink:${dailyPuzzle.id}'),

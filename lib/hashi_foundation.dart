@@ -1599,9 +1599,11 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
               Navigator.of(dialogContext).pop();
               Navigator.of(context).pop();
             },
-            child: Text(widget.mode == GameMode.generated
-                ? 'Hashi verlassen'
-                : 'Zur Sammlung'),
+            child: Text(switch (widget.mode) {
+              GameMode.generated => 'Hashi verlassen',
+              GameMode.daily => 'Zum Kalender',
+              _ => 'Zur Sammlung',
+            }),
           ),
           if (widget.mode == GameMode.generated)
             FilledButton(
@@ -1623,7 +1625,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
               },
               child: const Text('Nächstes Rätsel'),
             )
-          else
+          else if (widget.mode != GameMode.daily)
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Geschafft'),
@@ -1990,6 +1992,12 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
                           },
                           icon: const Icon(Icons.arrow_forward_rounded),
                           label: const Text('Nächstes Rätsel'),
+                        ),
+                      if (widget.mode == GameMode.daily)
+                        FilledButton.icon(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.calendar_month_outlined),
+                          label: const Text('Zum Kalender'),
                         ),
                       OutlinedButton.icon(
                         onPressed: _restart,
