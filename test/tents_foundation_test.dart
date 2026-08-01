@@ -124,15 +124,15 @@ void main() {
     expect(ratings[1].score, lessThan(ratings[2].score));
   });
 
-  test('collection contains 28 distinct and uniquely solvable puzzles', () {
+  test('collection contains 60 distinct and uniquely solvable puzzles', () {
     const solver = TentsSolver();
-    expect(tentsPuzzleCatalog, hasLength(28));
+    expect(tentsPuzzleCatalog, hasLength(60));
     expect(
-        tentsPuzzleCatalog.map((puzzle) => puzzle.id).toSet(), hasLength(28));
+        tentsPuzzleCatalog.map((puzzle) => puzzle.id).toSet(), hasLength(60));
     for (final difficulty in PuzzleDifficulty.values) {
       expect(
         tentsPuzzleCatalog.where((puzzle) => puzzle.difficulty == difficulty),
-        hasLength(difficulty == PuzzleDifficulty.hard ? 8 : 10),
+        hasLength(20),
       );
     }
     for (final puzzle in tentsPuzzleCatalog) {

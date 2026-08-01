@@ -66,11 +66,14 @@ void main() {
     final hashi = service.summaryForGame(date, GameType.hashi);
     final slitherlink = service.summaryForGame(date, GameType.slitherlink);
     final hitori = service.summaryForGame(date, GameType.hitori);
+    final tents = service.summaryForGame(date, GameType.tents);
 
     expect(hashi.puzzleId, 'daily-hashi-2026-08-01');
     expect(slitherlink.puzzleId, 'daily-slitherlink-2026-08-01');
     expect(hitori.puzzleId, 'daily-hitori-2026-08-01');
+    expect(tents.puzzleId, 'daily-tents-2026-08-01');
     expect(hitori.size, inInclusiveRange(5, 7));
+    expect(tents.size, isIn(const [6, 8, 10]));
     expect(hashi.seed, isNot(slitherlink.seed));
     expect(
       service.archiveSummariesForGame(GameType.hashi, through: date, days: 30),

@@ -160,6 +160,29 @@ void main() {
     expect(find.text('Nach Schwierigkeit'), findsOneWidget);
   });
 
+  testWidgets('Tents hub exposes random play, calendar, and statistics',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await AppPreferences.load();
+    await tester.pumpWidget(ProjectLogicApp(preferences: preferences));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Zelte & B\u00e4ume'));
+    await tester.tap(find.text('Zelte & B\u00e4ume'));
+    await tester.pumpAndSettle();
+    expect(find.text('Zufallsr\u00e4tsel'), findsOneWidget);
+    expect(find.text('Tagesr\u00e4tsel'), findsOneWidget);
+    expect(find.text('Statistik'), findsOneWidget);
+    expect(find.text('R\u00e4tselsammlung'), findsOneWidget);
+    expect(find.textContaining('60 feste Expeditionen'), findsOneWidget);
+
+    await tester.tap(find.text('Statistik'));
+    await tester.pumpAndSettle();
+    expect(find.text('Zelte & B\u00e4ume-Statistik'), findsOneWidget);
+    expect(find.text('Nach Rastergr\u00f6\u00dfe'), findsOneWidget);
+    expect(find.text('Nach Schwierigkeit'), findsOneWidget);
+  });
+
   testWidgets('daily calendar tiles fit a narrow phone without overflow',
       (tester) async {
     SharedPreferences.setMockInitialValues({});

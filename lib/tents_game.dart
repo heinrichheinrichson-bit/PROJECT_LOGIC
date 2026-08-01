@@ -220,7 +220,7 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
               style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 8),
           const Text(
-              'Finde zu jedem Baum genau ein Zelt. Zelte d\u00fcrfen sich nicht ber\u00fchren.'),
+              'Jeder Start erzeugt ein neues, eindeutig l\u00f6sbares Brett. Finde zu jedem Baum genau ein Zelt.'),
           const SizedBox(height: 12),
           Row(children: [
             Expanded(
@@ -269,7 +269,8 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
           Text('R\u00e4tselsammlung',
               style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 8),
-          const Text('28 feste Expeditionen mit dauerhaftem Fortschritt.'),
+          Text(
+              '${tentsPuzzleCatalog.length} feste Expeditionen mit dauerhaftem Fortschritt.'),
           const SizedBox(height: 8),
           for (final difficulty in PuzzleDifficulty.values)
             Card(

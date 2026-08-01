@@ -10,24 +10,34 @@ const tentsChapterTitles = {
 
 final List<TentsPuzzle> tentsPuzzleCatalog = [
   for (final difficulty in PuzzleDifficulty.values)
-    for (var index = 0;
-        index < (difficulty == PuzzleDifficulty.hard ? 8 : 10);
-        index++)
+    for (var index = 0; index < 20; index++)
       const TentsGenerator().generate(
         seed: 23000 + difficulty.index * 100 + index,
         difficulty: difficulty,
         id: 'tents-${difficulty.name}-${index + 1}',
-        title: switch (index) {
-          0 => 'Am Waldrand',
-          1 => 'Freie Wiese',
-          2 => 'Zwischen den B\u00e4umen',
-          3 => 'Kleine Lichtung',
-          4 => 'Ruhiger Morgen',
-          5 => 'Schmale Pfade',
-          6 => 'Verteilte Lager',
-          7 => 'Tiefe Spuren',
-          8 => 'Weiter Weg',
-          _ => 'Kapitelabschluss',
-        },
+        title: _tentsPuzzleTitles[index],
       ),
+];
+
+const _tentsPuzzleTitles = <String>[
+  'Am Waldrand',
+  'Freie Wiese',
+  'Zwischen den B\u00e4umen',
+  'Kleine Lichtung',
+  'Ruhiger Morgen',
+  'Schmale Pfade',
+  'Verteilte Lager',
+  'Tiefe Spuren',
+  'Weiter Weg',
+  'Erstes Etappenziel',
+  'Versteckte Lichtung',
+  'Unter hohen Kronen',
+  'Am stillen Bach',
+  'Dichter Wald',
+  'Lange Wanderung',
+  'Unruhiges Gel\u00e4nde',
+  'Viele Abzweigungen',
+  'Abgelegener Platz',
+  'Letzte Wegmarken',
+  'Expedition vollendet',
 ];
