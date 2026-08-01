@@ -3375,6 +3375,20 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                     const SizedBox(height: 12),
                     _StatisticListCard(
+                      icon: Icons.auto_awesome_outlined,
+                      title: 'Zufallsrätsel',
+                      subtitle:
+                          '${hashiStatistics.completedForMode(GameMode.generated)} abgeschlossen',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.calendar_today_outlined,
+                      title: 'Tagesrätsel',
+                      subtitle:
+                          '${hashiStatistics.completedForMode(GameMode.daily)} abgeschlossen',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
                       icon: Icons.timer_outlined,
                       title: 'Spielzeit',
                       subtitle:
@@ -3396,7 +3410,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     const SizedBox(height: 24),
                     _ModePerformanceSection(
                       statistics: hashiStatistics,
-                      modes: const [GameMode.catalog, GameMode.generated],
+                      modes: const [
+                        GameMode.catalog,
+                        GameMode.generated,
+                        GameMode.daily,
+                      ],
                       showMoves: true,
                     ),
                     const SizedBox(height: 24),
@@ -3428,6 +3446,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                     const SizedBox(height: 12),
                     _StatisticListCard(
+                      icon: Icons.calendar_today_outlined,
+                      title: 'Tagesrätsel',
+                      subtitle:
+                          '${slitherlinkStatistics.completedForMode(GameMode.daily)} abgeschlossen',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
                       icon: Icons.timer_outlined,
                       title: 'Spielzeit',
                       subtitle: _formatLongTime(
@@ -3446,7 +3471,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     const SizedBox(height: 24),
                     _ModePerformanceSection(
                       statistics: slitherlinkStatistics,
-                      modes: const [GameMode.catalog, GameMode.generated],
+                      modes: const [
+                        GameMode.catalog,
+                        GameMode.generated,
+                        GameMode.daily,
+                      ],
                       showMoves: true,
                     ),
                     const SizedBox(height: 24),

@@ -114,7 +114,28 @@ void main() {
     expect(find.text('Leistung'), findsOneWidget);
     expect(find.text('Nach Schwierigkeit'), findsOneWidget);
     expect(find.text('Wenigste Züge'), findsOneWidget);
-    expect(find.text('Tagesrätsel'), findsNothing);
+    expect(find.text('Tagesrätsel'), findsOneWidget);
+  });
+
+  testWidgets('Futoshiki has detailed mode and board-size statistics',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: StatisticsScreen(
+          results: <String, PuzzleResult>{},
+          progress: PlayerProgress.empty(),
+          gameType: GameType.futoshiki,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Futoshiki-Statistik'), findsOneWidget);
+    expect(find.text('Tagesrätsel'), findsOneWidget);
+    expect(find.text('Nach Rastergröße'), findsOneWidget);
+    expect(find.text('7 × 7'), findsOneWidget);
   });
 
   testWidgets('daily calendar tiles fit a narrow phone without overflow',
