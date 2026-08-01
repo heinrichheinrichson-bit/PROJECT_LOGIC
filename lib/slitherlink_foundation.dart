@@ -561,6 +561,7 @@ class SlitherlinkHubScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 18),
+                    const _SlitherResumeCard(),
                     Card(
                       child: ListTile(
                         leading: const CircleAvatar(
@@ -709,6 +710,64 @@ class SlitherlinkHubScreen extends StatelessWidget {
         ),
       );
     }
+  }
+}
+
+class _SlitherResumeCard extends StatefulWidget {
+  const _SlitherResumeCard();
+
+  @override
+  State<_SlitherResumeCard> createState() => _SlitherResumeCardState();
+}
+
+class _SlitherResumeCardState extends State<_SlitherResumeCard> {
+  SavedSlitherlinkGame? _saved;
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  Future<void> _refresh() async {
+    final saved = await SlitherlinkGameStore().load();
+    if (mounted) setState(() => _saved = saved);
+  }
+
+  String _formatTime(int seconds) =>
+      '${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}';
+
+  @override
+  Widget build(BuildContext context) {
+    final saved = _saved;
+    if (saved == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Card(
+        color: Theme.of(context).colorScheme.secondaryContainer,
+        child: ListTile(
+          leading: const CircleAvatar(child: Icon(Icons.play_arrow_rounded)),
+          title: const Text('Rätsel fortsetzen'),
+          subtitle: Text(
+            '${saved.puzzle.difficulty.label} · '
+            '${saved.puzzle.rows} × ${saved.puzzle.columns} · '
+            '${_formatTime(saved.elapsedSeconds)}',
+          ),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => SlitherlinkGameScreen(
+                  puzzle: saved.puzzle,
+                  savedGame: saved,
+                ),
+              ),
+            );
+            await _refresh();
+          },
+        ),
+      ),
+    );
   }
 }
 

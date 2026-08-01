@@ -230,6 +230,28 @@ void main() {
     expect(restored.rewardedHints, 2);
   });
 
+  testWidgets('Slitherlink hub offers a saved puzzle to continue',
+      (tester) async {
+    await SlitherlinkGameStore().save(
+      const SavedSlitherlinkGame(
+        puzzle: slitherlinkTutorialPuzzle,
+        marks: {'h:1:1': SlitherEdgeMark.line},
+        elapsedSeconds: 73,
+        moves: 1,
+        hintsUsed: 0,
+        rewardedHints: 0,
+      ),
+    );
+
+    await tester.pumpWidget(
+      const MaterialApp(home: SlitherlinkHubScreen()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Rätsel fortsetzen'), findsOneWidget);
+    expect(find.textContaining('1:13'), findsOneWidget);
+  });
+
   test('completed Slitherlink save is not offered as an open game', () async {
     final store = SlitherlinkGameStore();
     await store.save(SavedSlitherlinkGame(

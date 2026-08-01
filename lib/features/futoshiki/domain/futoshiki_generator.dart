@@ -1,0 +1,103 @@
+import 'dart:math';
+
+import '../../../core/domain/game_identity.dart';
+import 'futoshiki_puzzle.dart';
+import 'futoshiki_solver.dart';
+
+class FutoshikiGenerator {
+  const FutoshikiGenerator({this.solver = const FutoshikiSolver()});
+
+  final FutoshikiSolver solver;
+
+  FutoshikiPuzzle generate({
+    required int seed,
+    required PuzzleDifficulty difficulty,
+    String? id,
+    String? title,
+  }) {
+    final random = Random(seed);
+    final size = switch (difficulty) {
+      PuzzleDifficulty.easy => 4,
+      PuzzleDifficulty.medium => 5,
+      PuzzleDifficulty.hard => 6,
+    };
+    final symbols = [for (var value = 1; value <= size; value++) value]
+      ..shuffle(random);
+    final rowOrder = [for (var index = 0; index < size; index++) index]
+      ..shuffle(random);
+    final columnOrder = [for (var index = 0; index < size; index++) index]
+      ..shuffle(random);
+    final solution = [
+      for (final row in rowOrder)
+        [
+          for (final column in columnOrder) symbols[(row + column) % size],
+        ],
+    ];
+
+    final adjacent = <((int, int), (int, int))>[];
+    for (var row = 0; row < size; row++) {
+      for (var column = 0; column < size; column++) {
+        if (column + 1 < size) adjacent.add(((row, column), (row, column + 1)));
+        if (row + 1 < size) adjacent.add(((row, column), (row + 1, column)));
+      }
+    }
+    adjacent.shuffle(random);
+    final inequalityTarget = switch (difficulty) {
+      PuzzleDifficulty.easy => 7,
+      PuzzleDifficulty.medium => 9,
+      PuzzleDifficulty.hard => 11,
+    };
+    final inequalities = <FutoshikiInequality>[
+      for (final pair in adjacent.take(inequalityTarget))
+        FutoshikiInequality(
+          firstRow: pair.$1.$1,
+          firstColumn: pair.$1.$2,
+          secondRow: pair.$2.$1,
+          secondColumn: pair.$2.$2,
+          firstIsLess: solution[pair.$1.$1][pair.$1.$2] <
+              solution[pair.$2.$1][pair.$2.$2],
+        ),
+    ];
+    final givens = <List<int?>>[
+      for (final row in solution) [for (final value in row) value],
+    ];
+    final positions = <(int, int)>[
+      for (var row = 0; row < size; row++)
+        for (var column = 0; column < size; column++) (row, column),
+    ]..shuffle(random);
+    final minimumGivens = switch (difficulty) {
+      PuzzleDifficulty.easy => 6,
+      PuzzleDifficulty.medium => 5,
+      PuzzleDifficulty.hard => 4,
+    };
+    var givenCount = size * size;
+    for (final position in positions) {
+      if (givenCount <= minimumGivens) break;
+      final previous = givens[position.$1][position.$2];
+      givens[position.$1][position.$2] = null;
+      final candidate = FutoshikiPuzzle(
+        id: 'candidate',
+        title: 'candidate',
+        size: size,
+        givens: givens,
+        inequalities: inequalities,
+        solution: solution,
+        difficulty: difficulty,
+      );
+      if (solver.hasUniqueSolution(candidate)) {
+        givenCount--;
+      } else {
+        givens[position.$1][position.$2] = previous;
+      }
+    }
+    return FutoshikiPuzzle(
+      id: id ?? 'futoshiki-generated-${difficulty.name}-$seed',
+      title: title ?? '${difficulty.label} · Zufallsrätsel',
+      size: size,
+      givens: givens,
+      inequalities: inequalities,
+      solution: solution,
+      difficulty: difficulty,
+    );
+  }
+}
