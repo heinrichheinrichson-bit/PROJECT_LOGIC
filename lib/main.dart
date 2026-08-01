@@ -1461,6 +1461,48 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
         }
       },
       child: Scaffold(
+        bottomNavigationBar: puzzle.isSolved
+            ? SafeArea(
+                minimum: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (widget.source == PuzzleSource.generated)
+                          FilledButton.icon(
+                            onPressed: _startNextGeneratedPuzzle,
+                            icon: const Icon(Icons.auto_awesome_rounded),
+                            label: const Text('Noch eins'),
+                          )
+                        else if (widget.source == PuzzleSource.catalog &&
+                            _hasNextPuzzle)
+                          FilledButton.icon(
+                            onPressed: () =>
+                                Navigator.of(context).pushReplacement(
+                              MaterialPageRoute<void>(
+                                builder: (_) => BinaryPuzzleScreen(
+                                  definition: _nextPuzzle!,
+                                ),
+                              ),
+                            ),
+                            icon: const Icon(Icons.arrow_forward_rounded),
+                            label: const Text('Nächstes Rätsel'),
+                          ),
+                        OutlinedButton.icon(
+                          onPressed: _reset,
+                          icon: const Icon(Icons.replay_rounded),
+                          label: const Text('Noch einmal'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            : null,
         appBar: AppBar(
           title: Text(
             widget.titleOverride ??

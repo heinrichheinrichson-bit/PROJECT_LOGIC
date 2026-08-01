@@ -133,6 +133,10 @@ void main() {
     expect(find.text('Schleife vollendet!'), findsOneWidget);
     expect(find.text('Testabschluss · keine Statistik'), findsOneWidget);
     expect(await GameStorage().loadResults(), isEmpty);
+
+    await tester.tap(find.text('Brett ansehen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Noch einmal'), findsOneWidget);
   });
 
   test('saved Slitherlink game preserves puzzle and progress', () async {

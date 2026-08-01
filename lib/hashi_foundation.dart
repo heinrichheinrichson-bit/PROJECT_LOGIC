@@ -1697,9 +1697,13 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
 
   HashiPuzzle? get _nextPuzzle {
     if (widget.mode != GameMode.catalog) return null;
-    final index = hashiPuzzleCatalog.indexOf(widget.puzzle);
-    if (index < 0 || index + 1 >= hashiPuzzleCatalog.length) return null;
-    return hashiPuzzleCatalog[index + 1];
+    final group = hashiPuzzleCatalog
+        .where((puzzle) =>
+            puzzle.sharedDifficulty == widget.puzzle.sharedDifficulty)
+        .toList(growable: false);
+    final index = group.indexWhere((puzzle) => puzzle.id == widget.puzzle.id);
+    if (index < 0 || index + 1 >= group.length) return null;
+    return group[index + 1];
   }
 
   Future<void> _startNextRandomPuzzle() async {
@@ -1914,6 +1918,47 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
             : 'Wähle eine leuchtende Zielinsel.');
 
     return Scaffold(
+      bottomNavigationBar: _completionShown
+          ? SafeArea(
+              minimum: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (widget.mode == GameMode.generated)
+                        FilledButton.icon(
+                          onPressed: _startNextRandomPuzzle,
+                          icon: const Icon(Icons.auto_awesome_rounded),
+                          label: const Text('Noch eins'),
+                        )
+                      else if (_nextPuzzle != null)
+                        FilledButton.icon(
+                          onPressed: () =>
+                              Navigator.of(context).pushReplacement(
+                            MaterialPageRoute<void>(
+                              builder: (_) => HashiGameScreen(
+                                puzzle: _nextPuzzle!,
+                              ),
+                            ),
+                          ),
+                          icon: const Icon(Icons.arrow_forward_rounded),
+                          label: const Text('Nächstes Rätsel'),
+                        ),
+                      OutlinedButton.icon(
+                        onPressed: _restart,
+                        icon: const Icon(Icons.replay_rounded),
+                        label: const Text('Noch einmal'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          : null,
       appBar: AppBar(
         title: Text(widget.mode == GameMode.generated
             ? '${widget.puzzle.sharedDifficulty.label} · Zufallsrätsel'

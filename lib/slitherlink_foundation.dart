@@ -938,6 +938,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
       _state = SlitherlinkState(puzzle: widget.puzzle);
       _redo.clear();
       _completionShown = false;
+      _developerCompletion = false;
       _elapsedSeconds = 0;
       _moves = 0;
       _hintsUsed = 0;
@@ -1092,8 +1093,97 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
     return '$minutes:${rest.toString().padLeft(2, '0')}';
   }
 
+  bool get _isGenerated => widget.puzzle.id.startsWith('slither-generated-');
+
+  SlitherlinkPuzzle? get _nextCollectionPuzzle {
+    final group = slitherlinkPuzzleCatalog
+        .where((puzzle) => puzzle.difficulty == widget.puzzle.difficulty)
+        .toList(growable: false);
+    final index = group.indexWhere((puzzle) => puzzle.id == widget.puzzle.id);
+    if (index < 0 || index + 1 >= group.length) return null;
+    return group[index + 1];
+  }
+
+  Future<void> _startNextRandomPuzzle() async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 18),
+            Expanded(child: Text('Neues Rätsel wird geprüft …')),
+          ],
+        ),
+      ),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    try {
+      final puzzle = const SlitherlinkGenerator().generate(
+        seed: DateTime.now().microsecondsSinceEpoch & 0x7fffffff,
+        difficulty: widget.puzzle.difficulty,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => SlitherlinkGameScreen(puzzle: puzzle),
+        ),
+      );
+    } on Object {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Neues Rätsel konnte nicht erstellt werden.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
+        bottomNavigationBar: _completionShown
+            ? SafeArea(
+                minimum: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        if (_isGenerated)
+                          FilledButton.icon(
+                            onPressed: _startNextRandomPuzzle,
+                            icon: const Icon(Icons.auto_awesome_rounded),
+                            label: const Text('Noch eins'),
+                          )
+                        else if (_nextCollectionPuzzle != null)
+                          FilledButton.icon(
+                            onPressed: () =>
+                                Navigator.of(context).pushReplacement(
+                              MaterialPageRoute<void>(
+                                builder: (_) => SlitherlinkGameScreen(
+                                  puzzle: _nextCollectionPuzzle!,
+                                ),
+                              ),
+                            ),
+                            icon: const Icon(Icons.arrow_forward_rounded),
+                            label: const Text('Nächstes Rätsel'),
+                          ),
+                        OutlinedButton.icon(
+                          onPressed: _restart,
+                          icon: const Icon(Icons.replay_rounded),
+                          label: const Text('Noch einmal'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            : null,
         appBar: AppBar(
           title: Text(widget.puzzle.title),
           actions: [
