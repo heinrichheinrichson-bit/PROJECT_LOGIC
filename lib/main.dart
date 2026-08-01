@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_preferences.dart';
+import 'app_theme.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/statistics/game_statistics.dart';
@@ -51,20 +52,8 @@ class ProjectLogicApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           title: 'Project Logic',
           themeMode: preferences.themePreference.themeMode,
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF365A7A),
-              brightness: Brightness.light,
-            ),
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF83B8E3),
-              brightness: Brightness.dark,
-            ),
-            useMaterial3: true,
-          ),
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
           home: const HomeScreen(),
         ),
       ),
@@ -125,30 +114,17 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 32),
-                  Icon(
-                    Icons.grid_view_rounded,
-                    size: 68,
-                    color: Theme.of(context).colorScheme.primary,
+                  const SizedBox(height: 16),
+                  _HomeHeader(
+                    completedToday: _progress.completedToday,
+                    onSettings: () async {
+                      await Navigator.of(context).push(MaterialPageRoute<void>(
+                        builder: (_) => const SettingsScreen(),
+                      ));
+                      await _refresh();
+                    },
                   ),
-                  const SizedBox(height: 18),
-                  Text(
-                    'PROJECT LOGIC',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.5,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Ruhige Logikspiele. Klare Regeln. Kein Zeitdruck.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 28),
                   if (_loading)
                     const Center(child: CircularProgressIndicator())
                   else ...[
@@ -159,6 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         subtitle:
                             '${saved.puzzle.sharedDifficulty.label} · ${saved.moves} Züge · ${_shortTime(saved.elapsedSeconds)}',
                         enabled: true,
+                        emphasized: true,
                         onTap: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute<void>(
@@ -181,6 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         subtitle:
                             '${saved.puzzle.rows} × ${saved.puzzle.columns} · ${saved.moves} Züge · ${_shortTime(saved.elapsedSeconds)}',
                         enabled: true,
+                        emphasized: true,
                         onTap: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute<void>(
@@ -196,6 +174,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 12),
                     ],
                     _StreakCard(progress: _progress),
+                    const SizedBox(height: 28),
+                    const _HomeSectionHeader(
+                      title: 'Deine Spiele',
+                      subtitle: 'Sechs Arten zu denken. Womit beginnst du?',
+                    ),
                     const SizedBox(height: 12),
                     _HomeAction(
                       icon: Icons.grid_4x4_rounded,
@@ -203,6 +186,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       subtitle:
                           '${_catalogCompletedCount(_results)} von ${binaryPuzzleCatalog.length} Rätseln gelöst',
                       enabled: true,
+                      accent: AppTheme.gameColors['binairo'],
                       onTap: () async {
                         await Navigator.of(context).push(
                           MaterialPageRoute<void>(
@@ -219,6 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       subtitle:
                           'Entdecke Inseln, Brücken und das neue Spielgefühl',
                       enabled: true,
+                      accent: AppTheme.gameColors['hashi'],
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => HashiHubScreen(
@@ -253,9 +238,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     _HomeAction(
                       icon: Icons.gesture_rounded,
                       title: 'Slitherlink',
-                      subtitle:
-                          'Neu · Zeichne eine einzige geschlossene Schleife',
+                      subtitle: 'Zeichne eine einzige geschlossene Schleife',
                       enabled: true,
+                      accent: AppTheme.gameColors['slitherlink'],
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => SlitherlinkHubScreen(
@@ -291,8 +276,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     _HomeAction(
                       icon: Icons.compare_arrows_rounded,
                       title: 'Futoshiki',
-                      subtitle: 'Neu · Zahlen logisch in Beziehung setzen',
+                      subtitle: 'Zahlen logisch in Beziehung setzen',
                       enabled: true,
+                      accent: AppTheme.gameColors['futoshiki'],
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => FutoshikiHubScreen(
@@ -328,8 +314,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     _HomeAction(
                       icon: Icons.filter_b_and_w_rounded,
                       title: 'Hitori',
-                      subtitle: 'Neu · Doppelte Zahlen geschickt schwärzen',
+                      subtitle: 'Doppelte Zahlen geschickt schwärzen',
                       enabled: true,
+                      accent: AppTheme.gameColors['hitori'],
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => HitoriHubScreen(
@@ -365,9 +352,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     _HomeAction(
                       icon: Icons.park_rounded,
                       title: 'Zelte & B\u00e4ume',
-                      subtitle:
-                          'Neu \u00b7 Finde f\u00fcr jeden Baum das passende Zelt',
+                      subtitle: 'Finde f\u00fcr jeden Baum das passende Zelt',
                       enabled: true,
+                      accent: AppTheme.gameColors['tents'],
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => TentsHubScreen(
@@ -398,6 +385,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 28),
+                    const _HomeSectionHeader(
+                      title: 'Dein Bereich',
+                      subtitle: 'Fortschritt, Statistiken und Einstellungen',
                     ),
                     const SizedBox(height: 12),
                     _HomeAction(
@@ -435,25 +427,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         await _refresh();
                       },
                     ),
-                    const SizedBox(height: 12),
-                    _HomeAction(
-                      icon: Icons.settings_outlined,
-                      title: 'Einstellungen',
-                      subtitle: 'Aussehen, Spielhilfen und gespeicherte Daten',
-                      enabled: true,
-                      onTap: () async {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const SettingsScreen(),
-                          ),
-                        );
-                        await _refresh();
-                      },
-                    ),
                   ],
                   const SizedBox(height: 28),
                   Text(
-                    'Version 0.8.2 · Hashi-Rätselkatalog',
+                    'Project Logic · Designstudie 1',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -1094,6 +1071,99 @@ String _formatHomeTime(int seconds) {
   return '$minutes:${rest.toString().padLeft(2, '0')}';
 }
 
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({
+    required this.completedToday,
+    required this.onSettings,
+  });
+
+  final bool completedToday;
+  final VoidCallback onSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: colors.primaryContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(Icons.grid_view_rounded,
+                  color: colors.onPrimaryContainer),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('PROJECT LOGIC',
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.4)),
+                  SizedBox(height: 2),
+                  Text('Deine ruhige Rätselecke'),
+                ],
+              ),
+            ),
+            IconButton.filledTonal(
+              tooltip: 'Einstellungen',
+              onPressed: onSettings,
+              icon: const Icon(Icons.tune_rounded),
+            ),
+          ],
+        ),
+        const SizedBox(height: 28),
+        Text(
+          completedToday
+              ? 'Schön, dass du wieder da bist.'
+              : 'Zeit zum Knobeln?',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          completedToday
+              ? 'Dein Tagesziel ist geschafft. Entdecke noch ein Rätsel.'
+              : 'Ein ruhiger Moment, ein klares Ziel – ganz ohne Zeitdruck.',
+          style: Theme.of(context)
+              .textTheme
+              .bodyLarge
+              ?.copyWith(color: colors.onSurfaceVariant, height: 1.35),
+        ),
+      ],
+    );
+  }
+}
+
+class _HomeSectionHeader extends StatelessWidget {
+  const _HomeSectionHeader({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 3),
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+        ],
+      );
+}
+
 class _StreakCard extends StatelessWidget {
   const _StreakCard({required this.progress});
 
@@ -1103,14 +1173,24 @@ class _StreakCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final streak = progress.currentStreak;
     final secured = progress.completedToday;
+    final colors = Theme.of(context).colorScheme;
     return Card(
+      color: secured ? colors.secondaryContainer : colors.surfaceContainerLow,
       child: ListTile(
-        leading: Icon(
-          secured
-              ? Icons.local_fire_department_rounded
-              : Icons.local_fire_department_outlined,
-          size: 32,
-          color: secured ? Theme.of(context).colorScheme.primary : null,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        leading: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: secured ? colors.secondary : colors.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(
+            secured
+                ? Icons.local_fire_department_rounded
+                : Icons.local_fire_department_outlined,
+            color: secured ? colors.onSecondary : colors.onSurfaceVariant,
+          ),
         ),
         title: Text(
           streak == 1 ? '1 Tag Spielserie' : '$streak Tage Spielserie',
@@ -1136,25 +1216,49 @@ class _HomeAction extends StatelessWidget {
       required this.title,
       required this.subtitle,
       this.enabled = false,
+      this.accent,
+      this.emphasized = false,
       this.onTap});
   final IconData icon;
   final String title;
   final String subtitle;
   final bool enabled;
+  final Color? accent;
+  final bool emphasized;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final actionColor = accent ?? colors.primary;
+    final cardColor = emphasized
+        ? colors.primaryContainer
+        : accent == null
+            ? colors.surfaceContainerLow
+            : Color.alphaBlend(
+                actionColor.withValues(
+                    alpha: Theme.of(context).brightness == Brightness.dark
+                        ? .14
+                        : .09),
+                colors.surfaceContainerLow,
+              );
     return Card(
-      color: enabled ? colors.primaryContainer : colors.surfaceContainerLow,
+      color: cardColor,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(22),
         onTap: enabled ? onTap : null,
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Row(children: [
-            Icon(icon, size: 30),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: actionColor.withValues(alpha: .16),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, size: 25, color: actionColor),
+            ),
             const SizedBox(width: 16),
             Expanded(
                 child: Column(
@@ -2622,22 +2726,36 @@ class SettingsScreen extends StatelessWidget {
                     Card(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
-                        child: DropdownButtonFormField<AppThemePreference>(
-                          initialValue: preferences.themePreference,
-                          decoration: const InputDecoration(
-                            labelText: 'Farbschema',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: [
-                            for (final value in AppThemePreference.values)
-                              DropdownMenuItem(
-                                value: value,
-                                child: Text(value.label),
-                              ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text('Farbschema',
+                                style: Theme.of(context).textTheme.titleMedium),
+                            const SizedBox(height: 12),
+                            SegmentedButton<AppThemePreference>(
+                              showSelectedIcon: false,
+                              segments: const [
+                                ButtonSegment(
+                                  value: AppThemePreference.system,
+                                  icon: Icon(Icons.brightness_auto_outlined),
+                                  label: Text('Auto'),
+                                ),
+                                ButtonSegment(
+                                  value: AppThemePreference.light,
+                                  icon: Icon(Icons.light_mode_outlined),
+                                  label: Text('Hell'),
+                                ),
+                                ButtonSegment(
+                                  value: AppThemePreference.dark,
+                                  icon: Icon(Icons.dark_mode_outlined),
+                                  label: Text('Dunkel'),
+                                ),
+                              ],
+                              selected: {preferences.themePreference},
+                              onSelectionChanged: (selection) =>
+                                  preferences.setTheme(selection.single),
+                            ),
                           ],
-                          onChanged: (value) {
-                            if (value != null) preferences.setTheme(value);
-                          },
                         ),
                       ),
                     ),
