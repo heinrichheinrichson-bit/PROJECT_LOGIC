@@ -359,7 +359,8 @@ class HitoriGameScreen extends StatefulWidget {
   State<HitoriGameScreen> createState() => _HitoriGameScreenState();
 }
 
-class _HitoriGameScreenState extends State<HitoriGameScreen> {
+class _HitoriGameScreenState extends State<HitoriGameScreen>
+    with WidgetsBindingObserver {
   static const _guideSeenKey = 'hitori_rules_guide_seen_v1';
   late HitoriState _state;
   final _history = <HitoriState>[];
@@ -379,6 +380,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final saved = widget.savedGame;
     _state = HitoriState(puzzle: widget.puzzle, marks: saved?.marks);
     _elapsedSeconds = saved?.elapsedSeconds ?? 0;
@@ -400,9 +402,21 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (!_completionShown) unawaited(_save());
     _timer?.cancel();
     _hintHighlightTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      if (!_completionShown) unawaited(_save());
+    }
   }
 
   Future<void> _save() => _store.save(SavedHitoriGame(

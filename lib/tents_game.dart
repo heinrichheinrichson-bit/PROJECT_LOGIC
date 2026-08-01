@@ -328,7 +328,8 @@ class TentsGameScreen extends StatefulWidget {
   State<TentsGameScreen> createState() => _TentsGameScreenState();
 }
 
-class _TentsGameScreenState extends State<TentsGameScreen> {
+class _TentsGameScreenState extends State<TentsGameScreen>
+    with WidgetsBindingObserver {
   late TentsState _state;
   final _history = <TentsState>[];
   final _redo = <TentsState>[];
@@ -347,6 +348,7 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _state = TentsState(puzzle: widget.puzzle, marks: widget.savedGame?.marks);
     _elapsed = widget.savedGame?.elapsedSeconds ?? 0;
     _moves = widget.savedGame?.moves ?? 0;
@@ -357,16 +359,29 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && !_completed) {
         setState(() => _elapsed++);
-        unawaited(_save());
+        if (_elapsed % 5 == 0) unawaited(_save());
       }
     });
+    unawaited(_save());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (!_completed) unawaited(_save());
     _timer?.cancel();
     _hintHighlightTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      if (!_completed) unawaited(_save());
+    }
   }
 
   Future<void> _save() => TentsGameStore().save(SavedTentsGame(

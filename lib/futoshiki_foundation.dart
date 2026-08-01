@@ -575,7 +575,8 @@ class FutoshikiGameScreen extends StatefulWidget {
   State<FutoshikiGameScreen> createState() => _FutoshikiGameScreenState();
 }
 
-class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
+class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
+    with WidgetsBindingObserver {
   static const _guideSeenKey = 'futoshiki_inequality_guide_seen_v1';
   late FutoshikiState _state;
   final _history = <_FutoshikiSnapshot>[];
@@ -597,6 +598,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final saved = widget.savedGame;
     _state = FutoshikiState(
       puzzle: widget.puzzle,
@@ -627,8 +629,20 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (!_completionShown) unawaited(_saveGame());
     _timer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      if (!_completionShown) unawaited(_saveGame());
+    }
   }
 
   (int, int)? _firstEditableCell() {

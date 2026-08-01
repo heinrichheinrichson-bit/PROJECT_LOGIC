@@ -1254,7 +1254,8 @@ class HashiGameScreen extends StatefulWidget {
   State<HashiGameScreen> createState() => _HashiGameScreenState();
 }
 
-class _HashiGameScreenState extends State<HashiGameScreen> {
+class _HashiGameScreenState extends State<HashiGameScreen>
+    with WidgetsBindingObserver {
   final HashiProgressStore _progressStore = HashiProgressStore();
   final GameStorage _gameStorage = GameStorage();
   final HashiGameStore _saveStore = HashiGameStore();
@@ -1281,6 +1282,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final saved = widget.savedGame;
     _game = HashiGameState(
       puzzle: widget.puzzle,
@@ -1310,10 +1312,21 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (!_completionShown && !_checkingExistingGame) unawaited(_saveGame());
     _timer?.cancel();
     _messageTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      if (!_completionShown && !_checkingExistingGame) unawaited(_saveGame());
+    }
   }
 
   Future<void> _saveGame() => _saveStore.save(SavedHashiGame(

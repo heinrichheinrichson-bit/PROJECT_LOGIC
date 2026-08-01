@@ -908,7 +908,8 @@ class SlitherlinkGameScreen extends StatefulWidget {
   State<SlitherlinkGameScreen> createState() => _SlitherlinkGameScreenState();
 }
 
-class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
+class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
+    with WidgetsBindingObserver {
   late SlitherlinkState _state;
   final List<SlitherlinkState> _history = [];
   final List<SlitherlinkState> _redo = [];
@@ -925,6 +926,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final saved = widget.savedGame;
     _state = SlitherlinkState(
       puzzle: widget.puzzle,
@@ -954,9 +956,20 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     if (!_completionShown && !_checkingExistingGame) unawaited(_saveGame());
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      if (!_completionShown && !_checkingExistingGame) unawaited(_saveGame());
+    }
   }
 
   Future<void> _saveGame() => _saveStore.save(SavedSlitherlinkGame(
