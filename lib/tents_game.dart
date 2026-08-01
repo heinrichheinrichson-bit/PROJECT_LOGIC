@@ -446,7 +446,10 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                           childrenPadding: EdgeInsets.all(16),
                           children: [
                             Text(
-                                'Neben jedem Baum steht genau ein Zelt. Zelte ber\u00fchren sich weder seitlich noch diagonal. Die Zahlen am Rand zeigen die Zelte pro Zeile und Spalte.')
+                                'Neben jedem Baum steht genau ein Zelt. Zelte ber\u00fchren sich weder seitlich noch diagonal. Die Zahlen am Rand zeigen die Zelte pro Zeile und Spalte.'),
+                            SizedBox(height: 10),
+                            Text(
+                                'Gras ist eine freiwillige Notiz: Damit markierst du Felder, auf denen sicher kein Zelt stehen kann.')
                           ]),
                     ])))));
   }
@@ -501,22 +504,83 @@ class _TentsBoard extends StatelessWidget {
                       onTap: tree ? null : () => onTap(cell.$1, cell.$2),
                       borderRadius: BorderRadius.circular(7),
                       child: Center(
-                          child: Icon(
-                              tree
-                                  ? Icons.park_rounded
-                                  : mark == TentsCellMark.tent
-                                      ? Icons.cabin_rounded
-                                      : mark == TentsCellMark.grass
-                                          ? Icons.grass_rounded
-                                          : null,
-                              size: size >= 10 ? 20 : 28,
-                              color: conflict
-                                  ? scheme.onErrorContainer
-                                  : tree
-                                      ? scheme.onPrimaryContainer
-                                      : null)))));
+                        child: mark == TentsCellMark.tent && !tree
+                            ? _TentIcon(
+                                size: size >= 10 ? 22 : 30,
+                                color: conflict
+                                    ? scheme.onErrorContainer
+                                    : scheme.onSurface,
+                              )
+                            : Icon(
+                                tree
+                                    ? Icons.park_rounded
+                                    : mark == TentsCellMark.grass
+                                        ? Icons.grass_rounded
+                                        : null,
+                                size: size >= 10 ? 20 : 28,
+                                color: conflict
+                                    ? scheme.onErrorContainer
+                                    : tree
+                                        ? scheme.onPrimaryContainer
+                                        : null,
+                              ),
+                      ))));
         });
   }
+}
+
+class _TentIcon extends StatelessWidget {
+  const _TentIcon({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+        size: Size.square(size),
+        painter: _TentPainter(color),
+      );
+}
+
+class _TentPainter extends CustomPainter {
+  const _TentPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = (size.width * .09).clamp(1.8, 2.8)
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final left = Offset(size.width * .08, size.height * .84);
+    final peak = Offset(size.width * .5, size.height * .12);
+    final right = Offset(size.width * .92, size.height * .84);
+    canvas.drawPath(
+      Path()
+        ..moveTo(left.dx, left.dy)
+        ..lineTo(peak.dx, peak.dy)
+        ..lineTo(right.dx, right.dy)
+        ..close(),
+      stroke,
+    );
+    canvas.drawLine(peak, Offset(size.width * .5, size.height * .84), stroke);
+    canvas.drawLine(
+      Offset(size.width * .5, size.height * .84),
+      Offset(size.width * .68, size.height * .54),
+      stroke,
+    );
+    canvas.drawLine(
+      Offset(size.width * .18, size.height * .75),
+      Offset(size.width * .82, size.height * .75),
+      stroke,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TentPainter oldDelegate) => oldDelegate.color != color;
 }
 
 String _time(int seconds) =>
