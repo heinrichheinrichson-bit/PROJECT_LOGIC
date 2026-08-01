@@ -574,9 +574,17 @@ class SlitherlinkGameStore {
     final raw = preferences.getString(_key);
     if (raw == null) return null;
     try {
-      return SavedSlitherlinkGame.fromJson(
+      final saved = SavedSlitherlinkGame.fromJson(
         Map<String, Object?>.from(jsonDecode(raw) as Map),
       );
+      if (SlitherlinkState(
+        puzzle: saved.puzzle,
+        marks: saved.marks,
+      ).isSolved) {
+        await preferences.remove(_key);
+        return null;
+      }
+      return saved;
     } on Object {
       await preferences.remove(_key);
       return null;
@@ -1077,6 +1085,22 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
             },
             child: const Text('Slitherlink verlassen'),
           ),
+          if (_isGenerated)
+            FilledButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _startNextRandomPuzzle();
+              },
+              child: const Text('Noch eins'),
+            )
+          else if (_nextCollectionPuzzle != null)
+            FilledButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await _openNextCollectionPuzzle();
+              },
+              child: const Text('Nächstes Rätsel'),
+            ),
         ],
       ),
     );
@@ -1173,6 +1197,8 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
   }
 
   Future<void> _startNextRandomPuzzle() async {
+    await _saveStore.clear();
+    if (!mounted) return;
     showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -1209,6 +1235,18 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
     }
   }
 
+  Future<void> _openNextCollectionPuzzle() async {
+    final next = _nextCollectionPuzzle;
+    if (next == null) return;
+    await _saveStore.clear();
+    if (!mounted) return;
+    await Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => SlitherlinkGameScreen(puzzle: next),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         bottomNavigationBar: _completionShown
@@ -1230,14 +1268,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
                           )
                         else if (_nextCollectionPuzzle != null)
                           FilledButton.icon(
-                            onPressed: () =>
-                                Navigator.of(context).pushReplacement(
-                              MaterialPageRoute<void>(
-                                builder: (_) => SlitherlinkGameScreen(
-                                  puzzle: _nextCollectionPuzzle!,
-                                ),
-                              ),
-                            ),
+                            onPressed: _openNextCollectionPuzzle,
                             icon: const Icon(Icons.arrow_forward_rounded),
                             label: const Text('Nächstes Rätsel'),
                           ),

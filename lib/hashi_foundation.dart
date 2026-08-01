@@ -493,9 +493,17 @@ class HashiGameStore {
     final raw = preferences.getString(_key);
     if (raw == null) return null;
     try {
-      return SavedHashiGame.fromJson(
+      final saved = SavedHashiGame.fromJson(
         Map<String, Object?>.from(jsonDecode(raw) as Map),
       );
+      if (HashiGameState(
+        puzzle: saved.puzzle,
+        bridges: saved.bridges,
+      ).isSolved) {
+        await preferences.remove(_key);
+        return null;
+      }
+      return saved;
     } on Object {
       await preferences.remove(_key);
       return null;
@@ -1720,6 +1728,8 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   }
 
   Future<void> _startNextRandomPuzzle() async {
+    await _saveStore.clear();
+    if (!mounted) return;
     showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -1952,14 +1962,17 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
                         )
                       else if (_nextPuzzle != null)
                         FilledButton.icon(
-                          onPressed: () =>
-                              Navigator.of(context).pushReplacement(
-                            MaterialPageRoute<void>(
-                              builder: (_) => HashiGameScreen(
-                                puzzle: _nextPuzzle!,
+                          onPressed: () async {
+                            await _saveStore.clear();
+                            if (!context.mounted) return;
+                            await Navigator.of(context).pushReplacement(
+                              MaterialPageRoute<void>(
+                                builder: (_) => HashiGameScreen(
+                                  puzzle: _nextPuzzle!,
+                                ),
                               ),
-                            ),
-                          ),
+                            );
+                          },
                           icon: const Icon(Icons.arrow_forward_rounded),
                           label: const Text('Nächstes Rätsel'),
                         ),

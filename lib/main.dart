@@ -357,7 +357,21 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
   }
 
   Future<void> _refresh() async {
-    final savedGame = await _storage.loadActiveGame();
+    var savedGame = await _storage.loadActiveGame();
+    if (savedGame != null) {
+      final definition = savedGame.definition ??
+          binaryPuzzleCatalog
+              .where((candidate) => candidate.id == savedGame!.puzzleId)
+              .firstOrNull;
+      if (definition != null) {
+        final savedPuzzle = definition.createPuzzle()
+          ..restoreEditableValues(savedGame.values);
+        if (savedPuzzle.isSolved) {
+          await _storage.clearActiveGame();
+          savedGame = null;
+        }
+      }
+    }
     final results = await _storage.loadResults();
     final progress = await _storage.loadPlayerProgress();
     final dailyChallenge = const DailyChallengeService().today();
@@ -1481,6 +1495,14 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       await _saveGame();
       return;
     }
+    final savedPuzzle = definition.createPuzzle()
+      ..restoreEditableValues(existing.values);
+    if (savedPuzzle.isSolved) {
+      await _storage.clearActiveGame();
+      _checkingExistingGame = false;
+      await _saveGame();
+      return;
+    }
     final resume = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -2079,6 +2101,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
 
   Future<void> _startNextGeneratedPuzzle() async {
     if (widget.source != PuzzleSource.generated) return;
+    await _storage.clearActiveGame();
+    if (!mounted) return;
 
     showDialog<void>(
       context: context,

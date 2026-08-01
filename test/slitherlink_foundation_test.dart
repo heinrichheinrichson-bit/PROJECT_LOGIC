@@ -162,4 +162,23 @@ void main() {
     expect(restored.hintsUsed, 1);
     expect(restored.rewardedHints, 2);
   });
+
+  test('completed Slitherlink save is not offered as an open game', () async {
+    final store = SlitherlinkGameStore();
+    await store.save(SavedSlitherlinkGame(
+      puzzle: slitherlinkTutorialPuzzle,
+      marks: {
+        for (final edge in slitherlinkTutorialPuzzle.solution)
+          edge: SlitherEdgeMark.line,
+      },
+      elapsedSeconds: 38,
+      moves: 10,
+      hintsUsed: 0,
+      rewardedHints: 0,
+    ));
+
+    expect(await store.load(), isNull);
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.containsKey('active_slitherlink_game_v1'), isFalse);
+  });
 }

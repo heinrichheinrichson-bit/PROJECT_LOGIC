@@ -43,4 +43,21 @@ void main() {
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.containsKey('active_hashi_game_v1'), isFalse);
   });
+
+  test('completed Hashi save is not offered as an open game', () async {
+    final store = HashiGameStore();
+    await store.save(SavedHashiGame(
+      puzzle: hashiTutorialPuzzle,
+      mode: GameMode.catalog,
+      bridges: hashiTutorialPuzzle.solution,
+      elapsedSeconds: 42,
+      moves: 12,
+      hintsUsed: 0,
+      rewardedHints: 0,
+    ));
+
+    expect(await store.load(), isNull);
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.containsKey('active_hashi_game_v1'), isFalse);
+  });
 }
