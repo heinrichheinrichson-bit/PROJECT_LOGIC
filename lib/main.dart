@@ -556,6 +556,7 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
   final DailyChallengeService _service = const DailyChallengeService();
   Map<String, PuzzleResult> _results = const {};
   bool _loading = true;
+  bool _openingChallenge = false;
 
   Future<void> _refresh() async {
     final results = await _storage.loadResults();
@@ -573,16 +574,47 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
   }
 
   Future<void> _openChallenge(DailyChallengeSummary summary) async {
-    final route = switch (widget.gameType) {
-      GameType.binairo => _binaryDailyRoute(summary),
-      GameType.hashi => _hashiDailyRoute(summary),
-      GameType.slitherlink => _slitherlinkDailyRoute(summary),
-      _ => throw UnsupportedError('Tagesrätsel noch nicht verfügbar'),
-    };
-    await Navigator.of(context).push(
-      route,
+    if (_openingChallenge) return;
+    _openingChallenge = true;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: Row(
+          children: [
+            SizedBox.square(
+              dimension: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+            SizedBox(width: 18),
+            Expanded(child: Text('Tagesrätsel wird vorbereitet …')),
+          ],
+        ),
+      ),
     );
-    await _refresh();
+    await Future<void>.delayed(const Duration(milliseconds: 40));
+    try {
+      final route = switch (widget.gameType) {
+        GameType.binairo => _binaryDailyRoute(summary),
+        GameType.hashi => _hashiDailyRoute(summary),
+        GameType.slitherlink => _slitherlinkDailyRoute(summary),
+        _ => throw UnsupportedError('Tagesrätsel noch nicht verfügbar'),
+      };
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      await Navigator.of(context).push(route);
+      await _refresh();
+    } on Object {
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Das Tagesrätsel konnte nicht vorbereitet werden.'),
+        ),
+      );
+    } finally {
+      _openingChallenge = false;
+    }
   }
 
   MaterialPageRoute<void> _binaryDailyRoute(DailyChallengeSummary summary) {
@@ -731,26 +763,35 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: challenges.length,
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 5,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                            childAspectRatio: 0.92,
-                          ),
-                          itemBuilder: (context, index) {
-                            final challenge = challenges[index];
-                            final completed =
-                                _results.containsKey(_resultKey(challenge));
-                            return _DailyCalendarTile(
-                              challenge: challenge,
-                              completed: completed,
-                              isToday: index == 0,
-                              onTap: () => _openChallenge(challenge),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final columns = constraints.maxWidth >= 560
+                                ? 7
+                                : constraints.maxWidth >= 400
+                                    ? 6
+                                    : 5;
+                            return GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: challenges.length,
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: columns,
+                                crossAxisSpacing: 8,
+                                mainAxisSpacing: 8,
+                                childAspectRatio: 0.92,
+                              ),
+                              itemBuilder: (context, index) {
+                                final challenge = challenges[index];
+                                final completed =
+                                    _results.containsKey(_resultKey(challenge));
+                                return _DailyCalendarTile(
+                                  challenge: challenge,
+                                  completed: completed,
+                                  isToday: index == 0,
+                                  onTap: () => _openChallenge(challenge),
+                                );
+                              },
                             );
                           },
                         ),
