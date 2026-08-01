@@ -6,6 +6,8 @@ import 'package:project_logic_prototype/game_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   test('tutorial solution satisfies clues and forms one loop', () {
     final state = SlitherlinkState(
       puzzle: slitherlinkTutorialPuzzle,
@@ -66,5 +68,29 @@ void main() {
     expect(find.text('Schleife vollendet!'), findsOneWidget);
     expect(find.text('Testabschluss · keine Statistik'), findsOneWidget);
     expect(await GameStorage().loadResults(), isEmpty);
+  });
+
+  test('saved Slitherlink game preserves puzzle and progress', () async {
+    final store = SlitherlinkGameStore();
+    const edge = SlitherEdge.horizontal(1, 1);
+    final saved = SavedSlitherlinkGame(
+      puzzle: slitherlinkTutorialPuzzle,
+      marks: {edge.id: SlitherEdgeMark.line},
+      elapsedSeconds: 91,
+      moves: 4,
+      hintsUsed: 1,
+      rewardedHints: 2,
+    );
+
+    await store.save(saved);
+    final restored = await store.load();
+
+    expect(restored, isNotNull);
+    expect(restored!.puzzle.id, slitherlinkTutorialPuzzle.id);
+    expect(restored.marks[edge.id], SlitherEdgeMark.line);
+    expect(restored.elapsedSeconds, 91);
+    expect(restored.moves, 4);
+    expect(restored.hintsUsed, 1);
+    expect(restored.rewardedHints, 2);
   });
 }

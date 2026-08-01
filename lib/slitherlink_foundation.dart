@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_preferences.dart';
 import 'core/domain/game_identity.dart';
@@ -149,6 +151,101 @@ class SlitherlinkState {
   }
 }
 
+class SavedSlitherlinkGame {
+  const SavedSlitherlinkGame({
+    required this.puzzle,
+    required this.marks,
+    required this.elapsedSeconds,
+    required this.moves,
+    required this.hintsUsed,
+    required this.rewardedHints,
+  });
+
+  static const schemaVersion = 1;
+  final SlitherlinkPuzzle puzzle;
+  final Map<String, SlitherEdgeMark> marks;
+  final int elapsedSeconds;
+  final int moves;
+  final int hintsUsed;
+  final int rewardedHints;
+
+  Map<String, Object?> toJson() => {
+        'schemaVersion': schemaVersion,
+        'puzzle': {
+          'id': puzzle.id,
+          'title': puzzle.title,
+          'rows': puzzle.rows,
+          'columns': puzzle.columns,
+          'clues': puzzle.clues,
+          'solution': puzzle.solution.toList()..sort(),
+        },
+        'marks': {
+          for (final entry in marks.entries) entry.key: entry.value.name
+        },
+        'elapsedSeconds': elapsedSeconds,
+        'moves': moves,
+        'hintsUsed': hintsUsed,
+        'rewardedHints': rewardedHints,
+      };
+
+  factory SavedSlitherlinkGame.fromJson(Map<String, Object?> json) {
+    if (json['schemaVersion'] != schemaVersion) {
+      throw const FormatException('Unsupported Slitherlink save version.');
+    }
+    final puzzleJson = Map<String, Object?>.from(json['puzzle']! as Map);
+    final puzzle = SlitherlinkPuzzle(
+      id: puzzleJson['id']! as String,
+      title: puzzleJson['title']! as String,
+      rows: puzzleJson['rows']! as int,
+      columns: puzzleJson['columns']! as int,
+      clues: (puzzleJson['clues']! as List)
+          .map((row) => (row as List).map((value) => value as int?).toList())
+          .toList(),
+      solution: (puzzleJson['solution']! as List).cast<String>().toSet(),
+    );
+    final rawMarks = Map<String, Object?>.from(json['marks']! as Map);
+    return SavedSlitherlinkGame(
+      puzzle: puzzle,
+      marks: {
+        for (final entry in rawMarks.entries)
+          entry.key: SlitherEdgeMark.values.byName(entry.value! as String),
+      },
+      elapsedSeconds: json['elapsedSeconds']! as int,
+      moves: json['moves']! as int,
+      hintsUsed: json['hintsUsed']! as int,
+      rewardedHints: json['rewardedHints']! as int,
+    );
+  }
+}
+
+class SlitherlinkGameStore {
+  static const _key = 'active_slitherlink_game_v1';
+
+  Future<SavedSlitherlinkGame?> load() async {
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(_key);
+    if (raw == null) return null;
+    try {
+      return SavedSlitherlinkGame.fromJson(
+        Map<String, Object?>.from(jsonDecode(raw) as Map),
+      );
+    } on Object {
+      await preferences.remove(_key);
+      return null;
+    }
+  }
+
+  Future<void> save(SavedSlitherlinkGame game) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_key, jsonEncode(game.toJson()));
+  }
+
+  Future<void> clear() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_key);
+  }
+}
+
 class SlitherlinkHubScreen extends StatelessWidget {
   const SlitherlinkHubScreen({super.key});
 
@@ -226,9 +323,14 @@ class SlitherlinkHubScreen extends StatelessWidget {
 }
 
 class SlitherlinkGameScreen extends StatefulWidget {
-  const SlitherlinkGameScreen({required this.puzzle, super.key});
+  const SlitherlinkGameScreen({
+    required this.puzzle,
+    this.savedGame,
+    super.key,
+  });
 
   final SlitherlinkPuzzle puzzle;
+  final SavedSlitherlinkGame? savedGame;
 
   @override
   State<SlitherlinkGameScreen> createState() => _SlitherlinkGameScreenState();
@@ -245,14 +347,29 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
   int _moves = 0;
   int _hintsUsed = 0;
   HintBudget _hintBudget = const HintBudget();
+  final SlitherlinkGameStore _saveStore = SlitherlinkGameStore();
 
   @override
   void initState() {
     super.initState();
-    _state = SlitherlinkState(puzzle: widget.puzzle);
+    final saved = widget.savedGame;
+    _state = SlitherlinkState(
+      puzzle: widget.puzzle,
+      marks: saved?.marks ?? const {},
+    );
+    if (saved != null) {
+      _elapsedSeconds = saved.elapsedSeconds;
+      _moves = saved.moves;
+      _hintsUsed = saved.hintsUsed;
+      _hintBudget = HintBudget(
+        usedHints: saved.hintsUsed,
+        rewardedHints: saved.rewardedHints,
+      );
+    }
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && !_completionShown) {
         setState(() => _elapsedSeconds++);
+        if (_elapsedSeconds % 10 == 0) unawaited(_saveGame());
       }
     });
   }
@@ -260,8 +377,18 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    if (!_completionShown) unawaited(_saveGame());
     super.dispose();
   }
+
+  Future<void> _saveGame() => _saveStore.save(SavedSlitherlinkGame(
+        puzzle: widget.puzzle,
+        marks: _state.marks,
+        elapsedSeconds: _elapsedSeconds,
+        moves: _moves,
+        hintsUsed: _hintsUsed,
+        rewardedHints: _hintBudget.rewardedHints,
+      ));
 
   void _cycle(SlitherEdge edge) {
     if (_completionShown) return;
@@ -271,6 +398,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
       _redo.clear();
       _moves++;
     });
+    unawaited(_saveGame());
     if (_state.isSolved) _showCompletion();
   }
 
@@ -281,6 +409,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
       _state = _history.removeLast();
       if (_moves > 0) _moves--;
     });
+    unawaited(_saveGame());
   }
 
   void _redoMove() {
@@ -290,6 +419,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
       _state = _redo.removeLast();
       _moves++;
     });
+    unawaited(_saveGame());
     if (_state.isSolved) _showCompletion();
   }
 
@@ -316,6 +446,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
         _hintsUsed++;
         if (!premium) _hintBudget = _hintBudget.useHint();
       });
+      unawaited(_saveGame());
       if (_state.isSolved) _showCompletion();
       return;
     }
@@ -333,6 +464,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
       _hintsUsed = 0;
       _hintBudget = const HintBudget();
     });
+    unawaited(_saveGame());
   }
 
   Future<void> _showCompletion() async {
@@ -350,6 +482,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
         hintsUsed: _hintsUsed,
         rewardedHints: _hintBudget.rewardedHints,
       );
+      await _saveStore.clear();
     }
     if (!mounted) return;
     await showDialog<void>(

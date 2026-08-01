@@ -78,6 +78,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, PuzzleResult> _results = const {};
   PlayerProgress _progress = const PlayerProgress.empty();
   SavedHashiGame? _savedHashiGame;
+  SavedSlitherlinkGame? _savedSlitherlinkGame;
   bool _loading = true;
 
   @override
@@ -90,11 +91,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final results = await _storage.loadResults();
     final progress = await _storage.loadPlayerProgress();
     final savedHashiGame = await HashiGameStore().load();
+    final savedSlitherlinkGame = await SlitherlinkGameStore().load();
     if (!mounted) return;
     setState(() {
       _results = results;
       _progress = progress;
       _savedHashiGame = savedHashiGame;
+      _savedSlitherlinkGame = savedSlitherlinkGame;
       _loading = false;
     });
   }
@@ -151,6 +154,27 @@ class _HomeScreenState extends State<HomeScreen> {
                               builder: (_) => HashiGameScreen(
                                 puzzle: saved.puzzle,
                                 mode: saved.mode,
+                                savedGame: saved,
+                              ),
+                            ),
+                          );
+                          await _refresh();
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (_savedSlitherlinkGame case final saved?) ...[
+                      _HomeAction(
+                        icon: Icons.play_circle_outline_rounded,
+                        title: 'Slitherlink fortsetzen',
+                        subtitle:
+                            '${saved.puzzle.rows} × ${saved.puzzle.columns} · ${saved.moves} Züge · ${_shortTime(saved.elapsedSeconds)}',
+                        enabled: true,
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => SlitherlinkGameScreen(
+                                puzzle: saved.puzzle,
                                 savedGame: saved,
                               ),
                             ),
