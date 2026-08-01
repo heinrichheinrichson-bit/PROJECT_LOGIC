@@ -10,6 +10,7 @@ import 'app_preferences.dart';
 import 'core/domain/game_identity.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
+import 'core/presentation/rewarded_hint_dialog.dart';
 import 'game_storage.dart';
 
 part 'slitherlink_catalog.g.dart';
@@ -1068,8 +1069,11 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
   Future<void> _hint() async {
     final premium = PreferencesScope.of(context).premiumSimulationEnabled;
     if (!premium && !_hintBudget.canUseHint) {
+      if (!await showRewardedHintSimulation(context) || !mounted) return;
+      setState(() => _hintBudget = _hintBudget.earnRewardedHint());
+      unawaited(_saveGame());
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Keine Hinweise mehr verfügbar.')),
+        const SnackBar(content: Text('Ein zusätzlicher Tipp ist verfügbar.')),
       );
       return;
     }

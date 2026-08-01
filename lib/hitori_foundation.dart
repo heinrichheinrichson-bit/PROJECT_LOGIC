@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_preferences.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
+import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/hitori/domain/hitori_generator.dart';
 import 'features/hitori/domain/hitori_puzzle.dart';
 import 'game_storage.dart';
@@ -17,6 +19,8 @@ class SavedHitoriGame {
     required this.elapsedSeconds,
     required this.moves,
     required this.hintsRemaining,
+    this.hintsUsed = 0,
+    this.rewardedHints = 0,
   });
 
   final HitoriPuzzle puzzle;
@@ -24,6 +28,8 @@ class SavedHitoriGame {
   final int elapsedSeconds;
   final int moves;
   final int hintsRemaining;
+  final int hintsUsed;
+  final int rewardedHints;
 
   Map<String, Object?> toJson() => {
         'version': 1,
@@ -43,6 +49,8 @@ class SavedHitoriGame {
         'elapsedSeconds': elapsedSeconds,
         'moves': moves,
         'hintsRemaining': hintsRemaining,
+        'hintsUsed': hintsUsed,
+        'rewardedHints': rewardedHints,
       };
 
   factory SavedHitoriGame.fromJson(Map<String, Object?> json) {
@@ -79,6 +87,8 @@ class SavedHitoriGame {
       elapsedSeconds: json['elapsedSeconds']! as int,
       moves: json['moves']! as int,
       hintsRemaining: json['hintsRemaining']! as int,
+      hintsUsed: json['hintsUsed'] as int? ?? 0,
+      rewardedHints: json['rewardedHints'] as int? ?? 0,
     );
   }
 }
@@ -258,6 +268,8 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
   int _elapsedSeconds = 0;
   int _moves = 0;
   int _hintsRemaining = 3;
+  int _hintsUsed = 0;
+  int _rewardedHints = 0;
   bool _completionShown = false;
   bool _showConflicts = true;
   HitoriCell? _hintHighlight;
@@ -270,6 +282,8 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
     _elapsedSeconds = saved?.elapsedSeconds ?? 0;
     _moves = saved?.moves ?? 0;
     _hintsRemaining = saved?.hintsRemaining ?? 3;
+    _hintsUsed = saved?.hintsUsed ?? 0;
+    _rewardedHints = saved?.rewardedHints ?? 0;
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && !_completionShown) {
         setState(() => _elapsedSeconds++);
@@ -295,6 +309,8 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
         elapsedSeconds: _elapsedSeconds,
         moves: _moves,
         hintsRemaining: _hintsRemaining,
+        hintsUsed: _hintsUsed,
+        rewardedHints: _rewardedHints,
       ));
 
   Future<void> _showRulesGuide({bool force = false}) async {
@@ -398,6 +414,8 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
       _elapsedSeconds = 0;
       _moves = 0;
       _hintsRemaining = 3;
+      _hintsUsed = 0;
+      _rewardedHints = 0;
       _completionShown = false;
       _hintHighlight = null;
     });
@@ -405,7 +423,21 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
   }
 
   Future<void> _hint() async {
-    if (_hintsRemaining <= 0 || _completionShown) return;
+    if (_completionShown) return;
+    final premium =
+        PreferencesScope.maybeOf(context)?.premiumSimulationEnabled ?? false;
+    if (!premium && _hintsRemaining <= 0) {
+      if (!await showRewardedHintSimulation(context) || !mounted) return;
+      setState(() {
+        _hintsRemaining++;
+        _rewardedHints++;
+      });
+      unawaited(_save());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ein zusätzlicher Tipp ist verfügbar.')),
+      );
+      return;
+    }
     HitoriCell? target;
     for (var row = 0; row < widget.puzzle.size && target == null; row++) {
       for (var column = 0; column < widget.puzzle.size; column++) {
@@ -445,7 +477,8 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
       _hintHighlightTimer?.cancel();
       setState(() {
         _hintHighlight = cell;
-        _hintsRemaining--;
+        if (!premium) _hintsRemaining--;
+        _hintsUsed++;
       });
       _hintHighlightTimer = Timer(const Duration(seconds: 5), () {
         if (mounted && _hintHighlight == cell) {
@@ -462,7 +495,8 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
       final marks = Map<HitoriCell, HitoriCellMark>.from(_state.marks)
         ..[cell] = shade ? HitoriCellMark.shaded : HitoriCellMark.protected;
       _state = HitoriState(puzzle: widget.puzzle, marks: marks);
-      _hintsRemaining--;
+      if (!premium) _hintsRemaining--;
+      _hintsUsed++;
       _moves++;
       _redo.clear();
     });
@@ -500,7 +534,8 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
         boardSize: widget.puzzle.size,
         gameType: GameType.hitori,
         moves: _moves,
-        hintsUsed: 3 - _hintsRemaining,
+        hintsUsed: _hintsUsed,
+        rewardedHints: _rewardedHints,
       );
     }
     await _store.clear();
@@ -535,13 +570,34 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
             },
             child: const Text('Hitori verlassen'),
           ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _openNextHitori();
+            },
+            child: const Text('Noch eins'),
+          ),
         ],
+      ),
+    );
+  }
+
+  void _openNextHitori() {
+    final puzzle = const HitoriGenerator().generate(
+      seed: DateTime.now().microsecondsSinceEpoch,
+      difficulty: widget.puzzle.difficulty,
+    );
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => HitoriGameScreen(puzzle: puzzle),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final premium =
+        PreferencesScope.maybeOf(context)?.premiumSimulationEnabled ?? false;
     final duplicate =
         _showConflicts ? _state.protectedDuplicateConflicts : <HitoriCell>{};
     final adjacent =
@@ -595,7 +651,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                   ),
                   Chip(
                     avatar: const Icon(Icons.lightbulb_outline, size: 18),
-                    label: Text('$_hintsRemaining Tipps'),
+                    label: Text(premium ? 'Premium' : '$_hintsRemaining Tipps'),
                   ),
                 ],
               ),
@@ -760,6 +816,17 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                   ),
                 ],
               ),
+              if (_completionShown) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _openNextHitori,
+                    icon: const Icon(Icons.auto_awesome_rounded),
+                    label: const Text('Noch ein Hitori'),
+                  ),
+                ),
+              ],
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Regelfehler markieren'),

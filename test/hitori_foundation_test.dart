@@ -97,6 +97,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Hitori gelöst!'), findsOneWidget);
     expect(find.text('Testabschluss · keine Statistik'), findsOneWidget);
+    expect(find.text('Noch eins'), findsOneWidget);
   });
 
   testWidgets('completed Hitori can be viewed, restarted, and played again',
@@ -119,6 +120,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Brett ansehen'));
     await tester.pumpAndSettle();
+    expect(find.text('Noch ein Hitori'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.restart_alt_rounded));
     await tester.pumpAndSettle();
@@ -228,6 +230,41 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('0 Züge'), findsOneWidget);
+  });
+
+  testWidgets('empty Hitori hint budget offers a simulated rewarded tip',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'hitori_rules_guide_seen_v1': true,
+    });
+    final puzzle = const HitoriGenerator().generate(
+      seed: 9116,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: HitoriGameScreen(
+        puzzle: puzzle,
+        savedGame: SavedHitoriGame(
+          puzzle: puzzle,
+          marks: const {},
+          elapsedSeconds: 0,
+          moves: 0,
+          hintsRemaining: 0,
+          hintsUsed: 3,
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Hinweis'));
+    await tester.pumpAndSettle();
+    expect(find.text('Keine Tipps mehr'), findsOneWidget);
+    await tester.tap(find.text('Werbung simulieren'));
+    await tester.pumpAndSettle();
+    expect(find.text('Simulierte Werbung'), findsOneWidget);
+    await tester.tap(find.text('Werbung abschließen'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 Tipps'), findsOneWidget);
   });
 
   test('saved Hitori game preserves marks and time', () async {

@@ -108,6 +108,40 @@ void main() {
     expect(find.text('Testabschluss · keine Statistik'), findsOneWidget);
   });
 
+  testWidgets('empty Futoshiki hint budget offers a simulated rewarded tip',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'futoshiki_inequality_guide_seen_v1': true,
+    });
+    final puzzle = const FutoshikiGenerator().generate(
+      seed: 90211,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: FutoshikiGameScreen(
+        puzzle: puzzle,
+        savedGame: SavedFutoshikiGame(
+          puzzle: puzzle,
+          values: FutoshikiState(puzzle: puzzle).values,
+          elapsedSeconds: 0,
+          moves: 0,
+          hintsRemaining: 0,
+          hintsUsed: 3,
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Hinweis'));
+    await tester.pumpAndSettle();
+    expect(find.text('Keine Tipps mehr'), findsOneWidget);
+    await tester.tap(find.text('Werbung simulieren'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Werbung abschließen'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 Tipps'), findsOneWidget);
+  });
+
   test('saved game preserves board progress and play time', () async {
     final puzzle = const FutoshikiGenerator().generate(
       seed: 117,

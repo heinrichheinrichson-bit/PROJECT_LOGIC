@@ -229,6 +229,39 @@ void main() {
     expect(find.text('Hinweis anwenden'), findsNothing);
   });
 
+  testWidgets('empty Slitherlink hint budget offers a simulated rewarded tip',
+      (tester) async {
+    final preferences = await AppPreferences.load();
+    const saved = SavedSlitherlinkGame(
+      puzzle: slitherlinkTutorialPuzzle,
+      marks: {},
+      elapsedSeconds: 0,
+      moves: 0,
+      hintsUsed: 3,
+      rewardedHints: 0,
+    );
+    await tester.pumpWidget(
+      PreferencesScope(
+        preferences: preferences,
+        child: const MaterialApp(
+          home: SlitherlinkGameScreen(
+            puzzle: slitherlinkTutorialPuzzle,
+            savedGame: saved,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Hinweis'));
+    await tester.pumpAndSettle();
+    expect(find.text('Keine Tipps mehr'), findsOneWidget);
+    await tester.tap(find.text('Werbung simulieren'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Werbung abschließen'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 Tipps'), findsOneWidget);
+  });
+
   test('saved Slitherlink game preserves puzzle and progress', () async {
     final store = SlitherlinkGameStore();
     const edge = SlitherEdge.horizontal(1, 1);

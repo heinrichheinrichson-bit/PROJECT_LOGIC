@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_preferences.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
+import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/futoshiki/domain/futoshiki_generator.dart';
 import 'features/futoshiki/domain/futoshiki_puzzle.dart';
 import 'game_storage.dart';
@@ -17,6 +19,8 @@ class SavedFutoshikiGame {
     required this.elapsedSeconds,
     required this.moves,
     required this.hintsRemaining,
+    this.hintsUsed = 0,
+    this.rewardedHints = 0,
     this.mode = GameMode.generated,
     this.candidates = const {},
   });
@@ -26,6 +30,8 @@ class SavedFutoshikiGame {
   final int elapsedSeconds;
   final int moves;
   final int hintsRemaining;
+  final int hintsUsed;
+  final int rewardedHints;
   final GameMode mode;
   final Map<String, Set<int>> candidates;
 
@@ -53,6 +59,8 @@ class SavedFutoshikiGame {
         'elapsedSeconds': elapsedSeconds,
         'moves': moves,
         'hintsRemaining': hintsRemaining,
+        'hintsUsed': hintsUsed,
+        'rewardedHints': rewardedHints,
         'mode': mode.name,
         'candidates': {
           for (final entry in candidates.entries)
@@ -98,6 +106,8 @@ class SavedFutoshikiGame {
       elapsedSeconds: json['elapsedSeconds']! as int,
       moves: json['moves']! as int,
       hintsRemaining: json['hintsRemaining']! as int,
+      hintsUsed: json['hintsUsed'] as int? ?? 0,
+      rewardedHints: json['rewardedHints'] as int? ?? 0,
       mode: GameMode.values.byName(
         json['mode'] as String? ?? GameMode.generated.name,
       ),
@@ -595,6 +605,8 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
   int _elapsedSeconds = 0;
   int _moves = 0;
   int _hintsRemaining = 3;
+  int _hintsUsed = 0;
+  int _rewardedHints = 0;
   bool _showConflicts = true;
   bool _completionShown = false;
   bool _candidateMode = false;
@@ -614,6 +626,8 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
     _elapsedSeconds = saved?.elapsedSeconds ?? 0;
     _moves = saved?.moves ?? 0;
     _hintsRemaining = saved?.hintsRemaining ?? 3;
+    _hintsUsed = saved?.hintsUsed ?? 0;
+    _rewardedHints = saved?.rewardedHints ?? 0;
     _candidates = {
       if (saved != null)
         for (final entry in saved.candidates.entries)
@@ -653,6 +667,8 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
           elapsedSeconds: _elapsedSeconds,
           moves: _moves,
           hintsRemaining: _hintsRemaining,
+          hintsUsed: _hintsUsed,
+          rewardedHints: _rewardedHints,
           mode: widget.mode,
           candidates: _candidates,
         ),
@@ -803,6 +819,8 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
       _elapsedSeconds = 0;
       _moves = 0;
       _hintsRemaining = 3;
+      _hintsUsed = 0;
+      _rewardedHints = 0;
       _completionShown = false;
       _selected = _firstEditableCell();
     });
@@ -810,7 +828,21 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
   }
 
   Future<void> _hint() async {
-    if (_hintsRemaining <= 0 || _completionShown) return;
+    if (_completionShown) return;
+    final premium =
+        PreferencesScope.maybeOf(context)?.premiumSimulationEnabled ?? false;
+    if (!premium && _hintsRemaining <= 0) {
+      if (!await showRewardedHintSimulation(context) || !mounted) return;
+      setState(() {
+        _hintsRemaining++;
+        _rewardedHints++;
+      });
+      unawaited(_saveGame());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ein zusätzlicher Tipp ist verfügbar.')),
+      );
+      return;
+    }
     (int, int)? cell;
     for (var row = 0; row < widget.puzzle.size && cell == null; row++) {
       for (var column = 0; column < widget.puzzle.size; column++) {
@@ -836,7 +868,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Nur markieren'),
+            child: const Text('Auf dem Brett zeigen'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
@@ -845,13 +877,16 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
         ],
       ),
     );
-    if (!mounted) return;
+    if (apply == null || !mounted) return;
     setState(() => _selected = target);
     if (apply == true) {
       _setValue(widget.puzzle.solution[target.$1][target.$2]);
-      setState(() => _hintsRemaining--);
-      unawaited(_saveGame());
     }
+    setState(() {
+      if (!premium) _hintsRemaining--;
+      _hintsUsed++;
+    });
+    unawaited(_saveGame());
   }
 
   Future<void> _showCompletion({bool testCompletion = false}) async {
@@ -867,7 +902,8 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
         boardSize: widget.puzzle.size,
         gameType: GameType.futoshiki,
         moves: _moves,
-        hintsUsed: 3 - _hintsRemaining,
+        hintsUsed: _hintsUsed,
+        rewardedHints: _rewardedHints,
       );
     }
     await _saveStore.clear();
@@ -985,6 +1021,8 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
   @override
   Widget build(BuildContext context) {
     final conflicts = _showConflicts ? _state.conflictingCells : <(int, int)>{};
+    final premium =
+        PreferencesScope.maybeOf(context)?.premiumSimulationEnabled ?? false;
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.puzzle.difficulty.label} · Futoshiki'),
@@ -1034,7 +1072,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
                           icon: Icons.touch_app_outlined, text: '$_moves Züge'),
                       _Status(
                           icon: Icons.lightbulb_outline,
-                          text: '$_hintsRemaining Tipps'),
+                          text: premium ? 'Premium' : '$_hintsRemaining Tipps'),
                     ],
                   ),
                   const SizedBox(height: 16),

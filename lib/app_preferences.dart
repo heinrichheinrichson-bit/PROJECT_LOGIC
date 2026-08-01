@@ -113,4 +113,7 @@ class PreferencesScope extends InheritedNotifier<AppPreferences> {
     assert(scope != null, 'PreferencesScope is missing.');
     return scope!.notifier!;
   }
+
+  static AppPreferences? maybeOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<PreferencesScope>()?.notifier;
 }
