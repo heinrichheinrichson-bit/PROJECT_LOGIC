@@ -944,6 +944,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
         : const FutoshikiGenerator().generate(
             seed: DateTime.now().microsecondsSinceEpoch,
             difficulty: widget.puzzle.difficulty,
+            size: widget.puzzle.size,
           );
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(

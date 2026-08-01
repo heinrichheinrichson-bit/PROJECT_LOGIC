@@ -211,4 +211,29 @@ void main() {
     expect(
         saved!.candidates.values.any((values) => values.contains(1)), isTrue);
   });
+
+  testWidgets('another random puzzle keeps the exact 7x7 board size',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'futoshiki_inequality_guide_seen_v1': true,
+    });
+    final puzzle = const FutoshikiGenerator().generate(
+      seed: 77881,
+      difficulty: PuzzleDifficulty.hard,
+      size: 7,
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: FutoshikiGameScreen(puzzle: puzzle)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.bug_report_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sofort lösen'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Noch eins'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(FilledButton, '7'), findsOneWidget);
+    expect(find.text('Ungleichungen gelöst!'), findsNothing);
+  });
 }
