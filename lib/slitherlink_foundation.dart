@@ -12,6 +12,7 @@ import 'core/domain/game_identity.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
+import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'game_storage.dart';
 
@@ -1015,6 +1016,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
 
   void _cycle(SlitherEdge edge) {
     if (_completionShown) return;
+    PuzzleInteractionFeedback.selection(context);
     setState(() {
       _history.add(_state);
       _state = _state.cycle(edge);
@@ -1100,6 +1102,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
       _redo.clear();
       _moves++;
       _hintsUsed++;
+      PuzzleInteractionFeedback.hint(context);
       if (!premium) _hintBudget = _hintBudget.useHint();
     });
     unawaited(_saveGame());
@@ -1171,6 +1174,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
   Future<void> _showCompletion() async {
     if (_completionShown) return;
     _completionShown = true;
+    PuzzleInteractionFeedback.success(context);
     final countsForTesting =
         _developerCompletion && _gameMode == GameMode.daily;
     if (!_developerCompletion || countsForTesting) {

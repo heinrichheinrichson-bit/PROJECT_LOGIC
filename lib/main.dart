@@ -9,6 +9,7 @@ import 'app_theme.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
+import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/statistics/game_statistics.dart';
 import 'core/statistics/puzzle_attempt.dart';
 import 'daily_challenge.dart';
@@ -2159,9 +2160,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       puzzle.cycleCell(row, column);
     });
 
-    if (PreferencesScope.of(context).hapticsEnabled) {
-      HapticFeedback.selectionClick();
-    }
+    PuzzleInteractionFeedback.selection(context);
     _saveGame();
 
     if (puzzle.isSolved) {
@@ -2259,9 +2258,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
         _hintCell = null;
         _hintRelatedCells = const {};
       });
-      if (PreferencesScope.of(context).hapticsEnabled) {
-        HapticFeedback.lightImpact();
-      }
+      PuzzleInteractionFeedback.hint(context);
       await _saveGame();
       if (puzzle.isSolved) _showSolvedDialog();
     }

@@ -9,6 +9,7 @@ import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
+import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/futoshiki/domain/futoshiki_generator.dart';
 import 'features/futoshiki/domain/futoshiki_puzzle.dart';
@@ -729,6 +730,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
     if (_candidateMode) {
       final current = _candidates[key] ?? <int>{};
       if (value == null && current.isEmpty) return;
+      PuzzleInteractionFeedback.selection(context);
       setState(() {
         _history.add(_snapshot());
         final updated = {...current};
@@ -754,6 +756,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
             _state.values[selected.$1][selected.$2]) {
       return;
     }
+    PuzzleInteractionFeedback.selection(context);
     setState(() {
       _history.add(_snapshot());
       _state = next;
@@ -864,6 +867,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
     setState(() {
       if (!premium) _hintsRemaining--;
       _hintsUsed++;
+      PuzzleInteractionFeedback.hint(context);
     });
     unawaited(_saveGame());
   }
@@ -871,6 +875,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
   Future<void> _showCompletion({bool testCompletion = false}) async {
     if (_completionShown) return;
     setState(() => _completionShown = true);
+    PuzzleInteractionFeedback.success(context);
     final countsForTesting = testCompletion && widget.mode == GameMode.daily;
     if (!testCompletion || countsForTesting) {
       await GameStorage().recordCompletion(

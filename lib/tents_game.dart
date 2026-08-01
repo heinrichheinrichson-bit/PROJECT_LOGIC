@@ -9,6 +9,7 @@ import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
+import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/tents/domain/tents_generator.dart';
 import 'features/tents/domain/tents_catalog.dart';
@@ -380,6 +381,7 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
       mode: widget.mode));
   void _tap(int row, int column) {
     if (_completed || widget.puzzle.trees.contains((row, column))) return;
+    PuzzleInteractionFeedback.selection(context);
     setState(() {
       _history.add(_state);
       _state = _state.cycle(row, column);
@@ -512,6 +514,7 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
     setState(() {
       if (!premium) _hintsRemaining--;
       _hintsUsed++;
+      PuzzleInteractionFeedback.hint(context);
       _hintHighlight = hint.cell;
       if (apply) {
         _history.add(_state);
@@ -639,6 +642,7 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
   Future<void> _finish({required bool test}) async {
     if (_completed) return;
     setState(() => _completed = true);
+    PuzzleInteractionFeedback.success(context);
     await TentsGameStore().clear();
     final countsForTesting = test && widget.mode == GameMode.daily;
     if (!test || countsForTesting) {

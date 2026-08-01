@@ -11,6 +11,7 @@ import 'core/domain/game_identity.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
+import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/statistics/game_statistics.dart';
 import 'app_preferences.dart';
 import 'game_storage.dart';
@@ -1396,6 +1397,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
 
   Future<void> _handleIslandTap(int index) async {
     if (_completionShown) return;
+    PuzzleInteractionFeedback.selection(context);
     if (_selectedIsland == null) {
       setState(() => _selectedIsland = index);
       return;
@@ -1437,6 +1439,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   Future<void> _showCompletionIfSolved() async {
     if (!_game.isSolved || _completionShown) return;
     _completionShown = true;
+    PuzzleInteractionFeedback.success(context);
     int? previousBestSeconds;
     String? collectionProgress;
     if (!_developerCompletion && widget.mode == GameMode.catalog) {
@@ -1680,6 +1683,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
     final previous = _game;
     final next = previous.removeConnection(bridge.from, bridge.to);
     if (identical(previous, next)) return;
+    PuzzleInteractionFeedback.selection(context);
     setState(() {
       _history.add(previous);
       _redoHistory.clear();
@@ -1810,6 +1814,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
       setState(() => _hintBudget = _hintBudget.useHint());
     }
     _hintsUsed++;
+    PuzzleInteractionFeedback.hint(context);
     setState(() {
       _history.add(_game);
       _redoHistory.clear();

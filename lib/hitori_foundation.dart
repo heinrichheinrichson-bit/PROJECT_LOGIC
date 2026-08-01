@@ -9,6 +9,7 @@ import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
+import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/hitori/domain/hitori_generator.dart';
 import 'features/hitori/domain/hitori_catalog.dart';
@@ -470,6 +471,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
 
   void _cycle(int row, int column) {
     if (_completionShown) return;
+    PuzzleInteractionFeedback.selection(context);
     _hintHighlightTimer?.cancel();
     setState(() {
       _hintHighlight = null;
@@ -579,6 +581,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
         _hintHighlight = cell;
         if (!premium) _hintsRemaining--;
         _hintsUsed++;
+        PuzzleInteractionFeedback.hint(context);
       });
       _hintHighlightTimer = Timer(const Duration(seconds: 5), () {
         if (mounted && _hintHighlight == cell) {
@@ -597,6 +600,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
       _state = HitoriState(puzzle: widget.puzzle, marks: marks);
       if (!premium) _hintsRemaining--;
       _hintsUsed++;
+      PuzzleInteractionFeedback.hint(context);
       _moves++;
       _redo.clear();
     });
@@ -660,6 +664,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
   Future<void> _complete({bool testCompletion = false}) async {
     if (_completionShown) return;
     setState(() => _completionShown = true);
+    PuzzleInteractionFeedback.success(context);
     final countsForTesting = testCompletion && widget.mode == GameMode.daily;
     if (!testCompletion || countsForTesting) {
       await GameStorage().recordCompletion(
