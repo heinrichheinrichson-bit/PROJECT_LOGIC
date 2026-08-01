@@ -595,7 +595,9 @@ class SlitherlinkGameStore {
 }
 
 class SlitherlinkHubScreen extends StatelessWidget {
-  const SlitherlinkHubScreen({super.key});
+  const SlitherlinkHubScreen({this.onOpenStatistics, super.key});
+
+  final Future<void> Function(BuildContext context)? onOpenStatistics;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -652,6 +654,20 @@ class SlitherlinkHubScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 18),
+                    if (onOpenStatistics != null) ...[
+                      Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.insights_outlined),
+                          title: const Text('Slitherlink-Statistik'),
+                          subtitle: const Text(
+                            'Bestzeiten, Spielarten und Schwierigkeiten',
+                          ),
+                          trailing: const Icon(Icons.chevron_right_rounded),
+                          onTap: () => onOpenStatistics!(context),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                    ],
                     Text(
                       'Rätselsammlung',
                       style: Theme.of(context).textTheme.titleLarge,

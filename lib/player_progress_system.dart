@@ -182,6 +182,14 @@ class PlayerProgressService {
           target: 1,
         ),
         _achievement(
+          id: 'slitherlink-first',
+          title: 'Schleifenkünstler',
+          description: 'Vollende dein erstes Slitherlink-Rätsel.',
+          iconName: 'gesture',
+          current: snapshot.completedForGame(GameType.slitherlink),
+          target: 1,
+        ),
+        _achievement(
           id: 'streak-three',
           title: 'Dranbleiben',
           description: 'Spiele an 3 Tagen in Folge.',

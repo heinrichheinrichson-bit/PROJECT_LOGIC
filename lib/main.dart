@@ -240,7 +240,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       enabled: true,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => const SlitherlinkHubScreen(),
+                          builder: (_) => SlitherlinkHubScreen(
+                            onOpenStatistics: (slitherContext) async {
+                              final storage = GameStorage();
+                              final results = await storage.loadResults();
+                              final progress =
+                                  await storage.loadPlayerProgress();
+                              if (!slitherContext.mounted) return;
+                              await Navigator.of(slitherContext).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => StatisticsScreen(
+                                    results: results,
+                                    progress: progress,
+                                    gameType: GameType.slitherlink,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -2624,6 +2641,7 @@ class PlayerProfileScreen extends StatelessWidget {
       catalogPuzzleIds: {
         ...binaryPuzzleCatalog.map((puzzle) => puzzle.id),
         ...hashiPuzzleCatalog.map((puzzle) => 'hashi:${puzzle.id}'),
+        ...slitherlinkPuzzleCatalog.map((puzzle) => 'slitherlink:${puzzle.id}'),
       },
     );
     const service = PlayerProgressService();
@@ -2857,6 +2875,7 @@ class _ProgressGoalCard extends StatelessWidget {
         'diamond' => Icons.diamond_outlined,
         'grid_on' => Icons.grid_on_outlined,
         'hub' => Icons.hub_outlined,
+        'gesture' => Icons.gesture_outlined,
         'menu_book' => Icons.menu_book_outlined,
         _ => Icons.emoji_events_outlined,
       };
@@ -2938,6 +2957,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       _attempts,
       gameType: GameType.hashi,
     );
+    final slitherlinkStatistics = GameStatistics.fromAttempts(
+      _attempts,
+      gameType: GameType.slitherlink,
+    );
     final binairoResults = results.values
         .where((result) => result.gameType == GameType.binairo)
         .toList(growable: false);
@@ -2961,19 +2984,36 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         .map((result) => result.puzzleId)
         .toSet()
         .length;
+    final slitherlinkResults = results.values
+        .where((result) => result.gameType == GameType.slitherlink)
+        .toList(growable: false);
+    final slitherlinkCompleted = slitherlinkResults.fold<int>(
+      0,
+      (sum, result) => sum + result.completionCount,
+    );
+    final slitherlinkCollectionCompleted = slitherlinkResults
+        .where((result) => result.effectiveSource == GameMode.catalog)
+        .map((result) => result.puzzleId)
+        .toSet()
+        .length;
     final isBinairoDetail = widget.gameType == GameType.binairo;
     final isHashiDetail = widget.gameType == GameType.hashi;
+    final isSlitherlinkDetail = widget.gameType == GameType.slitherlink;
     final isGameDetail = widget.gameType != null;
     final selectedStatistics = isBinairoDetail
         ? binairoStatistics
         : isHashiDetail
             ? hashiStatistics
-            : GameStatistics.fromAttempts(_attempts);
+            : isSlitherlinkDetail
+                ? slitherlinkStatistics
+                : GameStatistics.fromAttempts(_attempts);
     final selectedCompleted = isBinairoDetail
         ? binairoCompleted
         : isHashiDetail
             ? hashiCompleted
-            : totalCompleted;
+            : isSlitherlinkDetail
+                ? slitherlinkCompleted
+                : totalCompleted;
 
     return Scaffold(
       appBar: AppBar(
@@ -3119,6 +3159,52 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           .toList(growable: false),
                       showMoves: true,
                     ),
+                  ] else if (isSlitherlinkDetail) ...[
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.collections_bookmark_outlined,
+                      title: 'Rätselsammlung',
+                      subtitle:
+                          '$slitherlinkCollectionCompleted von ${slitherlinkPuzzleCatalog.length} gelöst',
+                      trailing:
+                          '${((slitherlinkCollectionCompleted / slitherlinkPuzzleCatalog.length) * 100).round()} %',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.auto_awesome_outlined,
+                      title: 'Zufallsrätsel',
+                      subtitle:
+                          '${slitherlinkStatistics.completedForMode(GameMode.generated)} abgeschlossen',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.timer_outlined,
+                      title: 'Spielzeit',
+                      subtitle: _formatLongTime(
+                        slitherlinkStatistics.totalPlaySeconds,
+                      ),
+                      trailing: slitherlinkStatistics.averageSeconds == null
+                          ? null
+                          : 'Ø ${_formatLongTime(slitherlinkStatistics.averageSeconds!)}',
+                    ),
+                    const SizedBox(height: 24),
+                    _PerformanceStatisticsSection(
+                      statistics: slitherlinkStatistics,
+                      legacyBestSeconds: _bestResultSeconds(slitherlinkResults),
+                      showMoves: true,
+                    ),
+                    const SizedBox(height: 24),
+                    _ModePerformanceSection(
+                      statistics: slitherlinkStatistics,
+                      modes: const [GameMode.catalog, GameMode.generated],
+                      showMoves: true,
+                    ),
+                    const SizedBox(height: 24),
+                    _DifficultyPerformanceSection(
+                      statistics: slitherlinkStatistics,
+                      legacyResults: slitherlinkResults,
+                      showMoves: true,
+                    ),
                   ] else ...[
                     const SizedBox(height: 12),
                     _StatisticListCard(
@@ -3186,6 +3272,28 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             results: results,
                             progress: progress,
                             gameType: GameType.hashi,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _GameStatisticsOverviewCard(
+                      gameType: GameType.slitherlink,
+                      icon: Icons.gesture_outlined,
+                      completed: slitherlinkCompleted,
+                      catalogCompleted: slitherlinkCollectionCompleted,
+                      catalogTotal: slitherlinkPuzzleCatalog.length,
+                      endlessCompleted: slitherlinkStatistics.completedForMode(
+                        GameMode.generated,
+                      ),
+                      solvedWithoutHints:
+                          slitherlinkStatistics.solvedWithoutHints,
+                      onOpenDetails: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => StatisticsScreen(
+                            results: results,
+                            progress: progress,
+                            gameType: GameType.slitherlink,
                           ),
                         ),
                       ),
