@@ -11,6 +11,7 @@ import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/tents/domain/tents_generator.dart';
 import 'features/tents/domain/tents_catalog.dart';
 import 'features/tents/domain/tents_puzzle.dart';
+import 'features/tents/domain/tents_solver.dart';
 import 'game_storage.dart';
 
 class SavedTentsGame {
@@ -752,6 +753,12 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                       ]),
                       const SizedBox(height: 12),
                       const Text('Tippen: leer \u2192 Zelt \u2192 Gras'),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Ziel: Bilde Paare aus genau 1 Baum und 1 Zelt.',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                        textAlign: TextAlign.center,
+                      ),
                       const SizedBox(height: 16),
                       ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 560),
@@ -759,9 +766,18 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                               aspectRatio: 1,
                               child: _TentsBoard(
                                   state: _state,
+                                  completed: _completed,
                                   conflicts: conflicts,
                                   hintHighlight: _hintHighlight,
                                   onTap: _tap))),
+                      if (_completed) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          'Feine Rahmen zeigen die g\u00fcltigen Baum-Zelt-Paare.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       Row(children: [
                         Expanded(
@@ -814,7 +830,13 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                           childrenPadding: EdgeInsets.all(16),
                           children: [
                             Text(
-                                'Neben jedem Baum steht genau ein Zelt. Zelte ber\u00fchren sich weder seitlich noch diagonal. Die Zahlen am Rand zeigen die Zelte pro Zeile und Spalte.'),
+                                'Ordne jedem Baum genau ein Zelt zu. Das zugeordnete Zelt muss direkt waagerecht oder senkrecht neben seinem Baum stehen.'),
+                            SizedBox(height: 10),
+                            Text(
+                                'Wichtig: Ein Zelt darf neben mehreren B\u00e4umen stehen und ein Baum neben mehreren Zelten. Entscheidend ist, dass sich alle B\u00e4ume und Zelte vollst\u00e4ndig zu eindeutigen 1:1-Paaren verbinden lassen.'),
+                            SizedBox(height: 10),
+                            Text(
+                                'Zelte d\u00fcrfen sich weder seitlich noch diagonal ber\u00fchren. Die Zahlen am Rand zeigen, wie viele Zelte in der jeweiligen Zeile oder Spalte stehen.'),
                             SizedBox(height: 10),
                             Text(
                                 'Gras ist eine freiwillige Notiz: Damit markierst du Felder, auf denen sicher kein Zelt stehen kann.')
@@ -826,10 +848,12 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
 class _TentsBoard extends StatelessWidget {
   const _TentsBoard(
       {required this.state,
+      required this.completed,
       required this.conflicts,
       required this.hintHighlight,
       required this.onTap});
   final TentsState state;
+  final bool completed;
   final Set<TentsCell> conflicts;
   final TentsCell? hintHighlight;
   final void Function(int, int) onTap;
@@ -842,88 +866,152 @@ class _TentsBoard extends StatelessWidget {
         darkMode ? const Color(0xFF174D32) : const Color(0xFFCDEBD6);
     final treeForeground =
         darkMode ? const Color(0xFFB8F2C9) : const Color(0xFF175C35);
-    return GridView.builder(
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate:
-            SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: size + 1),
-        itemCount: (size + 1) * (size + 1),
-        itemBuilder: (context, index) {
-          final row = index ~/ (size + 1), column = index % (size + 1);
-          if (row == 0 && column == 0) return const SizedBox.shrink();
-          if (row == 0) {
-            final columnIndex = column - 1;
-            final fulfilled =
-                state.tents.where((cell) => cell.$2 == columnIndex).length ==
-                    state.puzzle.columnCounts[columnIndex];
-            return Center(
-                child: Text('${state.puzzle.columnCounts[columnIndex]}',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: fulfilled ? scheme.primary : null)));
-          }
-          if (column == 0) {
-            final rowIndex = row - 1;
-            final fulfilled =
-                state.tents.where((cell) => cell.$1 == rowIndex).length ==
-                    state.puzzle.rowCounts[rowIndex];
-            return Center(
-                child: Text('${state.puzzle.rowCounts[rowIndex]}',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: fulfilled ? scheme.primary : null)));
-          }
-          final cell = (row - 1, column - 1),
-              tree = state.puzzle.trees.contains(cell),
-              mark = state.markAt(cell.$1, cell.$2);
-          final conflict = conflicts.contains(cell);
-          final highlighted = hintHighlight == cell;
-          return Padding(
-              padding: const EdgeInsets.all(1.5),
-              child: Material(
-                  color: conflict
-                      ? scheme.errorContainer
-                      : tree
-                          ? treeBackground
-                          : mark == TentsCellMark.grass
-                              ? scheme.surfaceContainerLowest
-                              : scheme.surfaceContainer,
-                  shape: RoundedRectangleBorder(
-                      side: BorderSide(
-                          color: highlighted
-                              ? scheme.primary
-                              : scheme.outlineVariant,
-                          width: highlighted ? 3 : 1),
-                      borderRadius: BorderRadius.circular(7)),
-                  child: InkWell(
-                      onTap: tree ? null : () => onTap(cell.$1, cell.$2),
-                      borderRadius: BorderRadius.circular(7),
-                      child: Center(
-                        child: mark == TentsCellMark.tent && !tree
-                            ? _TentIcon(
-                                size: size >= 10 ? 22 : 30,
-                                color: conflict
-                                    ? scheme.onErrorContainer
-                                    : scheme.primary,
-                                accentColor: conflict
-                                    ? scheme.errorContainer
-                                    : scheme.onPrimary,
-                              )
-                            : Icon(
-                                tree
-                                    ? Icons.park_rounded
-                                    : mark == TentsCellMark.grass
-                                        ? Icons.grass_rounded
-                                        : null,
-                                size: size >= 10 ? 20 : 28,
-                                color: conflict
-                                    ? scheme.onErrorContainer
-                                    : tree
-                                        ? treeForeground
-                                        : null,
-                              ),
-                      ))));
-        });
+    final pairings = completed
+        ? const TentsSolver().pairTrees(state.puzzle, state.tents)
+        : const <TentsCell, TentsCell>{};
+    return LayoutBuilder(builder: (context, constraints) {
+      final grid = GridView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: size + 1),
+          itemCount: (size + 1) * (size + 1),
+          itemBuilder: (context, index) {
+            final row = index ~/ (size + 1), column = index % (size + 1);
+            if (row == 0 && column == 0) return const SizedBox.shrink();
+            if (row == 0) {
+              final columnIndex = column - 1;
+              final fulfilled =
+                  state.tents.where((cell) => cell.$2 == columnIndex).length ==
+                      state.puzzle.columnCounts[columnIndex];
+              return Center(
+                  child: Text('${state.puzzle.columnCounts[columnIndex]}',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: fulfilled ? scheme.primary : null)));
+            }
+            if (column == 0) {
+              final rowIndex = row - 1;
+              final fulfilled =
+                  state.tents.where((cell) => cell.$1 == rowIndex).length ==
+                      state.puzzle.rowCounts[rowIndex];
+              return Center(
+                  child: Text('${state.puzzle.rowCounts[rowIndex]}',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: fulfilled ? scheme.primary : null)));
+            }
+            final cell = (row - 1, column - 1),
+                tree = state.puzzle.trees.contains(cell),
+                mark = state.markAt(cell.$1, cell.$2);
+            final conflict = conflicts.contains(cell);
+            final highlighted = hintHighlight == cell;
+            return Padding(
+                padding: const EdgeInsets.all(1.5),
+                child: Material(
+                    color: conflict
+                        ? scheme.errorContainer
+                        : tree
+                            ? treeBackground
+                            : mark == TentsCellMark.grass
+                                ? scheme.surfaceContainerLowest
+                                : scheme.surfaceContainer,
+                    shape: RoundedRectangleBorder(
+                        side: BorderSide(
+                            color: highlighted
+                                ? scheme.primary
+                                : scheme.outlineVariant,
+                            width: highlighted ? 3 : 1),
+                        borderRadius: BorderRadius.circular(7)),
+                    child: InkWell(
+                        onTap: tree ? null : () => onTap(cell.$1, cell.$2),
+                        borderRadius: BorderRadius.circular(7),
+                        child: Center(
+                          child: mark == TentsCellMark.tent && !tree
+                              ? _TentIcon(
+                                  size: size >= 10 ? 22 : 30,
+                                  color: conflict
+                                      ? scheme.onErrorContainer
+                                      : scheme.primary,
+                                  accentColor: conflict
+                                      ? scheme.errorContainer
+                                      : scheme.onPrimary,
+                                )
+                              : Icon(
+                                  tree
+                                      ? Icons.park_rounded
+                                      : mark == TentsCellMark.grass
+                                          ? Icons.grass_rounded
+                                          : null,
+                                  size: size >= 10 ? 20 : 28,
+                                  color: conflict
+                                      ? scheme.onErrorContainer
+                                      : tree
+                                          ? treeForeground
+                                          : null,
+                                ),
+                        ))));
+          });
+      if (pairings.isEmpty) return grid;
+      return Stack(children: [
+        grid,
+        Positioned.fill(
+            child: IgnorePointer(
+                child: CustomPaint(
+                    painter: _TreeTentPairingPainter(
+                        size: size,
+                        pairings: pairings,
+                        color: scheme.primary))))
+      ]);
+    });
   }
+}
+
+class _TreeTentPairingPainter extends CustomPainter {
+  const _TreeTentPairingPainter({
+    required this.size,
+    required this.pairings,
+    required this.color,
+  });
+
+  final int size;
+  final Map<TentsCell, TentsCell> pairings;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size canvasSize) {
+    final cellWidth = canvasSize.width / (size + 1);
+    final cellHeight = canvasSize.height / (size + 1);
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.82)
+      ..strokeWidth = size >= 10 ? 1.6 : 2
+      ..style = PaintingStyle.stroke;
+    for (final entry in pairings.entries) {
+      final minimumRow =
+          entry.key.$1 < entry.value.$1 ? entry.key.$1 : entry.value.$1;
+      final maximumRow =
+          entry.key.$1 > entry.value.$1 ? entry.key.$1 : entry.value.$1;
+      final minimumColumn =
+          entry.key.$2 < entry.value.$2 ? entry.key.$2 : entry.value.$2;
+      final maximumColumn =
+          entry.key.$2 > entry.value.$2 ? entry.key.$2 : entry.value.$2;
+      final rect = Rect.fromLTRB(
+        (minimumColumn + 1) * cellWidth + 2.5,
+        (minimumRow + 1) * cellHeight + 2.5,
+        (maximumColumn + 2) * cellWidth - 2.5,
+        (maximumRow + 2) * cellHeight - 2.5,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(rect, const Radius.circular(9)),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TreeTentPairingPainter oldDelegate) =>
+      oldDelegate.size != size ||
+      oldDelegate.pairings != pairings ||
+      oldDelegate.color != color;
 }
 
 class _TentIcon extends StatelessWidget {

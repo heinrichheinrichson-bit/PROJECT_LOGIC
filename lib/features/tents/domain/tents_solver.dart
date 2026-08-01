@@ -15,6 +15,44 @@ class TentsSolveResult {
 class TentsSolver {
   const TentsSolver();
 
+  /// Finds one valid one-to-one assignment between trees and [tents].
+  ///
+  /// A tent may geometrically border more than one tree. The puzzle rule is
+  /// satisfied when every tree and every tent can still be used in exactly one
+  /// orthogonal pair.
+  Map<TentsCell, TentsCell> pairTrees(
+    TentsPuzzle puzzle,
+    Set<TentsCell> tents,
+  ) {
+    if (tents.length != puzzle.trees.length) return const {};
+    final tentToTree = <TentsCell, TentsCell>{};
+    final trees = puzzle.trees.toList()
+      ..sort(
+          (a, b) => a.$1 == b.$1 ? a.$2.compareTo(b.$2) : a.$1.compareTo(b.$1));
+
+    bool assign(TentsCell tree, Set<TentsCell> visited) {
+      final candidates = _orthogonal(puzzle.size, tree)
+          .where(tents.contains)
+          .toList()
+        ..sort((a, b) =>
+            a.$1 == b.$1 ? a.$2.compareTo(b.$2) : a.$1.compareTo(b.$1));
+      for (final tent in candidates) {
+        if (!visited.add(tent)) continue;
+        final previousTree = tentToTree[tent];
+        if (previousTree == null || assign(previousTree, visited)) {
+          tentToTree[tent] = tree;
+          return true;
+        }
+      }
+      return false;
+    }
+
+    for (final tree in trees) {
+      if (!assign(tree, <TentsCell>{})) return const {};
+    }
+    return {for (final entry in tentToTree.entries) entry.value: entry.key};
+  }
+
   TentsSolveResult? solve(TentsPuzzle puzzle) =>
       _search(puzzle, limit: 1).results.firstOrNull;
 

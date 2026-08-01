@@ -32,6 +32,18 @@ void main() {
       expect(solver.hasUniqueSolution(first), isTrue, reason: difficulty.name);
       expect(solver.solve(first)!.solution, first.solution,
           reason: difficulty.name);
+      final pairings = solver.pairTrees(first, first.solution);
+      expect(pairings.length, first.trees.length, reason: difficulty.name);
+      expect(pairings.values.toSet().length, first.solution.length,
+          reason: difficulty.name);
+      for (final entry in pairings.entries) {
+        expect(
+          (entry.key.$1 - entry.value.$1).abs() +
+              (entry.key.$2 - entry.value.$2).abs(),
+          1,
+          reason: difficulty.name,
+        );
+      }
     }
   });
 
