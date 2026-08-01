@@ -7,9 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_preferences.dart';
+import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
+import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'game_storage.dart';
 
@@ -526,151 +528,129 @@ class SlitherlinkHubScreen extends StatelessWidget {
   final Future<void> Function(BuildContext context)? onOpenStatistics;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Slitherlink')),
-        body: Center(
-          child: ListView(
-            padding: const EdgeInsets.all(24),
-            children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Card(
-                      color: Theme.of(context).colorScheme.primaryContainer,
-                      child: const Padding(
-                        padding: EdgeInsets.all(20),
-                        child: Column(
-                          children: [
-                            Icon(Icons.gesture_rounded, size: 44),
-                            SizedBox(height: 12),
-                            Text(
-                              'Eine einzige Schleife',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            SizedBox(height: 6),
-                            Text(
-                              'Verbinde die Punkte zu einer geschlossenen Schleife. Zahlen verraten, wie viele Seiten eines Feldes dazugehören.',
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+  Widget build(BuildContext context) {
+    final accent = AppTheme.gameColors['slitherlink']!;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Slitherlink')),
+      body: Center(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  PuzzleHubHeader(
+                    icon: Icons.gesture_rounded,
+                    title: 'Eine einzige Schleife',
+                    description: 'Verbinde die Punkte zu einer geschlossenen '
+                        'Schleife. Die Zahlen zeigen, wie viele Feldseiten '
+                        'zur Linie gehören.',
+                    accent: accent,
+                  ),
+                  const SizedBox(height: 18),
+                  const _SlitherResumeCard(),
+                  Card(
+                    child: ListTile(
+                      leading: const CircleAvatar(
+                        child: Icon(Icons.school_outlined),
+                      ),
+                      title: const Text('Die erste Schleife'),
+                      subtitle: const Text('Interaktiver Einstieg · 4 × 4'),
+                      trailing: const Icon(Icons.play_arrow_rounded),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const SlitherlinkGameScreen(
+                            puzzle: slitherlinkTutorialPuzzle,
+                          ),
                         ),
                       ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  if (onOpenDaily != null) ...[
+                    PuzzleHubAction(
+                      icon: Icons.calendar_today_outlined,
+                      title: 'Tagesrätsel & Kalender',
+                      subtitle:
+                          'Heute spielen oder vergangene Schleifen nachholen',
+                      accent: accent,
+                      onTap: () => onOpenDaily!(context),
                     ),
                     const SizedBox(height: 18),
-                    const _SlitherResumeCard(),
-                    Card(
-                      child: ListTile(
-                        leading: const CircleAvatar(
-                          child: Icon(Icons.school_outlined),
-                        ),
-                        title: const Text('Die erste Schleife'),
-                        subtitle: const Text('Interaktiver Einstieg · 4 × 4'),
-                        trailing: const Icon(Icons.play_arrow_rounded),
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const SlitherlinkGameScreen(
-                              puzzle: slitherlinkTutorialPuzzle,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    if (onOpenDaily != null) ...[
-                      Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.calendar_today_outlined),
-                          title: const Text('Tagesrätsel & Kalender'),
-                          subtitle: const Text(
-                            'Heute spielen oder vergangene Schleifen nachholen',
-                          ),
-                          trailing: const Icon(Icons.chevron_right_rounded),
-                          onTap: () => onOpenDaily!(context),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                    ],
-                    if (onOpenStatistics != null) ...[
-                      Card(
-                        child: ListTile(
-                          leading: const Icon(Icons.insights_outlined),
-                          title: const Text('Slitherlink-Statistik'),
-                          subtitle: const Text(
-                            'Bestzeiten, Spielarten und Schwierigkeiten',
-                          ),
-                          trailing: const Icon(Icons.chevron_right_rounded),
-                          onTap: () => onOpenStatistics!(context),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                    ],
-                    Text(
-                      'Rätselsammlung',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '36 eindeutig lösbare Rätsel in neun Kapiteln – vom Einstieg bis zur Meisterschleife.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                    const SizedBox(height: 10),
-                    for (final difficulty in PuzzleDifficulty.values)
-                      _SlitherCollectionChapter(difficulty: difficulty),
-                    const SizedBox(height: 18),
-                    Text(
-                      'Zufallsrätsel',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Neu erzeugt und vor dem Start auf eine eindeutige Lösung geprüft.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                    const SizedBox(height: 10),
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: [
-                            for (final difficulty in PuzzleDifficulty.values)
-                              FilledButton.tonalIcon(
-                                onPressed: () => _startRandom(
-                                  context,
-                                  difficulty,
-                                ),
-                                icon: Icon(switch (difficulty) {
-                                  PuzzleDifficulty.easy => Icons.eco_outlined,
-                                  PuzzleDifficulty.medium =>
-                                    Icons.psychology_alt_outlined,
-                                  PuzzleDifficulty.hard =>
-                                    Icons.local_fire_department_outlined,
-                                }),
-                                label: Text(difficulty.label),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
                   ],
-                ),
+                  if (onOpenStatistics != null) ...[
+                    PuzzleHubAction(
+                      icon: Icons.insights_outlined,
+                      title: 'Slitherlink-Statistik',
+                      subtitle: 'Bestzeiten, Spielarten und Schwierigkeiten',
+                      accent: accent,
+                      onTap: () => onOpenStatistics!(context),
+                    ),
+                    const SizedBox(height: 18),
+                  ],
+                  Text(
+                    'Rätselsammlung',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '36 eindeutig lösbare Rätsel in neun Kapiteln – vom Einstieg bis zur Meisterschleife.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  const SizedBox(height: 10),
+                  for (final difficulty in PuzzleDifficulty.values)
+                    _SlitherCollectionChapter(difficulty: difficulty),
+                  const SizedBox(height: 18),
+                  Text(
+                    'Zufallsrätsel',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Neu erzeugt und vor dem Start auf eine eindeutige Lösung geprüft.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  const SizedBox(height: 10),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          for (final difficulty in PuzzleDifficulty.values)
+                            FilledButton.tonalIcon(
+                              onPressed: () => _startRandom(
+                                context,
+                                difficulty,
+                              ),
+                              icon: Icon(switch (difficulty) {
+                                PuzzleDifficulty.easy => Icons.eco_outlined,
+                                PuzzleDifficulty.medium =>
+                                  Icons.psychology_alt_outlined,
+                                PuzzleDifficulty.hard =>
+                                  Icons.local_fire_department_outlined,
+                              }),
+                              label: Text(difficulty.label),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      );
+      ),
+    );
+  }
 
   Future<void> _startRandom(
     BuildContext context,

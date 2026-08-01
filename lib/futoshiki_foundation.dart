@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_preferences.dart';
+import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
+import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/futoshiki/domain/futoshiki_generator.dart';
 import 'features/futoshiki/domain/futoshiki_puzzle.dart';
@@ -265,89 +267,66 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final accent = AppTheme.gameColors['futoshiki']!;
     return Scaffold(
       appBar: AppBar(title: const Text('Futoshiki')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           if (_saved case final saved?) ...[
-            Card(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              child: ListTile(
-                minTileHeight: 88,
-                leading: const Icon(Icons.play_circle_outline_rounded),
-                title: const Text('Rätsel fortsetzen'),
-                subtitle: Text(
-                  '${saved.puzzle.difficulty.label} · '
+            PuzzleHubAction(
+              icon: Icons.play_circle_outline_rounded,
+              title: 'Rätsel fortsetzen',
+              subtitle: '${saved.puzzle.difficulty.label} · '
                   '${saved.puzzle.size} × ${saved.puzzle.size} · '
                   '${_formatTime(saved.elapsedSeconds)}',
-                ),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => _open(saved.puzzle, saved: saved),
-              ),
+              accent: accent,
+              prominent: true,
+              onTap: () => _open(saved.puzzle, saved: saved),
             ),
             const SizedBox(height: 20),
           ],
-          Text(
-            'Ungleich, aber logisch',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Fülle jede Zeile und Spalte mit allen Zahlen. Dabei darf keine '
-            'Zahl doppelt vorkommen und jedes Ungleichheitszeichen muss stimmen.',
+          PuzzleHubHeader(
+            icon: Icons.compare_arrows_rounded,
+            title: 'Ungleich, aber logisch',
+            description: 'Fülle jede Zeile und Spalte mit allen Zahlen. '
+                'Jedes Ungleichheitszeichen muss stimmen.',
+            accent: accent,
           ),
           const SizedBox(height: 24),
-          Card(
-            clipBehavior: Clip.antiAlias,
-            child: ListTile(
-              minTileHeight: 86,
-              leading: const CircleAvatar(
-                child: Icon(Icons.grid_view_rounded),
-              ),
-              title: const Text('Rätselsammlung'),
-              subtitle: const Text('32 ausgewählte Lern- und Logikrätsel'),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const FutoshikiCollectionScreen(),
-                  ),
-                );
-                await _refresh();
-              },
-            ),
+          PuzzleHubAction(
+            icon: Icons.grid_view_rounded,
+            title: 'Rätselsammlung',
+            subtitle: '32 ausgewählte Lern- und Logikrätsel',
+            accent: accent,
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const FutoshikiCollectionScreen(),
+                ),
+              );
+              await _refresh();
+            },
           ),
           const SizedBox(height: 12),
-          Card(
-            child: ListTile(
-              minTileHeight: 76,
-              leading: const CircleAvatar(
-                child: Icon(Icons.calendar_today_outlined),
-              ),
-              title: const Text('Tagesrätsel'),
-              subtitle:
-                  const Text('Heute spielen oder vergangene Tage nachholen'),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: widget.onOpenDaily == null
-                  ? null
-                  : () => widget.onOpenDaily!(context),
-            ),
+          PuzzleHubAction(
+            icon: Icons.calendar_today_outlined,
+            title: 'Tagesrätsel',
+            subtitle: 'Heute spielen oder vergangene Tage nachholen',
+            accent: accent,
+            onTap: widget.onOpenDaily == null
+                ? null
+                : () => widget.onOpenDaily!(context),
           ),
           const SizedBox(height: 12),
-          Card(
-            child: ListTile(
-              minTileHeight: 76,
-              leading: const CircleAvatar(
-                child: Icon(Icons.bar_chart_rounded),
-              ),
-              title: const Text('Futoshiki-Statistik'),
-              subtitle: const Text('Bestzeiten, Spielzeit und Fortschritt'),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: widget.onOpenStatistics == null
-                  ? null
-                  : () => widget.onOpenStatistics!(context),
-            ),
+          PuzzleHubAction(
+            icon: Icons.bar_chart_rounded,
+            title: 'Futoshiki-Statistik',
+            subtitle: 'Bestzeiten, Spielzeit und Fortschritt',
+            accent: accent,
+            onTap: widget.onOpenStatistics == null
+                ? null
+                : () => widget.onOpenStatistics!(context),
           ),
           const SizedBox(height: 24),
           Text(

@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_preferences.dart';
+import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
+import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/hitori/domain/hitori_generator.dart';
 import 'features/hitori/domain/hitori_catalog.dart';
@@ -218,140 +220,135 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Hitori')),
-        body: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            if (_saved case final saved?) ...[
-              Card(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                child: ListTile(
-                  minTileHeight: 86,
-                  leading: const Icon(Icons.play_circle_outline_rounded),
-                  title: const Text('Rätsel fortsetzen'),
-                  subtitle: Text(
-                    '${saved.puzzle.difficulty.label} · ${saved.puzzle.size} × '
-                    '${saved.puzzle.size} · ${_formatTime(saved.elapsedSeconds)}',
-                  ),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => _open(saved.puzzle, saved: saved),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-            Text('Finde die einzelnen Zahlen',
-                style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            const Text(
-              'Schwärze doppelte Zahlen, ohne schwarze Nachbarn zu erzeugen. '
-              'Alle hellen Felder müssen verbunden bleiben.',
+  Widget build(BuildContext context) {
+    final accent = AppTheme.gameColors['hitori']!;
+    final solved = hitoriPuzzleCatalog.where(_isSolved).length;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Hitori')),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          if (_saved case final saved?) ...[
+            PuzzleHubAction(
+              icon: Icons.play_circle_outline_rounded,
+              title: 'Rätsel fortsetzen',
+              subtitle:
+                  '${saved.puzzle.difficulty.label} · ${saved.puzzle.size} × '
+                  '${saved.puzzle.size} · ${_formatTime(saved.elapsedSeconds)}',
+              accent: accent,
+              prominent: true,
+              onTap: () => _open(saved.puzzle, saved: saved),
             ),
-            if (widget.onOpenDaily != null) ...[
-              const SizedBox(height: 20),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.calendar_month_outlined),
-                  title: const Text('Tagesrätsel & Kalender'),
-                  subtitle:
-                      const Text('Heute lösen oder verpasste Tage nachholen'),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => widget.onOpenDaily!(context),
+            const SizedBox(height: 20),
+          ],
+          PuzzleHubHeader(
+            icon: Icons.filter_b_and_w_rounded,
+            title: 'Finde die einzelnen Zahlen',
+            description:
+                'Schwärze doppelte Zahlen. Schwarze Felder dürfen sich nicht '
+                'berühren und alle hellen Felder bleiben verbunden.',
+            accent: accent,
+            progress: solved / hitoriPuzzleCatalog.length,
+            progressLabel:
+                'Sammlungsfortschritt: $solved von ${hitoriPuzzleCatalog.length}',
+          ),
+          if (widget.onOpenDaily != null) ...[
+            const SizedBox(height: 20),
+            PuzzleHubAction(
+              icon: Icons.calendar_month_outlined,
+              title: 'Tagesrätsel & Kalender',
+              subtitle: 'Heute lösen oder verpasste Tage nachholen',
+              accent: accent,
+              onTap: () => widget.onOpenDaily!(context),
+            ),
+          ],
+          if (widget.onOpenStatistics != null) ...[
+            const SizedBox(height: 12),
+            PuzzleHubAction(
+              icon: Icons.query_stats_rounded,
+              title: 'Hitori-Statistik',
+              subtitle: 'Bestzeiten, Spielzeit und Lösungswege',
+              accent: accent,
+              onTap: () => widget.onOpenStatistics!(context),
+            ),
+          ],
+          const SizedBox(height: 24),
+          Text('Rätselsammlung', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 6),
+          Text(
+            '$solved von ${hitoriPuzzleCatalog.length} Rätseln gelöst',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 10),
+          LinearProgressIndicator(
+            value: solved / hitoriPuzzleCatalog.length,
+          ),
+          const SizedBox(height: 12),
+          for (final chapter in hitoriChapters) ...[
+            Card(
+              clipBehavior: Clip.antiAlias,
+              child: ExpansionTile(
+                leading: CircleAvatar(child: Text('${chapter.number}')),
+                title: Text(chapter.title),
+                subtitle: Text(
+                  '${chapter.subtitle}\n'
+                  '${chapter.puzzles.where(_isSolved).length} von '
+                  '${chapter.puzzles.length} gelöst',
                 ),
+                children: [
+                  for (var index = 0; index < chapter.puzzles.length; index++)
+                    ListTile(
+                      leading: CircleAvatar(
+                        child: _isSolved(chapter.puzzles[index])
+                            ? const Icon(Icons.check_rounded)
+                            : Text('${index + 1}'),
+                      ),
+                      title: Text(chapter.puzzles[index].title),
+                      subtitle: Text(
+                        '${chapter.puzzles[index].size} × '
+                        '${chapter.puzzles[index].size}',
+                      ),
+                      trailing: const Icon(Icons.play_arrow_rounded),
+                      onTap: () => _open(
+                        chapter.puzzles[index],
+                        mode: GameMode.catalog,
+                      ),
+                    ),
+                ],
               ),
-            ],
-            if (widget.onOpenStatistics != null) ...[
-              const SizedBox(height: 12),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.query_stats_rounded),
-                  title: const Text('Hitori-Statistik'),
-                  subtitle: const Text('Bestzeiten, Spielzeit und Lösungswege'),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => widget.onOpenStatistics!(context),
-                ),
-              ),
-            ],
-            const SizedBox(height: 24),
-            Text('Rätselsammlung',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 6),
-            Text(
-              '${hitoriPuzzleCatalog.where(_isSolved).length} von '
-              '${hitoriPuzzleCatalog.length} Rätseln gelöst',
-              style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 10),
-            LinearProgressIndicator(
-              value: hitoriPuzzleCatalog.where(_isSolved).length /
-                  hitoriPuzzleCatalog.length,
+          ],
+          const SizedBox(height: 14),
+          Text('Zufallsrätsel', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 12),
+          for (final difficulty in PuzzleDifficulty.values) ...[
+            Card(
+              child: ListTile(
+                minTileHeight: 82,
+                leading: CircleAvatar(
+                  child: Text('${5 + difficulty.index}'),
+                ),
+                title: Text(difficulty.label),
+                subtitle: Text(
+                  '${difficulty.description} · ${5 + difficulty.index} × ${5 + difficulty.index}',
+                ),
+                trailing: const Icon(Icons.play_arrow_rounded),
+                onTap: () {
+                  final puzzle = const HitoriGenerator().generate(
+                    seed: DateTime.now().microsecondsSinceEpoch,
+                    difficulty: difficulty,
+                  );
+                  _open(puzzle);
+                },
+              ),
             ),
             const SizedBox(height: 12),
-            for (final chapter in hitoriChapters) ...[
-              Card(
-                clipBehavior: Clip.antiAlias,
-                child: ExpansionTile(
-                  leading: CircleAvatar(child: Text('${chapter.number}')),
-                  title: Text(chapter.title),
-                  subtitle: Text(
-                    '${chapter.subtitle}\n'
-                    '${chapter.puzzles.where(_isSolved).length} von '
-                    '${chapter.puzzles.length} gelöst',
-                  ),
-                  children: [
-                    for (var index = 0; index < chapter.puzzles.length; index++)
-                      ListTile(
-                        leading: CircleAvatar(
-                          child: _isSolved(chapter.puzzles[index])
-                              ? const Icon(Icons.check_rounded)
-                              : Text('${index + 1}'),
-                        ),
-                        title: Text(chapter.puzzles[index].title),
-                        subtitle: Text(
-                          '${chapter.puzzles[index].size} × '
-                          '${chapter.puzzles[index].size}',
-                        ),
-                        trailing: const Icon(Icons.play_arrow_rounded),
-                        onTap: () => _open(
-                          chapter.puzzles[index],
-                          mode: GameMode.catalog,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-            ],
-            const SizedBox(height: 14),
-            Text('Zufallsrätsel',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            for (final difficulty in PuzzleDifficulty.values) ...[
-              Card(
-                child: ListTile(
-                  minTileHeight: 82,
-                  leading: CircleAvatar(
-                    child: Text('${5 + difficulty.index}'),
-                  ),
-                  title: Text(difficulty.label),
-                  subtitle: Text(
-                    '${difficulty.description} · ${5 + difficulty.index} × ${5 + difficulty.index}',
-                  ),
-                  trailing: const Icon(Icons.play_arrow_rounded),
-                  onTap: () {
-                    final puzzle = const HitoriGenerator().generate(
-                      seed: DateTime.now().microsecondsSinceEpoch,
-                      difficulty: difficulty,
-                    );
-                    _open(puzzle);
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
           ],
-        ),
-      );
+        ],
+      ),
+    );
+  }
 }
 
 class HitoriGameScreen extends StatefulWidget {

@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_preferences.dart';
+import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
+import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/tents/domain/tents_generator.dart';
 import 'features/tents/domain/tents_catalog.dart';
@@ -201,104 +203,115 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Zelte & B\u00e4ume')),
-        body: ListView(padding: const EdgeInsets.all(20), children: [
-          if (_saved case final saved?) ...[
-            Card(
-                child: ListTile(
-                    leading: const Icon(Icons.play_circle_outline),
-                    title: const Text('R\u00e4tsel fortsetzen'),
-                    subtitle: Text(
-                        '${saved.puzzle.difficulty.label} \u00b7 ${saved.puzzle.size}\u00d7${saved.puzzle.size}'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _open(saved.puzzle.difficulty,
-                        saved: saved, mode: saved.mode))),
-            const SizedBox(height: 16),
-          ],
-          Text('Zufallsr\u00e4tsel',
-              style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          const Text(
-              'Jeder Start erzeugt ein neues, eindeutig l\u00f6sbares Brett. Finde zu jedem Baum genau ein Zelt.'),
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: widget.onOpenDaily == null
-                    ? null
-                    : () => widget.onOpenDaily!(context),
-                icon: const Icon(Icons.calendar_today_outlined),
-                label: const Text('Tagesr\u00e4tsel'),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: widget.onOpenStatistics == null
-                    ? null
-                    : () => widget.onOpenStatistics!(context),
-                icon: const Icon(Icons.query_stats_outlined),
-                label: const Text('Statistik'),
-              ),
-            ),
-          ]),
+  Widget build(BuildContext context) {
+    final accent = AppTheme.gameColors['tents']!;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Zelte & B\u00e4ume')),
+      body: ListView(padding: const EdgeInsets.all(20), children: [
+        if (_saved case final saved?) ...[
+          Card(
+              child: ListTile(
+                  leading: const Icon(Icons.play_circle_outline),
+                  title: const Text('R\u00e4tsel fortsetzen'),
+                  subtitle: Text(
+                      '${saved.puzzle.difficulty.label} \u00b7 ${saved.puzzle.size}\u00d7${saved.puzzle.size}'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _open(saved.puzzle.difficulty,
+                      saved: saved, mode: saved.mode))),
           const SizedBox(height: 16),
-          for (final difficulty in PuzzleDifficulty.values)
-            Card(
-                child: ListTile(
-              leading: Icon(switch (difficulty) {
-                PuzzleDifficulty.easy => Icons.eco_outlined,
-                PuzzleDifficulty.medium => Icons.park_outlined,
-                PuzzleDifficulty.hard => Icons.forest_outlined,
-              }),
-              title: Text(difficulty.label),
-              subtitle: Text('${switch (difficulty) {
-                PuzzleDifficulty.easy => 6,
-                PuzzleDifficulty.medium => 8,
-                PuzzleDifficulty.hard => 10
-              }} \u00d7 ${switch (difficulty) {
-                PuzzleDifficulty.easy => 6,
-                PuzzleDifficulty.medium => 8,
-                PuzzleDifficulty.hard => 10
-              }}'),
-              trailing: const Icon(Icons.play_arrow_rounded),
-              onTap: () => _open(difficulty),
-            )),
-          const SizedBox(height: 24),
-          Text('R\u00e4tselsammlung',
-              style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text(
-              '${tentsPuzzleCatalog.length} feste Expeditionen mit dauerhaftem Fortschritt.'),
-          const SizedBox(height: 8),
-          for (final difficulty in PuzzleDifficulty.values)
-            Card(
-              child: ExpansionTile(
-                leading: CircleAvatar(child: Text('${difficulty.index + 1}')),
-                title: Text(tentsChapterTitles[difficulty]!),
-                subtitle: Text(
-                  '${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty && _completedIds.contains(p.id)).length} '
-                  'von ${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty).length} gel\u00f6st',
-                ),
-                children: [
-                  for (final puzzle in tentsPuzzleCatalog
-                      .where((p) => p.difficulty == difficulty))
-                    ListTile(
-                      leading: Icon(_completedIds.contains(puzzle.id)
-                          ? Icons.check_circle_rounded
-                          : Icons.radio_button_unchecked_rounded),
-                      title: Text(puzzle.title),
-                      subtitle: Text('${puzzle.size} \u00d7 ${puzzle.size}'),
-                      trailing: const Icon(Icons.play_arrow_rounded),
-                      onTap: () => _open(difficulty,
-                          selectedPuzzle: puzzle, mode: GameMode.catalog),
-                    ),
-                ],
-              ),
+        ],
+        PuzzleHubHeader(
+          icon: Icons.park_rounded,
+          title: 'Plane ein ruhiges Waldlager',
+          description: 'Ordne jedem Baum genau ein Zelt zu. Jeder Start '
+              'erzeugt ein neues, eindeutig lösbares Brett.',
+          accent: accent,
+          progress: _completedIds.length / tentsPuzzleCatalog.length,
+          progressLabel:
+              '${_completedIds.length} von ${tentsPuzzleCatalog.length} Expeditionen gelöst',
+        ),
+        const SizedBox(height: 20),
+        Text('Zufallsr\u00e4tsel',
+            style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: widget.onOpenDaily == null
+                  ? null
+                  : () => widget.onOpenDaily!(context),
+              icon: const Icon(Icons.calendar_today_outlined),
+              label: const Text('Tagesr\u00e4tsel'),
             ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: widget.onOpenStatistics == null
+                  ? null
+                  : () => widget.onOpenStatistics!(context),
+              icon: const Icon(Icons.query_stats_outlined),
+              label: const Text('Statistik'),
+            ),
+          ),
         ]),
-      );
+        const SizedBox(height: 16),
+        for (final difficulty in PuzzleDifficulty.values)
+          Card(
+              child: ListTile(
+            leading: Icon(switch (difficulty) {
+              PuzzleDifficulty.easy => Icons.eco_outlined,
+              PuzzleDifficulty.medium => Icons.park_outlined,
+              PuzzleDifficulty.hard => Icons.forest_outlined,
+            }),
+            title: Text(difficulty.label),
+            subtitle: Text('${switch (difficulty) {
+              PuzzleDifficulty.easy => 6,
+              PuzzleDifficulty.medium => 8,
+              PuzzleDifficulty.hard => 10
+            }} \u00d7 ${switch (difficulty) {
+              PuzzleDifficulty.easy => 6,
+              PuzzleDifficulty.medium => 8,
+              PuzzleDifficulty.hard => 10
+            }}'),
+            trailing: const Icon(Icons.play_arrow_rounded),
+            onTap: () => _open(difficulty),
+          )),
+        const SizedBox(height: 24),
+        Text('R\u00e4tselsammlung',
+            style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 8),
+        Text(
+            '${tentsPuzzleCatalog.length} feste Expeditionen mit dauerhaftem Fortschritt.'),
+        const SizedBox(height: 8),
+        for (final difficulty in PuzzleDifficulty.values)
+          Card(
+            child: ExpansionTile(
+              leading: CircleAvatar(child: Text('${difficulty.index + 1}')),
+              title: Text(tentsChapterTitles[difficulty]!),
+              subtitle: Text(
+                '${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty && _completedIds.contains(p.id)).length} '
+                'von ${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty).length} gel\u00f6st',
+              ),
+              children: [
+                for (final puzzle in tentsPuzzleCatalog
+                    .where((p) => p.difficulty == difficulty))
+                  ListTile(
+                    leading: Icon(_completedIds.contains(puzzle.id)
+                        ? Icons.check_circle_rounded
+                        : Icons.radio_button_unchecked_rounded),
+                    title: Text(puzzle.title),
+                    subtitle: Text('${puzzle.size} \u00d7 ${puzzle.size}'),
+                    trailing: const Icon(Icons.play_arrow_rounded),
+                    onTap: () => _open(difficulty,
+                        selectedPuzzle: puzzle, mode: GameMode.catalog),
+                  ),
+              ],
+            ),
+          ),
+      ]),
+    );
+  }
 }
 
 class TentsGameScreen extends StatefulWidget {

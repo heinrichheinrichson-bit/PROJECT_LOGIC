@@ -173,9 +173,14 @@ void main() {
     expect(find.text('Zufallsr\u00e4tsel'), findsOneWidget);
     expect(find.text('Tagesr\u00e4tsel'), findsOneWidget);
     expect(find.text('Statistik'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('R\u00e4tselsammlung'),
+      280,
+    );
     expect(find.text('R\u00e4tselsammlung'), findsOneWidget);
     expect(find.textContaining('60 feste Expeditionen'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Statistik'));
     await tester.tap(find.text('Statistik'));
     await tester.pumpAndSettle();
     expect(find.text('Zelte & B\u00e4ume-Statistik'), findsOneWidget);
