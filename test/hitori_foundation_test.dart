@@ -143,6 +143,93 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('show hint highlights its cell without applying the answer',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'hitori_rules_guide_seen_v1': true,
+    });
+    final puzzle = const HitoriGenerator().generate(
+      seed: 9114,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    final target = [
+      for (var row = 0; row < puzzle.size; row++)
+        for (var column = 0; column < puzzle.size; column++)
+          if (puzzle.solution.contains((row, column))) (row, column),
+    ].first;
+    await tester.pumpWidget(
+      MaterialApp(home: HitoriGameScreen(puzzle: puzzle)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Hinweis'));
+    await tester.pumpAndSettle();
+    expect(find.text('Auf dem Brett zeigen'), findsOneWidget);
+    await tester.tap(find.text('Auf dem Brett zeigen'));
+    await tester.pump();
+
+    expect(find.text('2 Tipps'), findsOneWidget);
+    expect(
+      find.byKey(ValueKey(
+        'hitori-hint-highlight-${target.$1}-${target.$2}',
+      )),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(RegExp('Feld offen, Hinweisziel')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(ValueKey(
+      'hitori-cell-${target.$1}-${target.$2}',
+    )));
+    await tester.pump();
+    expect(find.bySemanticsLabel(RegExp('Hinweisziel')), findsNothing);
+    expect(find.text('1 Züge'), findsOneWidget);
+  });
+
+  testWidgets('applied hint is a reversible move', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'hitori_rules_guide_seen_v1': true,
+    });
+    final puzzle = const HitoriGenerator().generate(
+      seed: 9115,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    final target = [
+      for (var row = 0; row < puzzle.size; row++)
+        for (var column = 0; column < puzzle.size; column++)
+          if (puzzle.solution.contains((row, column))) (row, column),
+    ].first;
+    await tester.pumpWidget(
+      MaterialApp(home: HitoriGameScreen(puzzle: puzzle)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Hinweis'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hinweis anwenden'));
+    await tester.pump();
+    expect(find.text('2 Tipps'), findsOneWidget);
+    expect(find.text('1 Züge'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp('Feld geschwärzt')),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(find.byIcon(Icons.undo_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.undo_rounded));
+    await tester.pump();
+    expect(
+      find.byKey(ValueKey(
+        'hitori-cell-state-${target.$1}-${target.$2}-open',
+      )),
+      findsOneWidget,
+    );
+    expect(find.text('0 Züge'), findsOneWidget);
+  });
+
   test('saved Hitori game preserves marks and time', () async {
     final puzzle = const HitoriGenerator().generate(
       seed: 9110,

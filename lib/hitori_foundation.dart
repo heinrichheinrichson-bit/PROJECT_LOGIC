@@ -254,11 +254,13 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
   final _redo = <HitoriState>[];
   final _store = HitoriGameStore();
   Timer? _timer;
+  Timer? _hintHighlightTimer;
   int _elapsedSeconds = 0;
   int _moves = 0;
   int _hintsRemaining = 3;
   bool _completionShown = false;
   bool _showConflicts = true;
+  HitoriCell? _hintHighlight;
 
   @override
   void initState() {
@@ -283,6 +285,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _hintHighlightTimer?.cancel();
     super.dispose();
   }
 
@@ -349,7 +352,9 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
 
   void _cycle(int row, int column) {
     if (_completionShown) return;
+    _hintHighlightTimer?.cancel();
     setState(() {
+      _hintHighlight = null;
       _history.add(_state);
       _state = _state.cycle(row, column);
       _redo.clear();
@@ -361,7 +366,9 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
 
   void _undo() {
     if (_history.isEmpty || _completionShown) return;
+    _hintHighlightTimer?.cancel();
     setState(() {
+      _hintHighlight = null;
       _redo.add(_state);
       _state = _history.removeLast();
       if (_moves > 0) _moves--;
@@ -371,7 +378,9 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
 
   void _redoMove() {
     if (_redo.isEmpty || _completionShown) return;
+    _hintHighlightTimer?.cancel();
     setState(() {
+      _hintHighlight = null;
       _history.add(_state);
       _state = _redo.removeLast();
       _moves++;
@@ -381,6 +390,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
 
   Future<void> _restart() async {
     if (!await confirmPuzzleRestart(context) || !mounted) return;
+    _hintHighlightTimer?.cancel();
     setState(() {
       _history.add(_state);
       _state = HitoriState(puzzle: widget.puzzle);
@@ -389,6 +399,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
       _moves = 0;
       _hintsRemaining = 3;
       _completionShown = false;
+      _hintHighlight = null;
     });
     unawaited(_save());
   }
@@ -420,7 +431,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Nur zeigen'),
+            child: const Text('Auf dem Brett zeigen'),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
@@ -429,8 +440,24 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
         ],
       ),
     );
-    if (apply != true || !mounted) return;
+    if (apply == null || !mounted) return;
+    if (!apply) {
+      _hintHighlightTimer?.cancel();
+      setState(() {
+        _hintHighlight = cell;
+        _hintsRemaining--;
+      });
+      _hintHighlightTimer = Timer(const Duration(seconds: 5), () {
+        if (mounted && _hintHighlight == cell) {
+          setState(() => _hintHighlight = null);
+        }
+      });
+      unawaited(_save());
+      return;
+    }
+    _hintHighlightTimer?.cancel();
     setState(() {
+      _hintHighlight = null;
       _history.add(_state);
       final marks = Map<HitoriCell, HitoriCellMark>.from(_state.marks)
         ..[cell] = shade ? HitoriCellMark.shaded : HitoriCellMark.protected;
@@ -447,6 +474,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
     final solution = widget.puzzle.solution.toList();
     final leave = almost && solution.isNotEmpty ? solution.last : null;
     setState(() {
+      _hintHighlight = null;
       _history.add(_state);
       _state = HitoriState(
         puzzle: widget.puzzle,
@@ -590,6 +618,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                       final mark = _state.markAt(row, column);
                       final conflict = duplicate.contains((row, column)) ||
                           adjacent.contains((row, column));
+                      final isHintTarget = _hintHighlight == (row, column);
                       final scheme = Theme.of(context).colorScheme;
                       final isDark =
                           Theme.of(context).brightness == Brightness.dark;
@@ -605,34 +634,58 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                                   ? scheme.surfaceContainerHigh
                                   : scheme.surfaceContainer,
                             };
-                      final borderColor = conflict
-                          ? scheme.error
-                          : switch (mark) {
-                              HitoriCellMark.shaded => isDark
-                                  ? const Color(0xFF566572)
-                                  : const Color(0xFF303840),
-                              HitoriCellMark.protected => scheme.primary,
-                              HitoriCellMark.open => scheme.outlineVariant
-                                  .withValues(alpha: isDark ? 0.42 : 0.28),
-                            };
+                      final borderColor = isHintTarget
+                          ? scheme.primary
+                          : conflict
+                              ? scheme.error
+                              : switch (mark) {
+                                  HitoriCellMark.shaded => isDark
+                                      ? const Color(0xFF566572)
+                                      : const Color(0xFF303840),
+                                  HitoriCellMark.protected => scheme.primary,
+                                  HitoriCellMark.open => scheme.outlineVariant
+                                      .withValues(alpha: isDark ? 0.42 : 0.28),
+                                };
                       return Padding(
                         padding: const EdgeInsets.all(2),
                         child: Semantics(
-                          label: switch (mark) {
+                          key: ValueKey(
+                            'hitori-cell-state-$row-$column-${mark.name}',
+                          ),
+                          label: '${switch (mark) {
                             HitoriCellMark.open => 'Feld offen',
                             HitoriCellMark.shaded => 'Feld geschwärzt',
                             HitoriCellMark.protected =>
                               'Feld als sicher markiert',
-                          },
+                          }}${isHintTarget ? ', Hinweisziel' : ''}',
                           button: true,
                           child: DecoratedBox(
+                            key: isHintTarget
+                                ? ValueKey(
+                                    'hitori-hint-highlight-$row-$column',
+                                  )
+                                : null,
                             decoration: BoxDecoration(
                               color: cellColor,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: borderColor,
-                                width: mark == HitoriCellMark.open ? 1 : 1.5,
+                                width: isHintTarget
+                                    ? 3
+                                    : mark == HitoriCellMark.open
+                                        ? 1
+                                        : 1.5,
                               ),
+                              boxShadow: isHintTarget
+                                  ? [
+                                      BoxShadow(
+                                        color: scheme.primary
+                                            .withValues(alpha: 0.45),
+                                        blurRadius: 12,
+                                        spreadRadius: 1,
+                                      ),
+                                    ]
+                                  : null,
                             ),
                             child: Material(
                               color: Colors.transparent,
@@ -663,6 +716,16 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                                         child: Icon(
                                           Icons.check_circle_outline_rounded,
                                           size: 14,
+                                          color: scheme.primary,
+                                        ),
+                                      ),
+                                    if (isHintTarget)
+                                      Positioned(
+                                        left: 5,
+                                        top: 5,
+                                        child: Icon(
+                                          Icons.lightbulb_rounded,
+                                          size: 15,
                                           color: scheme.primary,
                                         ),
                                       ),
