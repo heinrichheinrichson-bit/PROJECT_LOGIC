@@ -98,6 +98,41 @@ abstract final class AppTheme {
           side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .72)),
         ),
       ),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
+        iconColor: scheme.onSurfaceVariant,
+        titleTextStyle: textTheme.titleMedium?.copyWith(
+          color: scheme.onSurface,
+          fontWeight: FontWeight.w700,
+        ),
+        subtitleTextStyle: textTheme.bodyMedium?.copyWith(
+          color: scheme.onSurfaceVariant,
+          height: 1.3,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      expansionTileTheme: ExpansionTileThemeData(
+        iconColor: scheme.primary,
+        collapsedIconColor: scheme.onSurfaceVariant,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        collapsedShape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 5),
+        childrenPadding: const EdgeInsets.only(bottom: 8),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: scheme.primary,
+        linearTrackColor: scheme.surfaceContainerHigh,
+        linearMinHeight: 7,
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: scheme.inverseSurface,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        textStyle: TextStyle(color: scheme.onInverseSurface),
+        waitDuration: const Duration(milliseconds: 650),
+      ),
       dialogTheme: DialogThemeData(
         backgroundColor: scheme.surfaceContainerHigh,
         surfaceTintColor: Colors.transparent,

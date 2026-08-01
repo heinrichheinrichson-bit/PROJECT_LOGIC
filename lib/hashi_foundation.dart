@@ -6,9 +6,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
+import 'core/presentation/puzzle_hub_components.dart';
 import 'core/statistics/game_statistics.dart';
 import 'app_preferences.dart';
 import 'game_storage.dart';
@@ -770,6 +772,8 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final accent = AppTheme.gameColors['hashi']!;
+    final progress = _completed.length / hashiPuzzleCatalog.length;
     return Scaffold(
       appBar: AppBar(title: const Text('Hashi')),
       body: Center(
@@ -780,46 +784,15 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: colors.secondaryContainer,
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.hub_rounded,
-                        size: 54,
-                        color: colors.onSecondaryContainer,
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        'Baue ein gemeinsames Brückennetz',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${_completed.length} von ${hashiPuzzleCatalog.length} Rätseln gelöst',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                      ),
-                      const SizedBox(height: 14),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(99),
-                        child: LinearProgressIndicator(
-                          minHeight: 8,
-                          value: _completed.length / hashiPuzzleCatalog.length,
-                          backgroundColor:
-                              colors.surface.withValues(alpha: 0.55),
-                        ),
-                      ),
-                    ],
-                  ),
+                PuzzleHubHeader(
+                  icon: Icons.hub_rounded,
+                  title: 'Baue ein gemeinsames Brückennetz',
+                  description:
+                      'Verbinde alle Inseln zu einem einzigen Netz – ohne Kreuzungen.',
+                  accent: accent,
+                  progress: progress,
+                  progressLabel:
+                      '${_completed.length} von ${hashiPuzzleCatalog.length} Rätseln gelöst',
                 ),
                 const SizedBox(height: 20),
                 Card(
@@ -854,20 +827,25 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                FilledButton.icon(
-                  onPressed: () => _openPuzzle(_nextPuzzle),
-                  icon: const Icon(Icons.play_arrow_rounded),
-                  label: Text(
-                    _completed.isEmpty
-                        ? 'Erste Herausforderung'
-                        : _completed.length == hashiPuzzleCatalog.length
-                            ? 'Noch einmal spielen'
-                            : 'Nächstes ungelöstes Rätsel',
-                  ),
+                PuzzleHubAction(
+                  icon: Icons.play_arrow_rounded,
+                  title: _completed.isEmpty
+                      ? 'Erste Herausforderung'
+                      : _completed.length == hashiPuzzleCatalog.length
+                          ? 'Noch einmal spielen'
+                          : 'Nächstes ungelöstes Rätsel',
+                  subtitle: 'Direkt mit deiner Sammlung weitermachen',
+                  accent: accent,
+                  prominent: true,
+                  onTap: () => _openPuzzle(_nextPuzzle),
                 ),
                 const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () async {
+                PuzzleHubAction(
+                  icon: Icons.apps_rounded,
+                  title: 'Rätselsammlung',
+                  subtitle: '50 handverlesene Brückennetze entdecken',
+                  accent: accent,
+                  onTap: () async {
                     await Navigator.of(context).push(
                       MaterialPageRoute<void>(
                         builder: (_) => const HashiCatalogScreen(),
@@ -875,33 +853,37 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                     );
                     await _refreshProgress();
                   },
-                  icon: const Icon(Icons.apps_rounded),
-                  label: const Text('Rätselsammlung'),
                 ),
                 const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(
+                PuzzleHubAction(
+                  icon: Icons.auto_awesome_rounded,
+                  title: 'Zufallsrätsel',
+                  subtitle: 'Ein neues Brückennetz erzeugen lassen',
+                  accent: accent,
+                  onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
                       builder: (_) => const HashiRandomSetupScreen(),
                     ),
                   ),
-                  icon: const Icon(Icons.auto_awesome_rounded),
-                  label: const Text('Zufallsrätsel'),
                 ),
                 if (widget.onOpenDaily != null) ...[
                   const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: widget.onOpenDaily,
-                    icon: const Icon(Icons.calendar_today_outlined),
-                    label: const Text('Tagesrätsel & Kalender'),
+                  PuzzleHubAction(
+                    icon: Icons.calendar_today_outlined,
+                    title: 'Tagesrätsel & Kalender',
+                    subtitle: 'Heute spielen oder vergangene Tage nachholen',
+                    accent: accent,
+                    onTap: widget.onOpenDaily,
                   ),
                 ],
                 if (widget.onOpenStatistics != null) ...[
                   const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: widget.onOpenStatistics,
-                    icon: const Icon(Icons.insights_outlined),
-                    label: const Text('Hashi-Statistik'),
+                  PuzzleHubAction(
+                    icon: Icons.insights_outlined,
+                    title: 'Hashi-Statistik',
+                    subtitle: 'Bestzeiten, Spielzeit und Fortschritt',
+                    accent: accent,
+                    onTap: widget.onOpenStatistics,
                   ),
                 ],
                 const SizedBox(height: 12),
