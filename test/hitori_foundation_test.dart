@@ -1,10 +1,15 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/core/domain/game_identity.dart';
 import 'package:project_logic_prototype/features/hitori/domain/hitori_generator.dart';
 import 'package:project_logic_prototype/features/hitori/domain/hitori_puzzle.dart';
 import 'package:project_logic_prototype/features/hitori/domain/hitori_solver.dart';
+import 'package:project_logic_prototype/hitori_foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
+
   test('state enforces all three Hitori rules', () {
     const puzzle = HitoriPuzzle(
       id: 'rules',
@@ -50,5 +55,51 @@ void main() {
       expect(solver.hasUniqueSolution(first), isTrue);
       expect(solver.solve(first), first.solution);
     }
+  });
+
+  testWidgets('Hitori fits a narrow phone and supports test completion',
+      (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final puzzle = const HitoriGenerator().generate(
+      seed: 9112,
+      difficulty: PuzzleDifficulty.hard,
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: HitoriGameScreen(puzzle: puzzle)),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('Tippen: hell'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.bug_report_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sofort lösen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Hitori gelöst!'), findsOneWidget);
+    expect(find.text('Testabschluss · keine Statistik'), findsOneWidget);
+  });
+
+  test('saved Hitori game preserves marks and time', () async {
+    final puzzle = const HitoriGenerator().generate(
+      seed: 9110,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    final cell = puzzle.solution.first;
+    final store = HitoriGameStore();
+    await store.save(SavedHitoriGame(
+      puzzle: puzzle,
+      marks: {cell: HitoriCellMark.shaded},
+      elapsedSeconds: 64,
+      moves: 3,
+      hintsRemaining: 2,
+    ));
+    final restored = await store.load();
+    expect(restored, isNotNull);
+    expect(restored!.marks[cell], HitoriCellMark.shaded);
+    expect(restored.elapsedSeconds, 64);
+    expect(restored.moves, 3);
   });
 }

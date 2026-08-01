@@ -15,6 +15,7 @@ import 'game_logic.dart';
 import 'game_storage.dart';
 import 'hint_engine.dart';
 import 'hashi_foundation.dart';
+import 'hitori_foundation.dart';
 import 'futoshiki_foundation.dart';
 import 'player_progress_system.dart';
 import 'slitherlink_foundation.dart';
@@ -314,6 +315,18 @@ class _HomeScreenState extends State<HomeScreen> {
                               );
                             },
                           ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _HomeAction(
+                      icon: Icons.filter_b_and_w_rounded,
+                      title: 'Hitori',
+                      subtitle: 'Neu · Doppelte Zahlen geschickt schwärzen',
+                      enabled: true,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const HitoriHubScreen(),
                         ),
                       ),
                     ),
