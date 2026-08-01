@@ -1389,11 +1389,13 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   int elapsedSeconds = 0;
   int? _elapsedBeforeReset;
   bool _completionRecorded = false;
+  bool _developerCompletion = false;
   CellPosition? _selectedCell;
   CellPosition? _hintCell;
   Set<CellPosition> _hintRelatedCells = const {};
   HintBudget _hintBudget = const HintBudget();
   int _hintsUsed = 0;
+  bool _checkingExistingGame = false;
 
   @override
   void initState() {
@@ -1406,11 +1408,14 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       puzzle.restoreEditableValues(savedGame.values);
       elapsedSeconds = savedGame.elapsedSeconds;
     } else {
-      _saveGame();
+      _checkingExistingGame = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_protectExistingGame());
+      });
     }
 
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && !puzzle.isSolved) {
+      if (mounted && !puzzle.isSolved && !_checkingExistingGame) {
         setState(() => elapsedSeconds++);
         if (elapsedSeconds % 5 == 0) _saveGame();
       }
@@ -1437,7 +1442,67 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _timer.cancel();
+    if (!_checkingExistingGame && !puzzle.isSolved) unawaited(_saveGame());
     super.dispose();
+  }
+
+  Future<void> _protectExistingGame() async {
+    final existing = await _storage.loadActiveGame();
+    if (!mounted) return;
+    if (existing == null) {
+      _checkingExistingGame = false;
+      await _saveGame();
+      return;
+    }
+    final definition = existing.definition ??
+        binaryPuzzleCatalog
+            .where((candidate) => candidate.id == existing.puzzleId)
+            .firstOrNull;
+    if (definition == null) {
+      await _storage.clearActiveGame();
+      _checkingExistingGame = false;
+      await _saveGame();
+      return;
+    }
+    final resume = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.save_outlined),
+        title: const Text('Offenes Binairo-Rätsel'),
+        content: const Text(
+          'Du hast bereits ein begonnenes Binairo-Rätsel. Möchtest du es fortsetzen oder mit dem neuen Rätsel beginnen?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Neu beginnen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Fortsetzen'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (resume == true) {
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(
+          builder: (_) => BinaryPuzzleScreen(
+            definition: definition,
+            savedGame: existing,
+            titleOverride: existing.titleOverride,
+            storeDefinition: existing.isGenerated,
+            source: existing.source,
+          ),
+        ),
+      );
+      return;
+    }
+    _checkingExistingGame = false;
+    await _storage.clearActiveGame();
+    await _saveGame();
   }
 
   @override
@@ -1802,15 +1867,19 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       _hintRelatedCells = const {};
       switch (action) {
         case _DeveloperAction.almostSolved:
+          _developerCompletion = true;
           puzzle.fillWithSolution(leaveOneEmpty: true);
           break;
         case _DeveloperAction.solve:
+          _developerCompletion = true;
           puzzle.fillWithSolution();
           break;
         case _DeveloperAction.error:
+          _developerCompletion = true;
           puzzle.createTestError();
           break;
         case _DeveloperAction.reset:
+          _developerCompletion = false;
           puzzle.reset();
           break;
       }
@@ -1828,7 +1897,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
     String? collectionProgress;
     if (!_completionRecorded) {
       _completionRecorded = true;
-      if (widget.saveProgress) {
+      if (widget.saveProgress && !_developerCompletion) {
         if (widget.source == PuzzleSource.catalog) {
           previousBestSeconds =
               (await _storage.loadResults())[widget.definition.id]?.bestSeconds;
@@ -1901,10 +1970,15 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                     ? 'Die Spielserie ist für heute gesichert.'
                     : 'Alle Regeln sind erfüllt.'),
                 const SizedBox(height: 16),
-                if (isNewRecord)
+                if (isNewRecord && !_developerCompletion)
                   const Chip(
                     avatar: Icon(Icons.workspace_premium_outlined),
                     label: Text('Neue Bestzeit'),
+                  ),
+                if (_developerCompletion)
+                  const Chip(
+                    avatar: Icon(Icons.science_outlined),
+                    label: Text('Testabschluss · keine Statistik'),
                   ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -2084,6 +2158,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       puzzle.reset();
       elapsedSeconds = 0;
       _completionRecorded = false;
+      _developerCompletion = false;
       _selectedCell = null;
       _hintCell = null;
       _hintRelatedCells = const {};

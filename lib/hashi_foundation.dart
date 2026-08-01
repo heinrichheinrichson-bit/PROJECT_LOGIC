@@ -1300,6 +1300,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
   HintBudget _hintBudget = const HintBudget();
   int _hintsUsed = 0;
   bool _checkingExistingGame = false;
+  bool _developerCompletion = false;
 
   @override
   void initState() {
@@ -1463,11 +1464,11 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
     _completionShown = true;
     int? previousBestSeconds;
     String? collectionProgress;
-    if (widget.mode == GameMode.catalog) {
+    if (!_developerCompletion && widget.mode == GameMode.catalog) {
       previousBestSeconds = (await _gameStorage
               .loadResults())['${GameType.hashi.name}:${widget.puzzle.id}']
           ?.bestSeconds;
-    } else {
+    } else if (!_developerCompletion) {
       previousBestSeconds = GameStatistics.fromAttempts(
         await _gameStorage.loadAttempts(),
         gameType: GameType.hashi,
@@ -1479,7 +1480,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
           )
           .bestSeconds;
     }
-    if (widget.mode == GameMode.catalog) {
+    if (!_developerCompletion && widget.mode == GameMode.catalog) {
       await _progressStore.markCompleted(widget.puzzle.id);
       final completed = await _progressStore.loadCompleted();
       final chapter = hashiChaptersFor().firstWhere(
@@ -1493,18 +1494,20 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
           '${chapter.title}: $chapterSolved/${chapter.puzzles.length} · '
           'Sammlung: ${completed.length}/${hashiPuzzleCatalog.length}';
     }
-    await _gameStorage.recordCompletion(
-      puzzleId: widget.puzzle.id,
-      elapsedSeconds: _elapsedSeconds,
-      gameType: GameType.hashi,
-      source: widget.mode,
-      difficulty: widget.puzzle.sharedDifficulty,
-      boardSize: widget.puzzle.size,
-      moves: _moves,
-      hintsUsed: _hintsUsed,
-      rewardedHints: _hintBudget.rewardedHints,
-    );
-    await _saveStore.clear();
+    if (!_developerCompletion) {
+      await _gameStorage.recordCompletion(
+        puzzleId: widget.puzzle.id,
+        elapsedSeconds: _elapsedSeconds,
+        gameType: GameType.hashi,
+        source: widget.mode,
+        difficulty: widget.puzzle.sharedDifficulty,
+        boardSize: widget.puzzle.size,
+        moves: _moves,
+        hintsUsed: _hintsUsed,
+        rewardedHints: _hintBudget.rewardedHints,
+      );
+      await _saveStore.clear();
+    }
     if (!mounted) return;
     final isNewRecord =
         previousBestSeconds == null || _elapsedSeconds < previousBestSeconds;
@@ -1522,10 +1525,17 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 18),
-            if (isNewRecord) ...[
+            if (isNewRecord && !_developerCompletion) ...[
               const Chip(
                 avatar: Icon(Icons.workspace_premium_outlined),
                 label: Text('Neue Bestzeit'),
+              ),
+              const SizedBox(height: 10),
+            ],
+            if (_developerCompletion) ...[
+              const Chip(
+                avatar: Icon(Icons.science_outlined),
+                label: Text('Testabschluss · keine Statistik'),
               ),
               const SizedBox(height: 10),
             ],
@@ -1627,6 +1637,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
           _selectedIsland = null;
           _completionShown = false;
           _moves = 0;
+          _developerCompletion = true;
         });
         _showActionMessage('Bis auf eine Brücke gelöst');
         return;
@@ -1641,6 +1652,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
           _selectedIsland = null;
           _completionShown = false;
           _moves = 0;
+          _developerCompletion = true;
         });
         await _showCompletionIfSolved();
         return;
@@ -1661,6 +1673,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
           _selectedIsland = null;
           _completionShown = false;
           _moves = 0;
+          _developerCompletion = true;
         });
         _showActionMessage('Fehlerzustand erzeugt');
         return;
@@ -1761,6 +1774,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
       _selectedIsland = null;
       _actionMessage = null;
       _completionShown = false;
+      _developerCompletion = false;
       if (restoresRestart) {
         _moves = _movesBeforeRestart;
         _elapsedSeconds = _elapsedBeforeRestart;
@@ -1888,6 +1902,7 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
       _selectedIsland = null;
       _actionMessage = null;
       _completionShown = false;
+      _developerCompletion = false;
       _elapsedSeconds = 0;
       _moves = 0;
     });
