@@ -125,6 +125,10 @@ void main() {
       marks: {editable: TentsCellMark.grass},
       elapsedSeconds: 83,
       moves: 7,
+      hintsRemaining: 1,
+      hintsUsed: 2,
+      rewardedHints: 1,
+      autoGrass: false,
     ));
     final restored = await TentsGameStore().load();
     expect(restored, isNotNull);
@@ -132,6 +136,10 @@ void main() {
     expect(restored.marks[editable], TentsCellMark.grass);
     expect(restored.elapsedSeconds, 83);
     expect(restored.moves, 7);
+    expect(restored.hintsRemaining, 1);
+    expect(restored.hintsUsed, 2);
+    expect(restored.rewardedHints, 1);
+    expect(restored.autoGrass, isFalse);
   });
 
   testWidgets('game fits a narrow phone and supports test completion',
@@ -154,5 +162,34 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Lager vollständig!'), findsOneWidget);
     expect(find.textContaining('Testabschluss'), findsOneWidget);
+  });
+
+  testWidgets('empty hint budget offers a simulated rewarded hint',
+      (tester) async {
+    final puzzle = const TentsGenerator().generate(
+      seed: 20260802,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: TentsGameScreen(
+        puzzle: puzzle,
+        savedGame: SavedTentsGame(
+          puzzle: puzzle,
+          marks: const {},
+          elapsedSeconds: 0,
+          moves: 0,
+          hintsRemaining: 0,
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Hinweis'));
+    await tester.pumpAndSettle();
+    expect(find.text('Keine Tipps mehr'), findsOneWidget);
+    await tester.tap(find.text('Werbung simulieren'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Werbung abschließen'));
+    await tester.pumpAndSettle();
+    expect(find.text('1 Tipps'), findsOneWidget);
   });
 }

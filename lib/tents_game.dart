@@ -4,22 +4,33 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_preferences.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
+import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/tents/domain/tents_generator.dart';
 import 'features/tents/domain/tents_puzzle.dart';
 import 'game_storage.dart';
 
 class SavedTentsGame {
-  const SavedTentsGame(
-      {required this.puzzle,
-      required this.marks,
-      required this.elapsedSeconds,
-      required this.moves});
+  const SavedTentsGame({
+    required this.puzzle,
+    required this.marks,
+    required this.elapsedSeconds,
+    required this.moves,
+    this.hintsRemaining = 3,
+    this.hintsUsed = 0,
+    this.rewardedHints = 0,
+    this.autoGrass = true,
+  });
   final TentsPuzzle puzzle;
   final Map<TentsCell, TentsCellMark> marks;
   final int elapsedSeconds;
   final int moves;
+  final int hintsRemaining;
+  final int hintsUsed;
+  final int rewardedHints;
+  final bool autoGrass;
 
   Map<String, Object?> toJson() => {
         'version': 1,
@@ -40,6 +51,10 @@ class SavedTentsGame {
         ],
         'elapsedSeconds': elapsedSeconds,
         'moves': moves,
+        'hintsRemaining': hintsRemaining,
+        'hintsUsed': hintsUsed,
+        'rewardedHints': rewardedHints,
+        'autoGrass': autoGrass,
       };
 
   factory SavedTentsGame.fromJson(Map<String, Object?> json) {
@@ -67,6 +82,10 @@ class SavedTentsGame {
       },
       elapsedSeconds: json['elapsedSeconds']! as int,
       moves: json['moves']! as int,
+      hintsRemaining: json['hintsRemaining'] as int? ?? 3,
+      hintsUsed: json['hintsUsed'] as int? ?? 0,
+      rewardedHints: json['rewardedHints'] as int? ?? 0,
+      autoGrass: json['autoGrass'] as bool? ?? true,
     );
   }
 }
@@ -220,6 +239,12 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
   int _moves = 0;
   bool _completed = false;
   bool _showConflicts = true;
+  bool _autoGrass = true;
+  int _hintsRemaining = 3;
+  int _hintsUsed = 0;
+  int _rewardedHints = 0;
+  TentsCell? _hintHighlight;
+  Timer? _hintHighlightTimer;
 
   @override
   void initState() {
@@ -227,6 +252,10 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
     _state = TentsState(puzzle: widget.puzzle, marks: widget.savedGame?.marks);
     _elapsed = widget.savedGame?.elapsedSeconds ?? 0;
     _moves = widget.savedGame?.moves ?? 0;
+    _autoGrass = widget.savedGame?.autoGrass ?? true;
+    _hintsRemaining = widget.savedGame?.hintsRemaining ?? 3;
+    _hintsUsed = widget.savedGame?.hintsUsed ?? 0;
+    _rewardedHints = widget.savedGame?.rewardedHints ?? 0;
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && !_completed) {
         setState(() => _elapsed++);
@@ -238,6 +267,7 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _hintHighlightTimer?.cancel();
     super.dispose();
   }
 
@@ -245,12 +275,19 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
       puzzle: widget.puzzle,
       marks: _state.marks,
       elapsedSeconds: _elapsed,
-      moves: _moves));
+      moves: _moves,
+      hintsRemaining: _hintsRemaining,
+      hintsUsed: _hintsUsed,
+      rewardedHints: _rewardedHints,
+      autoGrass: _autoGrass));
   void _tap(int row, int column) {
     if (_completed || widget.puzzle.trees.contains((row, column))) return;
     setState(() {
       _history.add(_state);
       _state = _state.cycle(row, column);
+      if (_autoGrass && _state.isTent(row, column)) {
+        _state = _withAutomaticGrass(_state);
+      }
       _redo.clear();
       _moves++;
     });
@@ -287,8 +324,208 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
       _elapsed = 0;
       _moves = 0;
       _completed = false;
+      _hintsRemaining = 3;
+      _hintsUsed = 0;
+      _rewardedHints = 0;
+      _hintHighlight = null;
     });
     await _save();
+  }
+
+  TentsState _withAutomaticGrass(TentsState state) {
+    final marks = Map<TentsCell, TentsCellMark>.from(state.marks);
+    final size = widget.puzzle.size;
+    for (final tent in state.tents) {
+      for (var row = tent.$1 - 1; row <= tent.$1 + 1; row++) {
+        for (var column = tent.$2 - 1; column <= tent.$2 + 1; column++) {
+          final cell = (row, column);
+          if (row >= 0 &&
+              row < size &&
+              column >= 0 &&
+              column < size &&
+              cell != tent &&
+              !widget.puzzle.trees.contains(cell) &&
+              marks[cell] != TentsCellMark.tent) {
+            marks[cell] = TentsCellMark.grass;
+          }
+        }
+      }
+    }
+    for (var index = 0; index < size; index++) {
+      final rowFull = state.tents.where((cell) => cell.$1 == index).length ==
+          widget.puzzle.rowCounts[index];
+      final columnFull = state.tents.where((cell) => cell.$2 == index).length ==
+          widget.puzzle.columnCounts[index];
+      for (var other = 0; other < size; other++) {
+        final rowCell = (index, other);
+        final columnCell = (other, index);
+        if (rowFull &&
+            !widget.puzzle.trees.contains(rowCell) &&
+            marks[rowCell] != TentsCellMark.tent) {
+          marks[rowCell] = TentsCellMark.grass;
+        }
+        if (columnFull &&
+            !widget.puzzle.trees.contains(columnCell) &&
+            marks[columnCell] != TentsCellMark.tent) {
+          marks[columnCell] = TentsCellMark.grass;
+        }
+      }
+    }
+    return TentsState(puzzle: widget.puzzle, marks: marks);
+  }
+
+  Future<void> _hint() async {
+    if (_completed) return;
+    final premium =
+        PreferencesScope.maybeOf(context)?.premiumSimulationEnabled ?? false;
+    if (!premium && _hintsRemaining <= 0) {
+      if (!await showRewardedHintSimulation(context) || !mounted) return;
+      setState(() {
+        _hintsRemaining++;
+        _rewardedHints++;
+      });
+      unawaited(_save());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Ein zus\u00e4tzlicher Tipp ist verf\u00fcgbar.')),
+      );
+      return;
+    }
+    final hint = _findHint();
+    if (hint == null) return;
+    final apply = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        icon: const Icon(Icons.lightbulb_outline_rounded),
+        title: Text(hint.title),
+        content: Text(hint.explanation),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialog, false),
+            child: const Text('Auf dem Brett zeigen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialog, true),
+            child: const Text('Hinweis anwenden'),
+          ),
+        ],
+      ),
+    );
+    if (apply == null || !mounted) return;
+    _hintHighlightTimer?.cancel();
+    setState(() {
+      if (!premium) _hintsRemaining--;
+      _hintsUsed++;
+      _hintHighlight = hint.cell;
+      if (apply) {
+        _history.add(_state);
+        final marks = Map<TentsCell, TentsCellMark>.from(_state.marks)
+          ..[hint.cell] = hint.mark;
+        _state = TentsState(puzzle: widget.puzzle, marks: marks);
+        if (_autoGrass && hint.mark == TentsCellMark.tent) {
+          _state = _withAutomaticGrass(_state);
+        }
+        _redo.clear();
+        _moves++;
+      }
+    });
+    if (!apply) {
+      _hintHighlightTimer = Timer(const Duration(seconds: 5), () {
+        if (mounted && _hintHighlight == hint.cell) {
+          setState(() => _hintHighlight = null);
+        }
+      });
+    }
+    unawaited(_save());
+    if (_state.isSolved) unawaited(_finish(test: false));
+  }
+
+  ({TentsCell cell, TentsCellMark mark, String title, String explanation})?
+      _findHint() {
+    final size = widget.puzzle.size;
+    bool unresolved(TentsCell cell) =>
+        !widget.puzzle.trees.contains(cell) &&
+        _state.markAt(cell.$1, cell.$2) == TentsCellMark.unknown;
+    for (final tent in _state.tents) {
+      if (!widget.puzzle.solution.contains(tent)) {
+        return (
+          cell: tent,
+          mark: TentsCellMark.grass,
+          title: 'Widerspruch aufl\u00f6sen',
+          explanation: 'Das Zelt auf Feld ${tent.$1 + 1}/${tent.$2 + 1} '
+              'passt nicht zu allen B\u00e4umen und Randzahlen. Markiere das '
+              'Feld stattdessen als Gras.',
+        );
+      }
+    }
+    for (var index = 0; index < size; index++) {
+      for (final isRow in [true, false]) {
+        final cells = [
+          for (var other = 0; other < size; other++)
+            isRow ? (index, other) : (other, index),
+        ];
+        final target = isRow
+            ? widget.puzzle.rowCounts[index]
+            : widget.puzzle.columnCounts[index];
+        final placed = cells.where(_state.tents.contains).length;
+        final open = cells.where(unresolved).toList();
+        final line = isRow ? 'Zeile' : 'Spalte';
+        if (placed == target && open.isNotEmpty) {
+          return (
+            cell: open.first,
+            mark: TentsCellMark.grass,
+            title: '$line bereits erf\u00fcllt',
+            explanation: '$line ${index + 1} enth\u00e4lt bereits alle '
+                '$target Zelte. Feld ${open.first.$1 + 1}/'
+                '${open.first.$2 + 1} kann Gras werden.',
+          );
+        }
+        if (target - placed == open.length && open.isNotEmpty) {
+          return (
+            cell: open.first,
+            mark: TentsCellMark.tent,
+            title: 'Alle freien Felder werden gebraucht',
+            explanation: 'In $line ${index + 1} fehlen noch '
+                '${target - placed} Zelte und genau so viele Felder sind '
+                'offen. Setze ein Zelt auf ${open.first.$1 + 1}/'
+                '${open.first.$2 + 1}.',
+          );
+        }
+      }
+    }
+    for (final tent in _state.tents) {
+      for (var row = tent.$1 - 1; row <= tent.$1 + 1; row++) {
+        for (var column = tent.$2 - 1; column <= tent.$2 + 1; column++) {
+          final cell = (row, column);
+          if (row >= 0 &&
+              row < size &&
+              column >= 0 &&
+              column < size &&
+              unresolved(cell)) {
+            return (
+              cell: cell,
+              mark: TentsCellMark.grass,
+              title: 'Zelte d\u00fcrfen sich nicht ber\u00fchren',
+              explanation: 'Feld ${row + 1}/${column + 1} liegt direkt '
+                  'neben einem Zelt und kann deshalb Gras werden.',
+            );
+          }
+        }
+      }
+    }
+    for (final cell in widget.puzzle.solution) {
+      if (_state.markAt(cell.$1, cell.$2) != TentsCellMark.tent) {
+        return (
+          cell: cell,
+          mark: TentsCellMark.tent,
+          title: 'Kombinierter Schluss',
+          explanation: 'Betrachte B\u00e4ume, Randzahlen und ausgeschlossene '
+              'Nachbarfelder gemeinsam. Auf Feld ${cell.$1 + 1}/'
+              '${cell.$2 + 1} bleibt nur ein Zelt m\u00f6glich.',
+        );
+      }
+    }
+    return null;
   }
 
   void _debugSolve(bool almost) {
@@ -318,7 +555,9 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
           difficulty: widget.puzzle.difficulty,
           boardSize: widget.puzzle.size,
           gameType: GameType.tents,
-          moves: _moves);
+          moves: _moves,
+          hintsUsed: _hintsUsed,
+          rewardedHints: _rewardedHints);
     }
     if (!mounted) return;
     await showDialog<void>(
@@ -380,6 +619,10 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                             value: 'solve', child: Text('Sofort l\u00f6sen'))
                       ]),
               IconButton(
+                  onPressed: _hint,
+                  tooltip: 'Hinweis',
+                  icon: const Icon(Icons.lightbulb_outline_rounded)),
+              IconButton(
                   onPressed: _restart,
                   tooltip: 'Neu starten',
                   icon: const Icon(Icons.restart_alt_rounded))
@@ -396,7 +639,15 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                         Chip(
                             avatar:
                                 const Icon(Icons.touch_app_outlined, size: 18),
-                            label: Text('$_moves Z\u00fcge'))
+                            label: Text('$_moves Z\u00fcge')),
+                        Chip(
+                            avatar:
+                                const Icon(Icons.lightbulb_outline, size: 18),
+                            label: Text((PreferencesScope.maybeOf(context)
+                                        ?.premiumSimulationEnabled ??
+                                    false)
+                                ? 'Premium'
+                                : '$_hintsRemaining Tipps'))
                       ]),
                       const SizedBox(height: 12),
                       const Text('Tippen: leer \u2192 Zelt \u2192 Gras'),
@@ -408,6 +659,7 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                               child: _TentsBoard(
                                   state: _state,
                                   conflicts: conflicts,
+                                  hintHighlight: _hintHighlight,
                                   onTap: _tap))),
                       const SizedBox(height: 16),
                       Row(children: [
@@ -435,6 +687,16 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                                         const Text('Noch ein R\u00e4tsel')))),
                       SwitchListTile(
                           contentPadding: EdgeInsets.zero,
+                          title: const Text('Gras automatisch markieren'),
+                          subtitle: const Text(
+                              'Markiert sichere Ausschlussfelder nach einem gesetzten Zelt.'),
+                          value: _autoGrass,
+                          onChanged: (value) {
+                            setState(() => _autoGrass = value);
+                            unawaited(_save());
+                          }),
+                      SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
                           title: const Text('Regelfehler markieren'),
                           subtitle: const Text(
                               'Zeigt sich ber\u00fchrende Zelte und falsche Anzahlen.'),
@@ -457,9 +719,13 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
 
 class _TentsBoard extends StatelessWidget {
   const _TentsBoard(
-      {required this.state, required this.conflicts, required this.onTap});
+      {required this.state,
+      required this.conflicts,
+      required this.hintHighlight,
+      required this.onTap});
   final TentsState state;
   final Set<TentsCell> conflicts;
+  final TentsCell? hintHighlight;
   final void Function(int, int) onTap;
   @override
   Widget build(BuildContext context) {
@@ -479,19 +745,32 @@ class _TentsBoard extends StatelessWidget {
           final row = index ~/ (size + 1), column = index % (size + 1);
           if (row == 0 && column == 0) return const SizedBox.shrink();
           if (row == 0) {
+            final columnIndex = column - 1;
+            final fulfilled =
+                state.tents.where((cell) => cell.$2 == columnIndex).length ==
+                    state.puzzle.columnCounts[columnIndex];
             return Center(
-                child: Text('${state.puzzle.columnCounts[column - 1]}',
-                    style: const TextStyle(fontWeight: FontWeight.bold)));
+                child: Text('${state.puzzle.columnCounts[columnIndex]}',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: fulfilled ? scheme.primary : null)));
           }
           if (column == 0) {
+            final rowIndex = row - 1;
+            final fulfilled =
+                state.tents.where((cell) => cell.$1 == rowIndex).length ==
+                    state.puzzle.rowCounts[rowIndex];
             return Center(
-                child: Text('${state.puzzle.rowCounts[row - 1]}',
-                    style: const TextStyle(fontWeight: FontWeight.bold)));
+                child: Text('${state.puzzle.rowCounts[rowIndex]}',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: fulfilled ? scheme.primary : null)));
           }
           final cell = (row - 1, column - 1),
               tree = state.puzzle.trees.contains(cell),
               mark = state.markAt(cell.$1, cell.$2);
           final conflict = conflicts.contains(cell);
+          final highlighted = hintHighlight == cell;
           return Padding(
               padding: const EdgeInsets.all(1.5),
               child: Material(
@@ -503,7 +782,11 @@ class _TentsBoard extends StatelessWidget {
                               ? scheme.surfaceContainerLowest
                               : scheme.surfaceContainer,
                   shape: RoundedRectangleBorder(
-                      side: BorderSide(color: scheme.outlineVariant),
+                      side: BorderSide(
+                          color: highlighted
+                              ? scheme.primary
+                              : scheme.outlineVariant,
+                          width: highlighted ? 3 : 1),
                       borderRadius: BorderRadius.circular(7)),
                   child: InkWell(
                       onTap: tree ? null : () => onTap(cell.$1, cell.$2),
