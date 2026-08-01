@@ -8,7 +8,8 @@ enum GameType {
   hitori('Hitori'),
   futoshiki('Futoshiki'),
   kakuro('Kakuro'),
-  nurikabe('Nurikabe');
+  nurikabe('Nurikabe'),
+  tents('Zelte & Bäume');
 
   const GameType(this.label);
 
