@@ -1642,6 +1642,10 @@ class SlitherlinkBoard extends StatelessWidget {
               painter: _SlitherlinkPainter(
                 state: state,
                 colors: Theme.of(context).colorScheme,
+                palette: AppTheme.boardPalette(
+                  'slitherlink',
+                  Theme.of(context).brightness,
+                ),
               ),
               size: Size.infinite,
             ),
@@ -1676,10 +1680,15 @@ class SlitherlinkBoard extends StatelessWidget {
 }
 
 class _SlitherlinkPainter extends CustomPainter {
-  const _SlitherlinkPainter({required this.state, required this.colors});
+  const _SlitherlinkPainter({
+    required this.state,
+    required this.colors,
+    required this.palette,
+  });
 
   final SlitherlinkState state;
   final ColorScheme colors;
+  final GameBoardPalette palette;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1687,17 +1696,17 @@ class _SlitherlinkPainter extends CustomPainter {
     final dx = size.width / puzzle.columns;
     final dy = size.height / puzzle.rows;
     final faint = Paint()
-      ..color = colors.outlineVariant.withValues(alpha: 0.35)
+      ..color = palette.muted.withValues(alpha: 0.24)
       ..strokeWidth = 1;
     final line = Paint()
-      ..color = colors.primary
+      ..color = palette.accent
       ..strokeWidth = 5
       ..strokeCap = StrokeCap.round;
     final blocked = Paint()
-      ..color = colors.onSurfaceVariant
+      ..color = palette.muted
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
-    final dot = Paint()..color = colors.onSurface;
+    final dot = Paint()..color = palette.foreground;
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
 
     for (var row = 0; row < puzzle.rows; row++) {
@@ -1709,8 +1718,8 @@ class _SlitherlinkPainter extends CustomPainter {
             text: '$clue',
             style: TextStyle(
               color: satisfied && state.lineIds.isNotEmpty
-                  ? colors.primary
-                  : colors.onSurface,
+                  ? palette.accentAlt
+                  : palette.foreground,
               fontSize: (dx < dy ? dx : dy) * 0.38,
               fontWeight: FontWeight.w700,
             ),
@@ -1765,7 +1774,9 @@ class _SlitherlinkPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SlitherlinkPainter oldDelegate) =>
-      oldDelegate.state != state || oldDelegate.colors != colors;
+      oldDelegate.state != state ||
+      oldDelegate.colors != colors ||
+      oldDelegate.palette != palette;
 }
 
 Iterable<SlitherEdge> _allEdges(SlitherlinkPuzzle puzzle) sync* {

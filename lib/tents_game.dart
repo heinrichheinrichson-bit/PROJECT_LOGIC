@@ -875,10 +875,11 @@ class _TentsBoard extends StatelessWidget {
     final size = state.puzzle.size;
     final scheme = Theme.of(context).colorScheme;
     final darkMode = Theme.of(context).brightness == Brightness.dark;
-    final treeBackground =
-        darkMode ? const Color(0xFF174D32) : const Color(0xFFCDEBD6);
+    final palette =
+        AppTheme.boardPalette('tents', Theme.of(context).brightness);
+    final treeBackground = palette.cellStrong;
     final treeForeground =
-        darkMode ? const Color(0xFFB8F2C9) : const Color(0xFF175C35);
+        darkMode ? const Color(0xFF72F0A3) : const Color(0xFF176A38);
     final pairings = completed
         ? const TentsSolver().pairTrees(state.puzzle, state.tents)
         : const <TentsCell, TentsCell>{};
@@ -900,7 +901,7 @@ class _TentsBoard extends StatelessWidget {
                   child: Text('${state.puzzle.columnCounts[columnIndex]}',
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: fulfilled ? scheme.primary : null)));
+                          color: fulfilled ? palette.accent : null)));
             }
             if (column == 0) {
               final rowIndex = row - 1;
@@ -911,7 +912,7 @@ class _TentsBoard extends StatelessWidget {
                   child: Text('${state.puzzle.rowCounts[rowIndex]}',
                       style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: fulfilled ? scheme.primary : null)));
+                          color: fulfilled ? palette.accent : null)));
             }
             final cell = (row - 1, column - 1),
                 tree = state.puzzle.trees.contains(cell),
@@ -934,8 +935,8 @@ class _TentsBoard extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                         side: BorderSide(
                             color: highlighted
-                                ? scheme.primary
-                                : scheme.outlineVariant,
+                                ? palette.accent
+                                : palette.muted.withValues(alpha: .62),
                             width: highlighted ? 3 : 1),
                         borderRadius: BorderRadius.circular(7)),
                     child: InkWell(
@@ -947,10 +948,10 @@ class _TentsBoard extends StatelessWidget {
                                   size: size >= 10 ? 22 : 30,
                                   color: conflict
                                       ? scheme.onErrorContainer
-                                      : scheme.primary,
+                                      : palette.accent,
                                   accentColor: conflict
                                       ? scheme.errorContainer
-                                      : scheme.onPrimary,
+                                      : palette.foreground,
                                 )
                               : Icon(
                                   tree
@@ -981,7 +982,7 @@ class _TentsBoard extends StatelessWidget {
                     painter: _TreeTentPairingPainter(
                         size: size,
                         pairings: pairings,
-                        color: scheme.primary))))
+                        color: palette.accent))))
       ]);
     });
   }

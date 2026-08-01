@@ -854,29 +854,33 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                       final scheme = Theme.of(context).colorScheme;
                       final isDark =
                           Theme.of(context).brightness == Brightness.dark;
+                      final palette = AppTheme.boardPalette(
+                        'hitori',
+                        Theme.of(context).brightness,
+                      );
                       final cellColor = conflict
                           ? scheme.errorContainer
                           : switch (mark) {
-                              HitoriCellMark.shaded => const Color(0xFF101419),
+                              HitoriCellMark.shaded => isDark
+                                  ? const Color(0xFF020204)
+                                  : const Color(0xFF111015),
                               HitoriCellMark.protected => Color.alphaBlend(
-                                  scheme.primary.withValues(alpha: 0.18),
-                                  scheme.surfaceContainerHigh,
+                                  palette.accent.withValues(alpha: 0.24),
+                                  palette.cellStrong,
                                 ),
-                              HitoriCellMark.open => isDark
-                                  ? scheme.surfaceContainerHigh
-                                  : scheme.surfaceContainer,
+                              HitoriCellMark.open => palette.cell,
                             };
                       final borderColor = isHintTarget
-                          ? scheme.primary
+                          ? palette.accentAlt
                           : conflict
                               ? scheme.error
                               : switch (mark) {
                                   HitoriCellMark.shaded => isDark
-                                      ? const Color(0xFF566572)
+                                      ? palette.muted
                                       : const Color(0xFF303840),
-                                  HitoriCellMark.protected => scheme.primary,
-                                  HitoriCellMark.open => scheme.outlineVariant
-                                      .withValues(alpha: isDark ? 0.42 : 0.28),
+                                  HitoriCellMark.protected => palette.accent,
+                                  HitoriCellMark.open => palette.muted
+                                      .withValues(alpha: isDark ? 0.68 : 0.48),
                                 };
                       return Padding(
                         padding: const EdgeInsets.all(2),
@@ -911,7 +915,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                               boxShadow: isHintTarget
                                   ? [
                                       BoxShadow(
-                                        color: scheme.primary
+                                        color: palette.accentAlt
                                             .withValues(alpha: 0.45),
                                         blurRadius: 12,
                                         spreadRadius: 1,
@@ -937,7 +941,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                                           ?.copyWith(
                                             color: mark == HitoriCellMark.shaded
                                                 ? Colors.white54
-                                                : null,
+                                                : palette.foreground,
                                             fontWeight: FontWeight.w700,
                                           ),
                                     ),
@@ -948,7 +952,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                                         child: Icon(
                                           Icons.check_circle_outline_rounded,
                                           size: 14,
-                                          color: scheme.primary,
+                                          color: palette.accent,
                                         ),
                                       ),
                                     if (isHintTarget)
@@ -958,7 +962,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                                         child: Icon(
                                           Icons.lightbulb_rounded,
                                           size: 15,
-                                          color: scheme.primary,
+                                          color: palette.accentAlt,
                                         ),
                                       ),
                                   ],

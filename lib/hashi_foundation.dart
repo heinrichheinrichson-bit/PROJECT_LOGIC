@@ -2350,6 +2350,10 @@ class HashiBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = AppTheme.boardPalette(
+      'hashi',
+      Theme.of(context).brightness,
+    );
     return LayoutBuilder(
       builder: (context, constraints) {
         final side = math.min(constraints.maxWidth, constraints.maxHeight);
@@ -2379,6 +2383,7 @@ class HashiBoard extends StatelessWidget {
                       incorrectBridges: incorrectBridges,
                       incorrectIslands: incorrectIslands,
                       colorScheme: Theme.of(context).colorScheme,
+                      palette: palette,
                     ),
                   ),
                 ),
@@ -2424,6 +2429,7 @@ class _HashiBoardPainter extends CustomPainter {
     required this.incorrectBridges,
     required this.incorrectIslands,
     required this.colorScheme,
+    required this.palette,
   });
 
   final HashiPuzzle puzzle;
@@ -2434,6 +2440,7 @@ class _HashiBoardPainter extends CustomPainter {
   final List<HashiBridge> incorrectBridges;
   final Set<int> incorrectIslands;
   final ColorScheme colorScheme;
+  final GameBoardPalette palette;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -2447,7 +2454,7 @@ class _HashiBoardPainter extends CustomPainter {
         );
 
     final guidePaint = Paint()
-      ..color = colorScheme.outlineVariant.withValues(alpha: 0.22)
+      ..color = palette.muted.withValues(alpha: 0.20)
       ..style = PaintingStyle.fill;
     final guideRadius = (cell * 0.018).clamp(0.8, 1.6).toDouble();
     for (var row = 0; row < puzzle.size; row++) {
@@ -2465,7 +2472,7 @@ class _HashiBoardPainter extends CustomPainter {
 
     final bridgeWidth = (cell * 0.075).clamp(2.4, 5.2).toDouble();
     final bridgeUnderlay = Paint()
-      ..color = colorScheme.surfaceContainerLowest
+      ..color = palette.board
       ..strokeWidth = bridgeWidth + (cell * 0.075).clamp(2.0, 4.5).toDouble()
       ..strokeCap = StrokeCap.round;
     void drawBridgeLine(Offset start, Offset end, Color color) {
@@ -2485,7 +2492,7 @@ class _HashiBoardPainter extends CustomPainter {
           bridge.to,
         ),
       );
-      final bridgeColor = isIncorrect ? colorScheme.error : colorScheme.primary;
+      final bridgeColor = isIncorrect ? colorScheme.error : palette.accent;
       final start = point(puzzle.islands[bridge.from]);
       final end = point(puzzle.islands[bridge.to]);
       if (bridge.count == 1) {
@@ -2511,7 +2518,7 @@ class _HashiBoardPainter extends CustomPainter {
 
       if (selected || possibleTarget) {
         final haloPaint = Paint()
-          ..color = (selected ? colorScheme.primary : colorScheme.tertiary)
+          ..color = (selected ? palette.accent : palette.accentAlt)
               .withValues(alpha: selected ? 0.18 : 0.13);
         canvas.drawCircle(center, radius + cell * 0.14, haloPaint);
       }
@@ -2523,7 +2530,7 @@ class _HashiBoardPainter extends CustomPainter {
         ));
       canvas.drawShadow(
         shadowPath,
-        colorScheme.shadow.withValues(alpha: 0.28),
+        palette.glow,
         cell * 0.07,
         false,
       );
@@ -2536,24 +2543,24 @@ class _HashiBoardPainter extends CustomPainter {
               ? [colorScheme.errorContainer, colorScheme.errorContainer]
               : fulfilled
                   ? [
-                      colorScheme.primaryContainer,
-                      colorScheme.primaryContainer.withValues(alpha: 0.82),
+                      palette.cellStrong,
+                      palette.cellStrong.withValues(alpha: 0.82),
                     ]
                   : [
-                      colorScheme.secondaryContainer,
-                      colorScheme.secondaryContainer.withValues(alpha: 0.82),
+                      palette.cell,
+                      palette.cell.withValues(alpha: 0.86),
                     ],
         ).createShader(Rect.fromCircle(center: center, radius: radius));
       final outlinePaint = Paint()
         ..color = selected
-            ? colorScheme.primary
+            ? palette.accent
             : possibleTarget
-                ? colorScheme.tertiary
+                ? palette.accentAlt
                 : incorrect
                     ? colorScheme.error
                     : fulfilled
-                        ? colorScheme.primary
-                        : colorScheme.outline
+                        ? palette.accent
+                        : palette.muted
         ..style = PaintingStyle.stroke
         ..strokeWidth = (selected || possibleTarget)
             ? (cell * 0.085).clamp(3.0, 6.0).toDouble()
@@ -2564,7 +2571,7 @@ class _HashiBoardPainter extends CustomPainter {
 
       if (fulfilled && !incorrect) {
         final checkPaint = Paint()
-          ..color = colorScheme.primary
+          ..color = palette.accent
           ..style = PaintingStyle.stroke
           ..strokeWidth = (cell * 0.04).clamp(1.6, 3.0).toDouble()
           ..strokeCap = StrokeCap.round
@@ -2573,7 +2580,7 @@ class _HashiBoardPainter extends CustomPainter {
         canvas.drawCircle(
           checkCenter,
           cell * 0.105,
-          Paint()..color = colorScheme.surfaceContainerLowest,
+          Paint()..color = palette.board,
         );
         final checkPath = Path()
           ..moveTo(checkCenter.dx - cell * 0.045, checkCenter.dy)
@@ -2589,8 +2596,8 @@ class _HashiBoardPainter extends CustomPainter {
             color: incorrect
                 ? colorScheme.onErrorContainer
                 : fulfilled
-                    ? colorScheme.onPrimaryContainer
-                    : colorScheme.onSecondaryContainer,
+                    ? palette.foreground
+                    : palette.foreground,
             fontSize: cell * 0.33,
             fontWeight: FontWeight.w900,
             height: 1,
@@ -2613,7 +2620,8 @@ class _HashiBoardPainter extends CustomPainter {
         oldDelegate.possibleTargets != possibleTargets ||
         oldDelegate.bridgeCounts != bridgeCounts ||
         oldDelegate.incorrectBridges != incorrectBridges ||
-        oldDelegate.colorScheme != colorScheme;
+        oldDelegate.colorScheme != colorScheme ||
+        oldDelegate.palette != palette;
   }
 }
 

@@ -1282,20 +1282,24 @@ class FutoshikiBoard extends StatelessWidget {
     final isSelected = selected == (row, column);
     final isConflict = conflicts.contains((row, column));
     final scheme = Theme.of(context).colorScheme;
+    final palette = AppTheme.boardPalette(
+      'futoshiki',
+      Theme.of(context).brightness,
+    );
     return Material(
       color: isConflict
           ? scheme.errorContainer
           : isSelected
               ? Color.alphaBlend(
-                  scheme.primary.withValues(alpha: 0.16),
-                  scheme.surfaceContainer,
+                  palette.accent.withValues(alpha: 0.22),
+                  palette.cell,
                 )
               : state.isGiven(row, column)
-                  ? scheme.surfaceContainerHighest
-                  : scheme.surfaceContainer,
+                  ? palette.cellStrong
+                  : palette.cell,
       shape: RoundedRectangleBorder(
         side: BorderSide(
-          color: isSelected ? scheme.primary : scheme.outlineVariant,
+          color: isSelected ? palette.accent : palette.muted,
           width: isSelected ? 2 : 1,
         ),
         borderRadius: BorderRadius.circular(10),
@@ -1309,7 +1313,7 @@ class FutoshikiBoard extends StatelessWidget {
                   notes.join('  '),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
+                        color: palette.muted,
                         fontWeight: FontWeight.w600,
                       ),
                 )
@@ -1319,7 +1323,9 @@ class FutoshikiBoard extends StatelessWidget {
                         fontWeight: state.isGiven(row, column)
                             ? FontWeight.w800
                             : FontWeight.w500,
-                        color: isConflict ? scheme.onErrorContainer : null,
+                        color: isConflict
+                            ? scheme.onErrorContainer
+                            : palette.foreground,
                       ),
                 ),
         ),
@@ -1366,12 +1372,16 @@ class FutoshikiBoard extends StatelessWidget {
         conflicts.contains((inequality.firstRow, inequality.firstColumn)) &&
         conflicts.contains((inequality.secondRow, inequality.secondColumn));
     final scheme = Theme.of(context).colorScheme;
+    final palette = AppTheme.boardPalette(
+      'futoshiki',
+      Theme.of(context).brightness,
+    );
     return Text(
       inequality.firstIsLess ? '<' : '>',
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
             height: 1,
             fontWeight: FontWeight.w900,
-            color: invalid ? scheme.error : scheme.onSurfaceVariant,
+            color: invalid ? scheme.error : palette.accentAlt,
           ),
     );
   }

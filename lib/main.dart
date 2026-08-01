@@ -4913,11 +4913,15 @@ class _PuzzleBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final palette = AppTheme.boardPalette(
+      'binairo',
+      Theme.of(context).brightness,
+    );
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        border: Border.all(color: colors.outline, width: 2),
+        color: palette.board,
+        border: Border.all(color: palette.muted, width: 2),
         borderRadius: BorderRadius.circular(18),
       ),
       child: ClipRRect(
@@ -4987,22 +4991,28 @@ class _PuzzleCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final palette = AppTheme.boardPalette(
+      'binairo',
+      Theme.of(context).brightness,
+    );
 
     final background = switch ((value, clue, hasIssue)) {
       (_, _, true) => colors.errorContainer,
-      (null, _, false) => colors.surface,
-      (_, true, false) => colors.secondaryContainer,
-      (CellValue.zero, false, false) => colors.primaryContainer,
-      (CellValue.one, false, false) => colors.tertiaryContainer,
+      (null, _, false) => palette.board,
+      (_, true, false) => palette.cellStrong,
+      (CellValue.zero, false, false) =>
+        Color.alphaBlend(palette.accent.withValues(alpha: .44), palette.board),
+      (CellValue.one, false, false) => Color.alphaBlend(
+          palette.accentAlt.withValues(alpha: .48), palette.board),
     };
 
     final foreground = hasIssue
         ? colors.onErrorContainer
         : clue
-            ? colors.onSecondaryContainer
+            ? palette.foreground
             : value == CellValue.one
-                ? colors.onTertiaryContainer
-                : colors.onPrimaryContainer;
+                ? palette.foreground
+                : palette.foreground;
 
     return Semantics(
       button: !clue,
@@ -5016,18 +5026,18 @@ class _PuzzleCell extends StatelessWidget {
         duration: Duration(milliseconds: animationsEnabled ? 160 : 0),
         decoration: BoxDecoration(
           color: isHint
-              ? colors.primaryContainer
+              ? palette.cellStrong
               : isHintRelated && !hasIssue
                   ? colors.secondaryContainer.withValues(alpha: 0.55)
                   : isRelated && value == null && !hasIssue
-                      ? colors.surfaceContainerHigh
+                      ? palette.cell
                       : background,
           border: Border.all(
             color: isSelected || isHint
-                ? colors.primary
+                ? palette.accent
                 : isHintRelated
-                    ? colors.secondary
-                    : colors.outlineVariant,
+                    ? palette.accentAlt
+                    : palette.muted.withValues(alpha: .55),
             width: isSelected || isHint
                 ? 2.2
                 : isHintRelated
