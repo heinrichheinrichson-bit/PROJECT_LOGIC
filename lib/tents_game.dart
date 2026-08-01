@@ -465,6 +465,11 @@ class _TentsBoard extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = state.puzzle.size;
     final scheme = Theme.of(context).colorScheme;
+    final darkMode = Theme.of(context).brightness == Brightness.dark;
+    final treeBackground =
+        darkMode ? const Color(0xFF174D32) : const Color(0xFFCDEBD6);
+    final treeForeground =
+        darkMode ? const Color(0xFFB8F2C9) : const Color(0xFF175C35);
     return GridView.builder(
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate:
@@ -493,7 +498,7 @@ class _TentsBoard extends StatelessWidget {
                   color: conflict
                       ? scheme.errorContainer
                       : tree
-                          ? scheme.primaryContainer
+                          ? treeBackground
                           : mark == TentsCellMark.grass
                               ? scheme.surfaceContainerLowest
                               : scheme.surfaceContainer,
@@ -509,7 +514,10 @@ class _TentsBoard extends StatelessWidget {
                                 size: size >= 10 ? 22 : 30,
                                 color: conflict
                                     ? scheme.onErrorContainer
-                                    : scheme.onSurface,
+                                    : scheme.primary,
+                                accentColor: conflict
+                                    ? scheme.errorContainer
+                                    : scheme.onPrimary,
                               )
                             : Icon(
                                 tree
@@ -521,7 +529,7 @@ class _TentsBoard extends StatelessWidget {
                                 color: conflict
                                     ? scheme.onErrorContainer
                                     : tree
-                                        ? scheme.onPrimaryContainer
+                                        ? treeForeground
                                         : null,
                               ),
                       ))));
@@ -530,57 +538,62 @@ class _TentsBoard extends StatelessWidget {
 }
 
 class _TentIcon extends StatelessWidget {
-  const _TentIcon({required this.size, required this.color});
+  const _TentIcon({
+    required this.size,
+    required this.color,
+    required this.accentColor,
+  });
 
   final double size;
   final Color color;
+  final Color accentColor;
 
   @override
   Widget build(BuildContext context) => CustomPaint(
         size: Size.square(size),
-        painter: _TentPainter(color),
+        painter: _TentPainter(color, accentColor),
       );
 }
 
 class _TentPainter extends CustomPainter {
-  const _TentPainter(this.color);
+  const _TentPainter(this.color, this.accentColor);
 
   final Color color;
+  final Color accentColor;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final stroke = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = (size.width * .09).clamp(1.8, 2.8)
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final left = Offset(size.width * .08, size.height * .84);
-    final peak = Offset(size.width * .5, size.height * .12);
-    final right = Offset(size.width * .92, size.height * .84);
+    final left = Offset(size.width * .06, size.height * .88);
+    final peak = Offset(size.width * .48, size.height * .08);
+    final right = Offset(size.width * .95, size.height * .88);
+    final tent = Path()
+      ..moveTo(left.dx, left.dy)
+      ..lineTo(peak.dx, peak.dy)
+      ..lineTo(right.dx, right.dy)
+      ..close();
+    canvas.drawPath(tent, Paint()..color = color);
+
     canvas.drawPath(
       Path()
-        ..moveTo(left.dx, left.dy)
-        ..lineTo(peak.dx, peak.dy)
+        ..moveTo(peak.dx, peak.dy)
         ..lineTo(right.dx, right.dy)
+        ..lineTo(size.width * .68, size.height * .88)
         ..close(),
-      stroke,
+      Paint()..color = accentColor.withValues(alpha: .24),
     );
-    canvas.drawLine(peak, Offset(size.width * .5, size.height * .84), stroke);
-    canvas.drawLine(
-      Offset(size.width * .5, size.height * .84),
-      Offset(size.width * .68, size.height * .54),
-      stroke,
-    );
-    canvas.drawLine(
-      Offset(size.width * .18, size.height * .75),
-      Offset(size.width * .82, size.height * .75),
-      stroke,
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width * .34, size.height * .88)
+        ..lineTo(size.width * .5, size.height * .55)
+        ..lineTo(size.width * .7, size.height * .88)
+        ..close(),
+      Paint()..color = accentColor,
     );
   }
 
   @override
-  bool shouldRepaint(_TentPainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(_TentPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.accentColor != accentColor;
 }
 
 String _time(int seconds) =>
