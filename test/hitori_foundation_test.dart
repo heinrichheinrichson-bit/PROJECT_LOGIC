@@ -71,8 +71,12 @@ void main() {
       MaterialApp(home: HitoriGameScreen(puzzle: puzzle)),
     );
     await tester.pumpAndSettle();
+    expect(find.text('So funktioniert Hitori'), findsOneWidget);
+    expect(find.text('Doppelte Zahlen entfernen'), findsOneWidget);
+    await tester.tap(find.text('Verstanden'));
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    expect(find.textContaining('Tippen: hell'), findsOneWidget);
+    expect(find.textContaining('Tippen: unverändert'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.bug_report_outlined));
     await tester.pumpAndSettle();

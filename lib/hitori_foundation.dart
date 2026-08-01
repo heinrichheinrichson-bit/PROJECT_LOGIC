@@ -248,6 +248,7 @@ class HitoriGameScreen extends StatefulWidget {
 }
 
 class _HitoriGameScreenState extends State<HitoriGameScreen> {
+  static const _guideSeenKey = 'hitori_rules_guide_seen_v1';
   late HitoriState _state;
   final _history = <HitoriState>[];
   final _redo = <HitoriState>[];
@@ -274,6 +275,9 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
       }
     });
     unawaited(_save());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_showRulesGuide());
+    });
   }
 
   @override
@@ -289,6 +293,59 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
         moves: _moves,
         hintsRemaining: _hintsRemaining,
       ));
+
+  Future<void> _showRulesGuide({bool force = false}) async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!force && (preferences.getBool(_guideSeenKey) ?? false)) return;
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.school_outlined),
+        title: const Text('So funktioniert Hitori'),
+        content: const SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _HitoriRule(
+                number: '1',
+                title: 'Doppelte Zahlen entfernen',
+                text:
+                    'In jeder Zeile und Spalte darf jede Zahl nur einmal hell bleiben.',
+              ),
+              SizedBox(height: 14),
+              _HitoriRule(
+                number: '2',
+                title: 'Schwarze Felder trennen',
+                text:
+                    'Zwei schwarze Felder dürfen sich niemals oben, unten, links oder rechts berühren.',
+              ),
+              SizedBox(height: 14),
+              _HitoriRule(
+                number: '3',
+                title: 'Helle Fläche verbinden',
+                text:
+                    'Alle hell gebliebenen Felder müssen einen einzigen zusammenhängenden Bereich bilden.',
+              ),
+              SizedBox(height: 18),
+              Text(
+                'Tippen: unverändert → schwarz → sicher hell → unverändert',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Verstanden'),
+          ),
+        ],
+      ),
+    );
+    await preferences.setBool(_guideSeenKey, true);
+  }
 
   void _cycle(int row, int column) {
     if (_completionShown) return;
@@ -474,6 +531,11 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
             ],
           ),
           IconButton(
+            tooltip: 'Regeln',
+            onPressed: () => _showRulesGuide(force: true),
+            icon: const Icon(Icons.help_outline_rounded),
+          ),
+          IconButton(
             tooltip: 'Hinweis',
             onPressed: _hint,
             icon: const Icon(Icons.lightbulb_outline),
@@ -509,7 +571,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              const Text('Tippen: hell → schwarz → als hell markieren'),
+              const Text('Tippen: unverändert → schwarz → sicher hell'),
               const SizedBox(height: 18),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 560),
@@ -534,7 +596,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                           color: conflict
                               ? scheme.errorContainer
                               : mark == HitoriCellMark.shaded
-                                  ? scheme.inverseSurface
+                                  ? Colors.black
                                   : mark == HitoriCellMark.protected
                                       ? scheme.primaryContainer
                                       : scheme.surfaceContainer,
@@ -552,7 +614,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                                       .titleLarge
                                       ?.copyWith(
                                         color: mark == HitoriCellMark.shaded
-                                            ? scheme.onInverseSurface
+                                            ? Colors.white24
                                             : null,
                                         fontWeight: FontWeight.w700,
                                       ),
@@ -607,12 +669,68 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                 value: _showConflicts,
                 onChanged: (value) => setState(() => _showConflicts = value),
               ),
+              Card(
+                child: ExpansionTile(
+                  leading: const Icon(Icons.menu_book_outlined),
+                  title: const Text('So funktioniert es'),
+                  childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                  children: [
+                    const Text(
+                      'Schwärze so viele doppelte Zahlen, dass jede Zahl pro '
+                      'Zeile und Spalte nur einmal hell bleibt. Schwarze Felder '
+                      'dürfen sich nicht seitlich berühren. Die übrigen hellen '
+                      'Felder müssen vollständig miteinander verbunden bleiben.',
+                    ),
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () => _showRulesGuide(force: true),
+                        icon: const Icon(Icons.school_outlined),
+                        label: const Text('Regeln Schritt für Schritt'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
       ),
     );
   }
+}
+
+class _HitoriRule extends StatelessWidget {
+  const _HitoriRule({
+    required this.number,
+    required this.title,
+    required this.text,
+  });
+
+  final String number;
+  final String title;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(radius: 15, child: Text(number)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                const SizedBox(height: 3),
+                Text(text),
+              ],
+            ),
+          ),
+        ],
+      );
 }
 
 String _formatTime(int seconds) {
