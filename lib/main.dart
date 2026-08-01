@@ -20,6 +20,8 @@ import 'player_progress_system.dart';
 import 'slitherlink_foundation.dart';
 import 'features/binary_puzzle/domain/binary_puzzle_generator.dart';
 import 'features/hashi/domain/hashi_generator.dart';
+import 'features/futoshiki/domain/futoshiki_generator.dart';
+import 'features/futoshiki/domain/futoshiki_puzzle.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -286,7 +288,32 @@ class _HomeScreenState extends State<HomeScreen> {
                       enabled: true,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => const FutoshikiHubScreen(),
+                          builder: (_) => FutoshikiHubScreen(
+                            onOpenDaily: (futoshikiContext) =>
+                                Navigator.of(futoshikiContext).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const DailyArchiveScreen(
+                                  gameType: GameType.futoshiki,
+                                ),
+                              ),
+                            ),
+                            onOpenStatistics: (futoshikiContext) async {
+                              final storage = GameStorage();
+                              final results = await storage.loadResults();
+                              final progress =
+                                  await storage.loadPlayerProgress();
+                              if (!futoshikiContext.mounted) return;
+                              await Navigator.of(futoshikiContext).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => StatisticsScreen(
+                                    results: results,
+                                    progress: progress,
+                                    gameType: GameType.futoshiki,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -611,6 +638,7 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
         GameType.binairo => _binaryDailyRoute(summary),
         GameType.hashi => _hashiDailyRoute(summary),
         GameType.slitherlink => _slitherlinkDailyRoute(summary),
+        GameType.futoshiki => _futoshikiDailyRoute(summary),
         _ => throw UnsupportedError('Tagesrätsel noch nicht verfügbar'),
       };
       if (!mounted) return;
@@ -680,6 +708,30 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
     );
     return MaterialPageRoute<void>(
       builder: (_) => SlitherlinkGameScreen(puzzle: puzzle),
+    );
+  }
+
+  MaterialPageRoute<void> _futoshikiDailyRoute(
+    DailyChallengeSummary summary,
+  ) {
+    final generated = const FutoshikiGenerator().generate(
+      seed: summary.seed,
+      difficulty: summary.difficulty,
+    );
+    final puzzle = FutoshikiPuzzle(
+      id: summary.puzzleId,
+      title: 'Tagesrätsel · ${DailyChallengeService.formatDate(summary.day)}',
+      size: generated.size,
+      givens: generated.givens,
+      inequalities: generated.inequalities,
+      solution: generated.solution,
+      difficulty: generated.difficulty,
+    );
+    return MaterialPageRoute<void>(
+      builder: (_) => FutoshikiGameScreen(
+        puzzle: puzzle,
+        mode: GameMode.daily,
+      ),
     );
   }
 
@@ -3138,6 +3190,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       _attempts,
       gameType: GameType.slitherlink,
     );
+    final futoshikiStatistics = GameStatistics.fromAttempts(
+      _attempts,
+      gameType: GameType.futoshiki,
+    );
     final binairoResults = results.values
         .where((result) => result.gameType == GameType.binairo)
         .toList(growable: false);
@@ -3173,9 +3229,22 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         .map((result) => result.puzzleId)
         .toSet()
         .length;
+    final futoshikiResults = results.values
+        .where((result) => result.gameType == GameType.futoshiki)
+        .toList(growable: false);
+    final futoshikiCompleted = futoshikiResults.fold<int>(
+      0,
+      (sum, result) => sum + result.completionCount,
+    );
+    final futoshikiCollectionCompleted = futoshikiResults
+        .where((result) => result.effectiveSource == GameMode.catalog)
+        .map((result) => result.puzzleId)
+        .toSet()
+        .length;
     final isBinairoDetail = widget.gameType == GameType.binairo;
     final isHashiDetail = widget.gameType == GameType.hashi;
     final isSlitherlinkDetail = widget.gameType == GameType.slitherlink;
+    final isFutoshikiDetail = widget.gameType == GameType.futoshiki;
     final isGameDetail = widget.gameType != null;
     final selectedStatistics = isBinairoDetail
         ? binairoStatistics
@@ -3183,14 +3252,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ? hashiStatistics
             : isSlitherlinkDetail
                 ? slitherlinkStatistics
-                : GameStatistics.fromAttempts(_attempts);
+                : isFutoshikiDetail
+                    ? futoshikiStatistics
+                    : GameStatistics.fromAttempts(_attempts);
     final selectedCompleted = isBinairoDetail
         ? binairoCompleted
         : isHashiDetail
             ? hashiCompleted
             : isSlitherlinkDetail
                 ? slitherlinkCompleted
-                : totalCompleted;
+                : isFutoshikiDetail
+                    ? futoshikiCompleted
+                    : totalCompleted;
 
     return Scaffold(
       appBar: AppBar(
@@ -3382,6 +3455,63 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       legacyResults: slitherlinkResults,
                       showMoves: true,
                     ),
+                  ] else if (isFutoshikiDetail) ...[
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.collections_bookmark_outlined,
+                      title: 'Rätselsammlung',
+                      subtitle:
+                          '$futoshikiCollectionCompleted von ${futoshikiPuzzleCatalog.length} gelöst',
+                      trailing:
+                          '${((futoshikiCollectionCompleted / futoshikiPuzzleCatalog.length) * 100).round()} %',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.auto_awesome_outlined,
+                      title: 'Zufallsrätsel',
+                      subtitle:
+                          '${futoshikiStatistics.completedForMode(GameMode.generated)} abgeschlossen',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.calendar_today_outlined,
+                      title: 'Tagesrätsel',
+                      subtitle:
+                          '${futoshikiStatistics.completedForMode(GameMode.daily)} abgeschlossen',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.timer_outlined,
+                      title: 'Spielzeit',
+                      subtitle: _formatLongTime(
+                        futoshikiStatistics.totalPlaySeconds,
+                      ),
+                      trailing: futoshikiStatistics.averageSeconds == null
+                          ? null
+                          : 'Ø ${_formatLongTime(futoshikiStatistics.averageSeconds!)}',
+                    ),
+                    const SizedBox(height: 24),
+                    _PerformanceStatisticsSection(
+                      statistics: futoshikiStatistics,
+                      legacyBestSeconds: _bestResultSeconds(futoshikiResults),
+                      showMoves: true,
+                    ),
+                    const SizedBox(height: 24),
+                    _ModePerformanceSection(
+                      statistics: futoshikiStatistics,
+                      modes: const [
+                        GameMode.catalog,
+                        GameMode.generated,
+                        GameMode.daily,
+                      ],
+                      showMoves: true,
+                    ),
+                    const SizedBox(height: 24),
+                    _DifficultyPerformanceSection(
+                      statistics: futoshikiStatistics,
+                      legacyResults: futoshikiResults,
+                      showMoves: true,
+                    ),
                   ] else ...[
                     const SizedBox(height: 12),
                     _StatisticListCard(
@@ -3471,6 +3601,28 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             results: results,
                             progress: progress,
                             gameType: GameType.slitherlink,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _GameStatisticsOverviewCard(
+                      gameType: GameType.futoshiki,
+                      icon: Icons.compare_arrows_rounded,
+                      completed: futoshikiCompleted,
+                      catalogCompleted: futoshikiCollectionCompleted,
+                      catalogTotal: futoshikiPuzzleCatalog.length,
+                      endlessCompleted: futoshikiStatistics.completedForMode(
+                        GameMode.generated,
+                      ),
+                      solvedWithoutHints:
+                          futoshikiStatistics.solvedWithoutHints,
+                      onOpenDetails: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => StatisticsScreen(
+                            results: results,
+                            progress: progress,
+                            gameType: GameType.futoshiki,
                           ),
                         ),
                       ),

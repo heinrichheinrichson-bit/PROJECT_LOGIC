@@ -5,6 +5,7 @@ import 'package:project_logic_prototype/features/futoshiki/domain/futoshiki_gene
 import 'package:project_logic_prototype/features/futoshiki/domain/futoshiki_puzzle.dart';
 import 'package:project_logic_prototype/features/futoshiki/domain/futoshiki_solver.dart';
 import 'package:project_logic_prototype/futoshiki_foundation.dart';
+import 'package:project_logic_prototype/game_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -42,6 +43,21 @@ void main() {
     state = state.setValue(editable[1].$1, editable[1].$2, 1);
     expect(state.conflictingCells, isNotEmpty);
     expect(state.isSolved, isFalse);
+  });
+
+  test('collection contains eight distinct puzzles per difficulty', () {
+    expect(futoshikiPuzzleCatalog, hasLength(24));
+    expect(
+      futoshikiPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
+      hasLength(24),
+    );
+    for (final difficulty in PuzzleDifficulty.values) {
+      expect(
+        futoshikiPuzzleCatalog
+            .where((puzzle) => puzzle.difficulty == difficulty),
+        hasLength(8),
+      );
+    }
   });
 
   testWidgets('game fits a narrow phone and supports a test completion',
@@ -108,5 +124,40 @@ void main() {
     expect(restored.elapsedSeconds, 83);
     expect(restored.moves, 7);
     expect(restored.hintsRemaining, 2);
+  });
+
+  testWidgets('test solve counts for a daily Futoshiki puzzle', (tester) async {
+    final generated = const FutoshikiGenerator().generate(
+      seed: 20260801,
+      difficulty: PuzzleDifficulty.easy,
+      id: 'daily-futoshiki-2026-08-01',
+      title: 'Tagesrätsel',
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: FutoshikiGameScreen(
+          puzzle: generated,
+          mode: GameMode.daily,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Verstanden'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.bug_report_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sofort lösen'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Testabschluss · im Kalender gewertet'),
+      findsOneWidget,
+    );
+    expect(find.text('Zum Kalender'), findsWidgets);
+    expect(
+      (await GameStorage().loadResults())
+          .containsKey('futoshiki:${generated.id}'),
+      isTrue,
+    );
   });
 }

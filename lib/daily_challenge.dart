@@ -99,6 +99,7 @@ class DailyChallengeService {
       GameType.binairo => const <int>[4, 6, 8],
       GameType.hashi => const <int>[6, 8, 9],
       GameType.slitherlink => const <int>[5, 6, 7],
+      GameType.futoshiki => const <int>[4, 5, 6],
       _ => const <int>[6, 7, 8],
     };
     const difficulties = PuzzleDifficulty.values;

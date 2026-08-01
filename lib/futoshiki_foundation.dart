@@ -17,6 +17,7 @@ class SavedFutoshikiGame {
     required this.elapsedSeconds,
     required this.moves,
     required this.hintsRemaining,
+    this.mode = GameMode.generated,
   });
 
   final FutoshikiPuzzle puzzle;
@@ -24,6 +25,7 @@ class SavedFutoshikiGame {
   final int elapsedSeconds;
   final int moves;
   final int hintsRemaining;
+  final GameMode mode;
 
   Map<String, Object?> toJson() => {
         'version': 1,
@@ -49,6 +51,7 @@ class SavedFutoshikiGame {
         'elapsedSeconds': elapsedSeconds,
         'moves': moves,
         'hintsRemaining': hintsRemaining,
+        'mode': mode.name,
       };
 
   factory SavedFutoshikiGame.fromJson(Map<String, Object?> json) {
@@ -89,9 +92,32 @@ class SavedFutoshikiGame {
       elapsedSeconds: json['elapsedSeconds']! as int,
       moves: json['moves']! as int,
       hintsRemaining: json['hintsRemaining']! as int,
+      mode: GameMode.values.byName(
+        json['mode'] as String? ?? GameMode.generated.name,
+      ),
     );
   }
 }
+
+final List<FutoshikiPuzzle> futoshikiPuzzleCatalog = [
+  for (final difficulty in PuzzleDifficulty.values)
+    for (var index = 0; index < 8; index++)
+      const FutoshikiGenerator().generate(
+        seed: 8100 + difficulty.index * 100 + index,
+        difficulty: difficulty,
+        id: 'futoshiki-${difficulty.name}-${index + 1}',
+        title: switch (index) {
+          0 => 'Erste Vergleiche',
+          1 => 'Klare Reihen',
+          2 => 'Kleine Ketten',
+          3 => 'Sicher eingeordnet',
+          4 => 'Zahlenspiel',
+          5 => 'Enger Rahmen',
+          6 => 'Logische Ordnung',
+          _ => 'Kapitelabschluss',
+        },
+      ),
+];
 
 class FutoshikiGameStore {
   static const _key = 'active_futoshiki_game_v1';
@@ -127,7 +153,14 @@ class FutoshikiGameStore {
 }
 
 class FutoshikiHubScreen extends StatefulWidget {
-  const FutoshikiHubScreen({super.key});
+  const FutoshikiHubScreen({
+    this.onOpenDaily,
+    this.onOpenStatistics,
+    super.key,
+  });
+
+  final void Function(BuildContext context)? onOpenDaily;
+  final void Function(BuildContext context)? onOpenStatistics;
 
   @override
   State<FutoshikiHubScreen> createState() => _FutoshikiHubScreenState();
@@ -181,7 +214,11 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
     if (!mounted) return;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => FutoshikiGameScreen(puzzle: puzzle, savedGame: saved),
+        builder: (_) => FutoshikiGameScreen(
+          puzzle: puzzle,
+          savedGame: saved,
+          mode: saved?.mode ?? GameMode.generated,
+        ),
       ),
     );
     await _refresh();
@@ -222,11 +259,195 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
             'Zahl doppelt vorkommen und jedes Ungleichheitszeichen muss stimmen.',
           ),
           const SizedBox(height: 24),
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: ListTile(
+              minTileHeight: 86,
+              leading: const CircleAvatar(
+                child: Icon(Icons.grid_view_rounded),
+              ),
+              title: const Text('Rätselsammlung'),
+              subtitle: const Text('24 ausgewählte Lern- und Logikrätsel'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const FutoshikiCollectionScreen(),
+                  ),
+                );
+                await _refresh();
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              minTileHeight: 76,
+              leading: const CircleAvatar(
+                child: Icon(Icons.calendar_today_outlined),
+              ),
+              title: const Text('Tagesrätsel'),
+              subtitle:
+                  const Text('Heute spielen oder vergangene Tage nachholen'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: widget.onOpenDaily == null
+                  ? null
+                  : () => widget.onOpenDaily!(context),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              minTileHeight: 76,
+              leading: const CircleAvatar(
+                child: Icon(Icons.bar_chart_rounded),
+              ),
+              title: const Text('Futoshiki-Statistik'),
+              subtitle: const Text('Bestzeiten, Spielzeit und Fortschritt'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: widget.onOpenStatistics == null
+                  ? null
+                  : () => widget.onOpenStatistics!(context),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Zufallsrätsel',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 12),
           for (final difficulty in PuzzleDifficulty.values) ...[
             _DifficultyCard(
               difficulty: difficulty,
               onOpen: (puzzle) => _open(puzzle),
             ),
+            const SizedBox(height: 12),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class FutoshikiCollectionScreen extends StatefulWidget {
+  const FutoshikiCollectionScreen({super.key});
+
+  @override
+  State<FutoshikiCollectionScreen> createState() =>
+      _FutoshikiCollectionScreenState();
+}
+
+class _FutoshikiCollectionScreenState extends State<FutoshikiCollectionScreen> {
+  Map<String, PuzzleResult> _results = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_refresh());
+  }
+
+  Future<void> _refresh() async {
+    final results = await GameStorage().loadResults();
+    if (mounted) setState(() => _results = results);
+  }
+
+  Future<void> _openPuzzle(FutoshikiPuzzle puzzle) async {
+    final saved = await FutoshikiGameStore().load();
+    if (!mounted) return;
+    if (saved != null && saved.puzzle.id != puzzle.id) {
+      final choice = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          icon: const Icon(Icons.save_outlined),
+          title: const Text('Offenes Futoshiki-Rätsel'),
+          content: const Text(
+            'Dein begonnenes Rätsel bleibt gespeichert. Möchtest du es '
+            'fortsetzen oder mit dem ausgewählten Rätsel neu beginnen?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, 'resume'),
+              child: const Text('Fortsetzen'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, 'replace'),
+              child: const Text('Neu beginnen'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || choice == null) return;
+      if (choice == 'resume') {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => FutoshikiGameScreen(
+              puzzle: saved.puzzle,
+              savedGame: saved,
+              mode: saved.mode,
+            ),
+          ),
+        );
+        await _refresh();
+        return;
+      }
+      await FutoshikiGameStore().clear();
+    }
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => FutoshikiGameScreen(
+          puzzle: puzzle,
+          mode: GameMode.catalog,
+        ),
+      ),
+    );
+    await _refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Futoshiki-Sammlung')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          for (final difficulty in PuzzleDifficulty.values) ...[
+            Builder(builder: (context) {
+              final puzzles = futoshikiPuzzleCatalog
+                  .where((puzzle) => puzzle.difficulty == difficulty)
+                  .toList(growable: false);
+              final solved = puzzles
+                  .where((puzzle) =>
+                      _results.containsKey('futoshiki:${puzzle.id}'))
+                  .length;
+              return Card(
+                clipBehavior: Clip.antiAlias,
+                child: ExpansionTile(
+                  initiallyExpanded: difficulty == PuzzleDifficulty.easy,
+                  leading: CircleAvatar(child: Text('${difficulty.index + 1}')),
+                  title: Text(difficulty.label),
+                  subtitle: Text('$solved von ${puzzles.length} gelöst'),
+                  children: [
+                    for (var index = 0; index < puzzles.length; index++)
+                      ListTile(
+                        leading: CircleAvatar(
+                          child: _results.containsKey(
+                            'futoshiki:${puzzles[index].id}',
+                          )
+                              ? const Icon(Icons.check_rounded)
+                              : Text('${index + 1}'),
+                        ),
+                        title: Text(puzzles[index].title),
+                        subtitle: Text(
+                          '${puzzles[index].size} × ${puzzles[index].size}',
+                        ),
+                        trailing: const Icon(Icons.play_arrow_rounded),
+                        onTap: () => _openPuzzle(puzzles[index]),
+                      ),
+                  ],
+                ),
+              );
+            }),
             const SizedBox(height: 12),
           ],
         ],
@@ -273,11 +494,13 @@ class FutoshikiGameScreen extends StatefulWidget {
   const FutoshikiGameScreen({
     required this.puzzle,
     this.savedGame,
+    this.mode = GameMode.generated,
     super.key,
   });
 
   final FutoshikiPuzzle puzzle;
   final SavedFutoshikiGame? savedGame;
+  final GameMode mode;
 
   @override
   State<FutoshikiGameScreen> createState() => _FutoshikiGameScreenState();
@@ -343,6 +566,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
           elapsedSeconds: _elapsedSeconds,
           moves: _moves,
           hintsRemaining: _hintsRemaining,
+          mode: widget.mode,
         ),
       );
 
@@ -487,11 +711,12 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
   Future<void> _showCompletion({bool testCompletion = false}) async {
     if (_completionShown) return;
     setState(() => _completionShown = true);
-    if (!testCompletion) {
+    final countsForTesting = testCompletion && widget.mode == GameMode.daily;
+    if (!testCompletion || countsForTesting) {
       await GameStorage().recordCompletion(
         puzzleId: widget.puzzle.id,
         elapsedSeconds: _elapsedSeconds,
-        source: GameMode.generated,
+        source: widget.mode,
         difficulty: widget.puzzle.difficulty,
         boardSize: widget.puzzle.size,
         gameType: GameType.futoshiki,
@@ -515,7 +740,11 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
             Text('${_formatTime(_elapsedSeconds)} · $_moves Züge'),
             if (testCompletion) ...[
               const SizedBox(height: 12),
-              const Text('Testabschluss · keine Statistik'),
+              Text(
+                countsForTesting
+                    ? 'Testabschluss · im Kalender gewertet'
+                    : 'Testabschluss · keine Statistik',
+              ),
             ],
             const SizedBox(height: 22),
             SizedBox(
@@ -523,9 +752,15 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
               child: FilledButton(
                 onPressed: () {
                   Navigator.pop(dialogContext);
-                  _openNextPuzzle();
+                  if (widget.mode == GameMode.daily) {
+                    Navigator.pop(context);
+                  } else {
+                    _openNextPuzzle();
+                  }
                 },
-                child: const Text('Noch eins'),
+                child: Text(
+                  widget.mode == GameMode.daily ? 'Zum Kalender' : 'Noch eins',
+                ),
               ),
             ),
             const SizedBox(height: 8),
@@ -553,13 +788,23 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
   }
 
   void _openNextPuzzle() {
-    final puzzle = const FutoshikiGenerator().generate(
-      seed: DateTime.now().microsecondsSinceEpoch,
-      difficulty: widget.puzzle.difficulty,
-    );
+    final sameDifficulty = futoshikiPuzzleCatalog
+        .where((puzzle) => puzzle.difficulty == widget.puzzle.difficulty)
+        .toList(growable: false);
+    final currentIndex =
+        sameDifficulty.indexWhere((puzzle) => puzzle.id == widget.puzzle.id);
+    final puzzle = widget.mode == GameMode.catalog && currentIndex >= 0
+        ? sameDifficulty[(currentIndex + 1) % sameDifficulty.length]
+        : const FutoshikiGenerator().generate(
+            seed: DateTime.now().microsecondsSinceEpoch,
+            difficulty: widget.puzzle.difficulty,
+          );
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
-        builder: (_) => FutoshikiGameScreen(puzzle: puzzle),
+        builder: (_) => FutoshikiGameScreen(
+          puzzle: puzzle,
+          mode: widget.mode,
+        ),
       ),
     );
   }
@@ -724,9 +969,19 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.tonalIcon(
-                        onPressed: _openNextPuzzle,
-                        icon: const Icon(Icons.auto_awesome_rounded),
-                        label: const Text('Noch ein Futoshiki'),
+                        onPressed: widget.mode == GameMode.daily
+                            ? () => Navigator.pop(context)
+                            : _openNextPuzzle,
+                        icon: Icon(
+                          widget.mode == GameMode.daily
+                              ? Icons.calendar_today_outlined
+                              : Icons.auto_awesome_rounded,
+                        ),
+                        label: Text(
+                          widget.mode == GameMode.daily
+                              ? 'Zum Kalender'
+                              : 'Noch ein Futoshiki',
+                        ),
                       ),
                     ),
                   ],
