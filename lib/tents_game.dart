@@ -124,7 +124,9 @@ class TentsGameStore {
 }
 
 class TentsHubScreen extends StatefulWidget {
-  const TentsHubScreen({super.key});
+  const TentsHubScreen({this.onOpenDaily, this.onOpenStatistics, super.key});
+  final void Function(BuildContext context)? onOpenDaily;
+  final void Function(BuildContext context)? onOpenStatistics;
   @override
   State<TentsHubScreen> createState() => _TentsHubScreenState();
 }
@@ -218,6 +220,28 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
           const SizedBox(height: 8),
           const Text(
               'Finde zu jedem Baum genau ein Zelt. Zelte d\u00fcrfen sich nicht ber\u00fchren.'),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: widget.onOpenDaily == null
+                    ? null
+                    : () => widget.onOpenDaily!(context),
+                icon: const Icon(Icons.calendar_today_outlined),
+                label: const Text('Tagesr\u00e4tsel'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: widget.onOpenStatistics == null
+                    ? null
+                    : () => widget.onOpenStatistics!(context),
+                icon: const Icon(Icons.query_stats_outlined),
+                label: const Text('Statistik'),
+              ),
+            ),
+          ]),
           const SizedBox(height: 16),
           for (final difficulty in PuzzleDifficulty.values)
             Card(
@@ -607,7 +631,8 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
     if (_completed) return;
     setState(() => _completed = true);
     await TentsGameStore().clear();
-    if (!test) {
+    final countsForTesting = test && widget.mode == GameMode.daily;
+    if (!test || countsForTesting) {
       await GameStorage().recordCompletion(
           puzzleId: widget.puzzle.id,
           elapsedSeconds: _elapsed,
@@ -627,7 +652,7 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                 icon: const Icon(Icons.emoji_events_outlined),
                 title: const Text('Lager vollst\u00e4ndig!'),
                 content: Text(
-                    '${_time(_elapsed)} \u00b7 $_moves Z\u00fcge${test ? '\nTestabschluss \u00b7 keine Statistik' : ''}'),
+                    '${_time(_elapsed)} \u00b7 $_moves Z\u00fcge${test ? countsForTesting ? '\nTestabschluss \u00b7 im Kalender gewertet' : '\nTestabschluss \u00b7 keine Statistik' : ''}'),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(dialog),
@@ -641,9 +666,15 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                   FilledButton(
                       onPressed: () {
                         Navigator.pop(dialog);
-                        _next();
+                        if (widget.mode == GameMode.daily) {
+                          Navigator.pop(context);
+                        } else {
+                          _next();
+                        }
                       },
-                      child: const Text('Noch eins'))
+                      child: Text(widget.mode == GameMode.daily
+                          ? 'Zum Kalender'
+                          : 'Noch eins'))
                 ]));
   }
 
@@ -751,10 +782,15 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                             child: SizedBox(
                                 width: double.infinity,
                                 child: FilledButton.tonalIcon(
-                                    onPressed: _next,
-                                    icon: const Icon(Icons.auto_awesome),
-                                    label:
-                                        const Text('Noch ein R\u00e4tsel')))),
+                                    onPressed: widget.mode == GameMode.daily
+                                        ? () => Navigator.pop(context)
+                                        : _next,
+                                    icon: Icon(widget.mode == GameMode.daily
+                                        ? Icons.calendar_today_outlined
+                                        : Icons.auto_awesome),
+                                    label: Text(widget.mode == GameMode.daily
+                                        ? 'Zum Kalender'
+                                        : 'Noch ein R\u00e4tsel')))),
                       SwitchListTile(
                           contentPadding: EdgeInsets.zero,
                           title: const Text('Gras automatisch markieren'),

@@ -7,6 +7,7 @@ import 'package:project_logic_prototype/features/tents/domain/tents_generator.da
 import 'package:project_logic_prototype/features/tents/domain/tents_puzzle.dart';
 import 'package:project_logic_prototype/features/tents/domain/tents_solver.dart';
 import 'package:project_logic_prototype/tents_game.dart';
+import 'package:project_logic_prototype/game_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -208,5 +209,27 @@ void main() {
     await tester.tap(find.text('Werbung abschließen'));
     await tester.pumpAndSettle();
     expect(find.text('1 Tipps'), findsOneWidget);
+  });
+
+  testWidgets('test solve counts for a daily Tents puzzle', (tester) async {
+    final puzzle = const TentsGenerator().generate(
+      seed: 20260803,
+      difficulty: PuzzleDifficulty.easy,
+      id: 'daily-tents-2026-08-03',
+      title: 'Tagesr\u00e4tsel',
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: TentsGameScreen(puzzle: puzzle, mode: GameMode.daily),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.bug_report_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sofort l\u00f6sen'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('im Kalender gewertet'), findsOneWidget);
+    expect(
+      (await GameStorage().loadResults()).containsKey('tents:${puzzle.id}'),
+      isTrue,
+    );
   });
 }

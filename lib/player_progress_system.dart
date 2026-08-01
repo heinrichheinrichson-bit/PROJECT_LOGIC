@@ -49,6 +49,7 @@ class ProgressSnapshot {
         GameType.slitherlink,
         GameType.futoshiki,
         GameType.hitori,
+        GameType.tents,
       ])
         service.summaryForGame(DateTime.now(), gameType).puzzleId,
     };
@@ -222,6 +223,14 @@ class PlayerProgressService {
           target: 1,
         ),
         _achievement(
+          id: 'tents-first',
+          title: 'Lager aufgeschlagen',
+          description: 'Vollende dein erstes Zelte-&-B\u00e4ume-R\u00e4tsel.',
+          iconName: 'park',
+          current: snapshot.completedForGame(GameType.tents),
+          target: 1,
+        ),
+        _achievement(
           id: 'streak-three',
           title: 'Dranbleiben',
           description: 'Spiele an 3 Tagen in Folge.',
@@ -292,6 +301,7 @@ class PlayerProgressService {
         GameType.slitherlink,
         GameType.futoshiki,
         GameType.hitori,
+        GameType.tents,
       ])
         dailyService.summaryForGame(today, gameType).puzzleId,
     };

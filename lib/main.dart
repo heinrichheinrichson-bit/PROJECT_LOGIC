@@ -26,6 +26,9 @@ import 'features/futoshiki/domain/futoshiki_generator.dart';
 import 'features/futoshiki/domain/futoshiki_puzzle.dart';
 import 'features/hitori/domain/hitori_generator.dart';
 import 'features/hitori/domain/hitori_catalog.dart';
+import 'features/tents/domain/tents_generator.dart';
+import 'features/tents/domain/tents_puzzle.dart';
+import 'features/tents/domain/tents_catalog.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -367,7 +370,32 @@ class _HomeScreenState extends State<HomeScreen> {
                       enabled: true,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => const TentsHubScreen(),
+                          builder: (_) => TentsHubScreen(
+                            onOpenDaily: (tentsContext) =>
+                                Navigator.of(tentsContext).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const DailyArchiveScreen(
+                                  gameType: GameType.tents,
+                                ),
+                              ),
+                            ),
+                            onOpenStatistics: (tentsContext) async {
+                              final storage = GameStorage();
+                              final results = await storage.loadResults();
+                              final progress =
+                                  await storage.loadPlayerProgress();
+                              if (!tentsContext.mounted) return;
+                              await Navigator.of(tentsContext).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => StatisticsScreen(
+                                    results: results,
+                                    progress: progress,
+                                    gameType: GameType.tents,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -694,6 +722,7 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
         GameType.slitherlink => _slitherlinkDailyRoute(summary),
         GameType.futoshiki => _futoshikiDailyRoute(summary),
         GameType.hitori => _hitoriDailyRoute(summary),
+        GameType.tents => _tentsDailyRoute(summary),
         _ => throw UnsupportedError('Tagesrätsel noch nicht verfügbar'),
       };
       if (!mounted) return;
@@ -800,6 +829,33 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
     return MaterialPageRoute<void>(
       builder: (_) => HitoriGameScreen(
         puzzle: generated,
+        mode: GameMode.daily,
+      ),
+    );
+  }
+
+  MaterialPageRoute<void> _tentsDailyRoute(DailyChallengeSummary summary) {
+    final generated = const TentsGenerator().generate(
+      seed: summary.seed,
+      difficulty: summary.difficulty,
+      size: summary.size,
+      id: summary.puzzleId,
+      title: 'Tagesr\u00e4tsel \u00b7 '
+          '${DailyChallengeService.formatDate(summary.day)}',
+    );
+    final puzzle = TentsPuzzle(
+      id: generated.id,
+      title: generated.title,
+      size: generated.size,
+      trees: generated.trees,
+      rowCounts: generated.rowCounts,
+      columnCounts: generated.columnCounts,
+      solution: generated.solution,
+      difficulty: generated.difficulty,
+    );
+    return MaterialPageRoute<void>(
+      builder: (_) => TentsGameScreen(
+        puzzle: puzzle,
         mode: GameMode.daily,
       ),
     );
@@ -2941,6 +2997,9 @@ class PlayerProfileScreen extends StatelessWidget {
         ...binaryPuzzleCatalog.map((puzzle) => puzzle.id),
         ...hashiPuzzleCatalog.map((puzzle) => 'hashi:${puzzle.id}'),
         ...slitherlinkPuzzleCatalog.map((puzzle) => 'slitherlink:${puzzle.id}'),
+        ...futoshikiPuzzleCatalog.map((puzzle) => puzzle.id),
+        ...hitoriPuzzleCatalog.map((puzzle) => puzzle.id),
+        ...tentsPuzzleCatalog.map((puzzle) => puzzle.id),
       },
     );
     const service = PlayerProgressService();
@@ -3176,6 +3235,7 @@ class _ProgressGoalCard extends StatelessWidget {
         'hub' => Icons.hub_outlined,
         'gesture' => Icons.gesture_outlined,
         'menu_book' => Icons.menu_book_outlined,
+        'park' => Icons.park_outlined,
         _ => Icons.emoji_events_outlined,
       };
 }
@@ -3268,6 +3328,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       _attempts,
       gameType: GameType.hitori,
     );
+    final tentsStatistics = GameStatistics.fromAttempts(
+      _attempts,
+      gameType: GameType.tents,
+    );
     final binairoResults = results.values
         .where((result) => result.gameType == GameType.binairo)
         .toList(growable: false);
@@ -3327,11 +3391,24 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         .map((result) => result.puzzleId)
         .toSet()
         .length;
+    final tentsResults = results.values
+        .where((result) => result.gameType == GameType.tents)
+        .toList(growable: false);
+    final tentsCompleted = tentsResults.fold<int>(
+      0,
+      (sum, result) => sum + result.completionCount,
+    );
+    final tentsCollectionCompleted = tentsResults
+        .where((result) => result.effectiveSource == GameMode.catalog)
+        .map((result) => result.puzzleId)
+        .toSet()
+        .length;
     final isBinairoDetail = widget.gameType == GameType.binairo;
     final isHashiDetail = widget.gameType == GameType.hashi;
     final isSlitherlinkDetail = widget.gameType == GameType.slitherlink;
     final isFutoshikiDetail = widget.gameType == GameType.futoshiki;
     final isHitoriDetail = widget.gameType == GameType.hitori;
+    final isTentsDetail = widget.gameType == GameType.tents;
     final isGameDetail = widget.gameType != null;
     final selectedStatistics = isBinairoDetail
         ? binairoStatistics
@@ -3343,7 +3420,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ? futoshikiStatistics
                     : isHitoriDetail
                         ? hitoriStatistics
-                        : GameStatistics.fromAttempts(_attempts);
+                        : isTentsDetail
+                            ? tentsStatistics
+                            : GameStatistics.fromAttempts(_attempts);
     final selectedCompleted = isBinairoDetail
         ? binairoCompleted
         : isHashiDetail
@@ -3354,7 +3433,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ? futoshikiCompleted
                     : isHitoriDetail
                         ? hitoriCompleted
-                        : totalCompleted;
+                        : isTentsDetail
+                            ? tentsCompleted
+                            : totalCompleted;
 
     return Scaffold(
       appBar: AppBar(
@@ -3716,6 +3797,90 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       legacyResults: hitoriResults,
                       showMoves: true,
                     ),
+                  ] else if (isTentsDetail) ...[
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.collections_bookmark_outlined,
+                      title: 'R\u00e4tselsammlung',
+                      subtitle:
+                          '$tentsCollectionCompleted von ${tentsPuzzleCatalog.length} gel\u00f6st',
+                      trailing:
+                          '${((tentsCollectionCompleted / tentsPuzzleCatalog.length) * 100).round()} %',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.auto_awesome_outlined,
+                      title: 'Zufallsr\u00e4tsel',
+                      subtitle:
+                          '${tentsStatistics.completedForMode(GameMode.generated)} abgeschlossen',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.calendar_today_outlined,
+                      title: 'Tagesr\u00e4tsel',
+                      subtitle:
+                          '${tentsStatistics.completedForMode(GameMode.daily)} abgeschlossen',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.timer_outlined,
+                      title: 'Spielzeit',
+                      subtitle:
+                          _formatLongTime(tentsStatistics.totalPlaySeconds),
+                      trailing: tentsStatistics.averageSeconds == null
+                          ? null
+                          : '\u00d8 ${_formatLongTime(tentsStatistics.averageSeconds!)}',
+                    ),
+                    const SizedBox(height: 24),
+                    _PerformanceStatisticsSection(
+                      statistics: tentsStatistics,
+                      legacyBestSeconds: _bestResultSeconds(tentsResults),
+                      showMoves: true,
+                    ),
+                    const SizedBox(height: 24),
+                    _ModePerformanceSection(
+                      statistics: tentsStatistics,
+                      modes: const [
+                        GameMode.catalog,
+                        GameMode.generated,
+                        GameMode.daily,
+                      ],
+                      showMoves: true,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Nach Rastergr\u00f6\u00dfe',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    for (final size in const [6, 8, 10]) ...[
+                      Builder(builder: (context) {
+                        final sizeResults = tentsResults
+                            .where(
+                                (result) => result.effectiveBoardSize == size)
+                            .toList(growable: false);
+                        final completed = sizeResults.fold<int>(
+                          0,
+                          (sum, result) => sum + result.completionCount,
+                        );
+                        final best = _bestResultSeconds(sizeResults);
+                        return _StatisticListCard(
+                          icon: Icons.grid_on_rounded,
+                          title: '$size \u00d7 $size',
+                          subtitle: '$completed R\u00e4tsel abgeschlossen',
+                          trailing: best == null
+                              ? null
+                              : 'Bestzeit ${_formatLongTime(best)}',
+                        );
+                      }),
+                      const SizedBox(height: 10),
+                    ],
+                    const SizedBox(height: 14),
+                    _DifficultyPerformanceSection(
+                      statistics: tentsStatistics,
+                      legacyResults: tentsResults,
+                      showMoves: true,
+                    ),
                   ] else ...[
                     const SizedBox(height: 12),
                     _StatisticListCard(
@@ -3848,6 +4013,27 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             results: results,
                             progress: progress,
                             gameType: GameType.hitori,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _GameStatisticsOverviewCard(
+                      gameType: GameType.tents,
+                      icon: Icons.park_outlined,
+                      completed: tentsCompleted,
+                      catalogCompleted: tentsCollectionCompleted,
+                      catalogTotal: tentsPuzzleCatalog.length,
+                      endlessCompleted: tentsStatistics.completedForMode(
+                        GameMode.generated,
+                      ),
+                      solvedWithoutHints: tentsStatistics.solvedWithoutHints,
+                      onOpenDetails: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => StatisticsScreen(
+                            results: results,
+                            progress: progress,
+                            gameType: GameType.tents,
                           ),
                         ),
                       ),
