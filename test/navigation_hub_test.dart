@@ -116,4 +116,24 @@ void main() {
     expect(find.text('Wenigste Züge'), findsOneWidget);
     expect(find.text('Tagesrätsel'), findsNothing);
   });
+
+  testWidgets('daily calendar tiles fit a narrow phone without overflow',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: DailyArchiveScreen(gameType: GameType.slitherlink),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Slitherlink-Tagesrätsel'), findsOneWidget);
+    expect(find.byType(GridView), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

@@ -1054,7 +1054,9 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
   Future<void> _showCompletion() async {
     if (_completionShown) return;
     _completionShown = true;
-    if (!_developerCompletion) {
+    final countsForTesting =
+        _developerCompletion && _gameMode == GameMode.daily;
+    if (!_developerCompletion || countsForTesting) {
       await GameStorage().recordCompletion(
         puzzleId: widget.puzzle.id,
         elapsedSeconds: _elapsedSeconds,
@@ -1084,9 +1086,13 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
             ),
             if (_developerCompletion) ...[
               const SizedBox(height: 14),
-              const Chip(
-                avatar: Icon(Icons.science_outlined),
-                label: Text('Testabschluss · keine Statistik'),
+              Chip(
+                avatar: const Icon(Icons.science_outlined),
+                label: Text(
+                  _gameMode == GameMode.daily
+                      ? 'Testabschluss · im Kalender gewertet'
+                      : 'Testabschluss · keine Statistik',
+                ),
               ),
             ] else ...[
               const SizedBox(height: 16),

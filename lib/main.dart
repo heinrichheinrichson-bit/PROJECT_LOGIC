@@ -779,7 +779,7 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
                                 crossAxisCount: columns,
                                 crossAxisSpacing: 8,
                                 mainAxisSpacing: 8,
-                                childAspectRatio: 0.92,
+                                mainAxisExtent: 100,
                               ),
                               itemBuilder: (context, index) {
                                 final challenge = challenges[index];
@@ -851,7 +851,7 @@ class _DailyCalendarTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -861,9 +861,9 @@ class _DailyCalendarTile extends StatelessWidget {
                     : isToday
                         ? Icons.today_rounded
                         : Icons.radio_button_unchecked_rounded,
-                size: 22,
+                size: 20,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 '${challenge.day.day}.${challenge.day.month}.',
                 style: const TextStyle(fontWeight: FontWeight.w700),
@@ -2055,7 +2055,9 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
     String? collectionProgress;
     if (!_completionRecorded) {
       _completionRecorded = true;
-      if (widget.saveProgress && !_developerCompletion) {
+      final countsForTesting =
+          _developerCompletion && widget.source == PuzzleSource.daily;
+      if (widget.saveProgress && (!_developerCompletion || countsForTesting)) {
         if (widget.source == PuzzleSource.catalog) {
           previousBestSeconds =
               (await _storage.loadResults())[widget.definition.id]?.bestSeconds;
@@ -2134,9 +2136,13 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                     label: Text('Neue Bestzeit'),
                   ),
                 if (_developerCompletion)
-                  const Chip(
-                    avatar: Icon(Icons.science_outlined),
-                    label: Text('Testabschluss · keine Statistik'),
+                  Chip(
+                    avatar: const Icon(Icons.science_outlined),
+                    label: Text(
+                      widget.source == PuzzleSource.daily
+                          ? 'Testabschluss · im Kalender gewertet'
+                          : 'Testabschluss · keine Statistik',
+                    ),
                   ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,

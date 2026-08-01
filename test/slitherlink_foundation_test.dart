@@ -27,6 +27,22 @@ void main() {
       slitherlinkPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
       hasLength(36),
     );
+    expect(
+      slitherlinkPuzzleCatalog
+          .where((puzzle) => puzzle.title.contains(RegExp(r'[ÃÂÆ]'))),
+      isEmpty,
+    );
+    expect(
+      slitherlinkPuzzleCatalog.map((puzzle) => puzzle.title),
+      containsAll(
+        const [
+          'Letzte Übung',
+          'Viele Möglichkeiten',
+          'Falsche Fährten',
+          'Große Prüfung'
+        ],
+      ),
+    );
     for (final difficulty in PuzzleDifficulty.values) {
       expect(
         slitherlinkPuzzleCatalog
@@ -149,6 +165,44 @@ void main() {
     await tester.tap(find.text('Brett ansehen'));
     await tester.pumpAndSettle();
     expect(find.text('Noch einmal'), findsOneWidget);
+  });
+
+  testWidgets('debug solve marks a daily Slitherlink puzzle as completed',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await AppPreferences.load();
+    final dailyPuzzle = SlitherlinkPuzzle(
+      id: 'daily-slitherlink-2026-08-01',
+      title: 'Tagesrätsel',
+      rows: 4,
+      columns: 4,
+      clues: slitherlinkTutorialPuzzle.clues,
+      solution: slitherlinkTutorialPuzzle.solution,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    await tester.pumpWidget(
+      PreferencesScope(
+        preferences: preferences,
+        child: MaterialApp(
+          home: SlitherlinkGameScreen(puzzle: dailyPuzzle),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.bug_report_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('Sofort'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Testabschluss · im Kalender gewertet'),
+      findsOneWidget,
+    );
+    expect(
+      (await GameStorage().loadResults())
+          .containsKey('slitherlink:${dailyPuzzle.id}'),
+      isTrue,
+    );
   });
 
   test('saved Slitherlink game preserves puzzle and progress', () async {

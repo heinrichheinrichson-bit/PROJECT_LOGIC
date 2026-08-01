@@ -1511,7 +1511,9 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
           '${chapter.title}: $chapterSolved/${chapter.puzzles.length} · '
           'Sammlung: ${completed.length}/${hashiPuzzleCatalog.length}';
     }
-    if (!_developerCompletion) {
+    final countsForTesting =
+        _developerCompletion && widget.mode == GameMode.daily;
+    if (!_developerCompletion || countsForTesting) {
       await _gameStorage.recordCompletion(
         puzzleId: widget.puzzle.id,
         elapsedSeconds: _elapsedSeconds,
@@ -1550,9 +1552,13 @@ class _HashiGameScreenState extends State<HashiGameScreen> {
               const SizedBox(height: 10),
             ],
             if (_developerCompletion) ...[
-              const Chip(
-                avatar: Icon(Icons.science_outlined),
-                label: Text('Testabschluss · keine Statistik'),
+              Chip(
+                avatar: const Icon(Icons.science_outlined),
+                label: Text(
+                  widget.mode == GameMode.daily
+                      ? 'Testabschluss · im Kalender gewertet'
+                      : 'Testabschluss · keine Statistik',
+                ),
               ),
               const SizedBox(height: 10),
             ],

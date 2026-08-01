@@ -353,7 +353,7 @@ final slitherlinkPuzzleCatalog = <SlitherlinkPuzzle>[
   ),
   const SlitherlinkPuzzle(
     id: 'slither_easy_12',
-    title: 'Letzte ÃƒÆ’Ã…â€œbung',
+    title: 'Letzte Übung',
     rows: 5,
     columns: 5,
     difficulty: PuzzleDifficulty.easy,
@@ -749,7 +749,7 @@ final slitherlinkPuzzleCatalog = <SlitherlinkPuzzle>[
   ),
   const SlitherlinkPuzzle(
     id: 'slither_medium_11',
-    title: 'Viele MÃƒÆ’Ã‚Â¶glichkeiten',
+    title: 'Viele Möglichkeiten',
     rows: 6,
     columns: 6,
     difficulty: PuzzleDifficulty.medium,
@@ -873,7 +873,7 @@ final slitherlinkPuzzleCatalog = <SlitherlinkPuzzle>[
   ),
   const SlitherlinkPuzzle(
     id: 'slither_hard_02',
-    title: 'Falsche FÃƒÆ’Ã‚Â¤hrten',
+    title: 'Falsche Fährten',
     rows: 7,
     columns: 7,
     difficulty: PuzzleDifficulty.hard,
@@ -1205,7 +1205,7 @@ final slitherlinkPuzzleCatalog = <SlitherlinkPuzzle>[
   ),
   const SlitherlinkPuzzle(
     id: 'slither_hard_11',
-    title: 'GroÃƒÆ’Ã…Â¸e PrÃƒÆ’Ã‚Â¼fung',
+    title: 'Große Prüfung',
     rows: 7,
     columns: 7,
     difficulty: PuzzleDifficulty.hard,
