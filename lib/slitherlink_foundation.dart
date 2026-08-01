@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -264,6 +265,236 @@ class SlitherlinkState {
   }
 }
 
+class SlitherlinkSolver {
+  const SlitherlinkSolver();
+
+  int countSolutions(SlitherlinkPuzzle puzzle, {int limit = 2}) {
+    final edges = _allEdges(puzzle).toList(growable: false);
+    final indexById = <String, int>{
+      for (var index = 0; index < edges.length; index++) edges[index].id: index,
+    };
+    final clues = <(int, List<int>)>[];
+    for (var row = 0; row < puzzle.rows; row++) {
+      for (var column = 0; column < puzzle.columns; column++) {
+        final clue = puzzle.clues[row][column];
+        if (clue == null) continue;
+        clues.add((
+          clue,
+          [
+            indexById['h:$row:$column']!,
+            indexById['h:${row + 1}:$column']!,
+            indexById['v:$row:$column']!,
+            indexById['v:$row:${column + 1}']!,
+          ]
+        ));
+      }
+    }
+    final vertices = <List<int>>[];
+    for (var row = 0; row <= puzzle.rows; row++) {
+      for (var column = 0; column <= puzzle.columns; column++) {
+        final touching = <int>[];
+        if (column > 0) touching.add(indexById['h:$row:${column - 1}']!);
+        if (column < puzzle.columns) touching.add(indexById['h:$row:$column']!);
+        if (row > 0) touching.add(indexById['v:${row - 1}:$column']!);
+        if (row < puzzle.rows) touching.add(indexById['v:$row:$column']!);
+        vertices.add(touching);
+      }
+    }
+    var solutions = 0;
+
+    void search(List<int> values) {
+      if (solutions >= limit) return;
+      final working = List<int>.from(values);
+      if (!_propagate(working, clues, vertices)) return;
+      final undecided = working.indexOf(-1);
+      if (undecided < 0) {
+        final state = SlitherlinkState(
+          puzzle: puzzle,
+          marks: {
+            for (var index = 0; index < edges.length; index++)
+              if (working[index] == 1) edges[index].id: SlitherEdgeMark.line,
+          },
+        );
+        if (state.isSolved) solutions++;
+        return;
+      }
+      final preferred = _preferredEdge(working, clues) ?? undecided;
+      final off = List<int>.from(working)..[preferred] = 0;
+      search(off);
+      if (solutions >= limit) return;
+      final on = List<int>.from(working)..[preferred] = 1;
+      search(on);
+    }
+
+    search(List<int>.filled(edges.length, -1));
+    return solutions;
+  }
+
+  bool hasUniqueSolution(SlitherlinkPuzzle puzzle) =>
+      countSolutions(puzzle) == 1;
+
+  static int? _preferredEdge(
+    List<int> values,
+    List<(int, List<int>)> clues,
+  ) {
+    for (final (_, edges) in clues) {
+      for (final edge in edges) {
+        if (values[edge] == -1) return edge;
+      }
+    }
+    return null;
+  }
+
+  static bool _propagate(
+    List<int> values,
+    List<(int, List<int>)> clues,
+    List<List<int>> vertices,
+  ) {
+    var changed = true;
+    while (changed) {
+      changed = false;
+      for (final (target, edges) in clues) {
+        final on = edges.where((edge) => values[edge] == 1).length;
+        final unknown = edges.where((edge) => values[edge] == -1).toList();
+        if (on > target || on + unknown.length < target) return false;
+        if (on == target) {
+          for (final edge in unknown) {
+            values[edge] = 0;
+            changed = true;
+          }
+        } else if (on + unknown.length == target) {
+          for (final edge in unknown) {
+            values[edge] = 1;
+            changed = true;
+          }
+        }
+      }
+      for (final edges in vertices) {
+        final on = edges.where((edge) => values[edge] == 1).length;
+        final unknown = edges.where((edge) => values[edge] == -1).toList();
+        if (on > 2 || (on == 1 && unknown.isEmpty)) return false;
+        if (on == 2) {
+          for (final edge in unknown) {
+            values[edge] = 0;
+            changed = true;
+          }
+        } else if (on == 1 && unknown.length == 1) {
+          values[unknown.single] = 1;
+          changed = true;
+        } else if (on == 0 && unknown.length == 1) {
+          values[unknown.single] = 0;
+          changed = true;
+        }
+      }
+    }
+    return true;
+  }
+}
+
+class SlitherlinkGenerator {
+  const SlitherlinkGenerator({this.solver = const SlitherlinkSolver()});
+
+  final SlitherlinkSolver solver;
+
+  SlitherlinkPuzzle generate({
+    required int seed,
+    required PuzzleDifficulty difficulty,
+  }) {
+    final random = math.Random(seed);
+    final size = switch (difficulty) {
+      PuzzleDifficulty.easy => 5,
+      PuzzleDifficulty.medium => 6,
+      PuzzleDifficulty.hard => 7,
+    };
+    final targetCells = switch (difficulty) {
+      PuzzleDifficulty.easy => 8,
+      PuzzleDifficulty.medium => 13,
+      PuzzleDifficulty.hard => 19,
+    };
+    final cells = <(int, int)>{(size ~/ 2, size ~/ 2)};
+    while (cells.length < targetCells) {
+      final base = cells.elementAt(random.nextInt(cells.length));
+      final direction =
+          const [(1, 0), (-1, 0), (0, 1), (0, -1)][random.nextInt(4)];
+      final candidate = (base.$1 + direction.$1, base.$2 + direction.$2);
+      if (candidate.$1 >= 0 &&
+          candidate.$1 < size &&
+          candidate.$2 >= 0 &&
+          candidate.$2 < size) {
+        cells.add(candidate);
+      }
+    }
+    final solution = _boundaryForCells(cells);
+    final completeClues = _cluesForSolution(size, size, solution);
+    var clues = completeClues;
+    final positions = [
+      for (var row = 0; row < size; row++)
+        for (var column = 0; column < size; column++) (row, column),
+    ]..shuffle(random);
+    final removalTarget = switch (difficulty) {
+      PuzzleDifficulty.easy => size * size ~/ 5,
+      PuzzleDifficulty.medium => size * size ~/ 3,
+      PuzzleDifficulty.hard => size * size * 2 ~/ 5,
+    };
+    var removed = 0;
+    for (final position in positions) {
+      if (removed >= removalTarget) break;
+      final candidate = [for (final row in clues) List<int?>.from(row)];
+      candidate[position.$1][position.$2] = null;
+      final puzzle = SlitherlinkPuzzle(
+        id: 'slither-generated-$seed',
+        title: 'Zufallsrätsel',
+        rows: size,
+        columns: size,
+        clues: candidate,
+        solution: solution,
+        difficulty: difficulty,
+      );
+      if (solver.hasUniqueSolution(puzzle)) {
+        clues = candidate;
+        removed++;
+      }
+    }
+    return SlitherlinkPuzzle(
+      id: 'slither-generated-$seed',
+      title: 'Zufallsrätsel',
+      rows: size,
+      columns: size,
+      clues: clues,
+      solution: solution,
+      difficulty: difficulty,
+    );
+  }
+
+  static Set<String> _boundaryForCells(Set<(int, int)> cells) {
+    final edges = <String>{};
+    void toggle(String id) => edges.remove(id) ? null : edges.add(id);
+    for (final (row, column) in cells) {
+      toggle('h:$row:$column');
+      toggle('h:${row + 1}:$column');
+      toggle('v:$row:$column');
+      toggle('v:$row:${column + 1}');
+    }
+    return edges;
+  }
+
+  static List<List<int?>> _cluesForSolution(
+    int rows,
+    int columns,
+    Set<String> solution,
+  ) =>
+      List.generate(rows, (row) {
+        return List<int?>.generate(columns, (column) {
+          return [
+            'h:$row:$column',
+            'h:${row + 1}:$column',
+            'v:$row:$column',
+            'v:$row:${column + 1}',
+          ].where(solution.contains).length;
+        });
+      });
+}
+
 class SavedSlitherlinkGame {
   const SavedSlitherlinkGame({
     required this.puzzle,
@@ -436,6 +667,46 @@ class SlitherlinkHubScreen extends StatelessWidget {
                     const SizedBox(height: 10),
                     for (final difficulty in PuzzleDifficulty.values)
                       _SlitherCollectionChapter(difficulty: difficulty),
+                    const SizedBox(height: 18),
+                    Text(
+                      'Zufallsrätsel',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Neu erzeugt und vor dem Start auf eine eindeutige Lösung geprüft.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                    const SizedBox(height: 10),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: [
+                            for (final difficulty in PuzzleDifficulty.values)
+                              FilledButton.tonalIcon(
+                                onPressed: () => _startRandom(
+                                  context,
+                                  difficulty,
+                                ),
+                                icon: Icon(switch (difficulty) {
+                                  PuzzleDifficulty.easy => Icons.eco_outlined,
+                                  PuzzleDifficulty.medium =>
+                                    Icons.psychology_alt_outlined,
+                                  PuzzleDifficulty.hard =>
+                                    Icons.local_fire_department_outlined,
+                                }),
+                                label: Text(difficulty.label),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -443,6 +714,47 @@ class SlitherlinkHubScreen extends StatelessWidget {
           ),
         ),
       );
+
+  Future<void> _startRandom(
+    BuildContext context,
+    PuzzleDifficulty difficulty,
+  ) async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 18),
+            Expanded(child: Text('Eindeutiges Rätsel wird erstellt …')),
+          ],
+        ),
+      ),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 30));
+    try {
+      final puzzle = const SlitherlinkGenerator().generate(
+        seed: DateTime.now().microsecondsSinceEpoch & 0x7fffffff,
+        difficulty: difficulty,
+      );
+      if (!context.mounted) return;
+      Navigator.of(context).pop();
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => SlitherlinkGameScreen(puzzle: puzzle),
+        ),
+      );
+    } on Object {
+      if (!context.mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Das Zufallsrätsel konnte nicht erstellt werden.'),
+        ),
+      );
+    }
+  }
 }
 
 class _SlitherCollectionChapter extends StatelessWidget {
@@ -643,7 +955,9 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen> {
         elapsedSeconds: _elapsedSeconds,
         source: widget.puzzle.id == slitherlinkTutorialPuzzle.id
             ? GameMode.tutorial
-            : GameMode.catalog,
+            : widget.puzzle.id.startsWith('slither-generated-')
+                ? GameMode.generated
+                : GameMode.catalog,
         difficulty: widget.puzzle.difficulty,
         boardSize: widget.puzzle.rows,
         gameType: GameType.slitherlink,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/slitherlink_foundation.dart';
 import 'package:project_logic_prototype/app_preferences.dart';
+import 'package:project_logic_prototype/core/domain/game_identity.dart';
 import 'package:project_logic_prototype/game_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,6 +30,53 @@ void main() {
         },
       );
       expect(state.isSolved, isTrue, reason: puzzle.id);
+    }
+  });
+
+  test('solver confirms the tutorial has exactly one solution', () {
+    expect(
+      const SlitherlinkSolver().countSolutions(slitherlinkTutorialPuzzle),
+      1,
+    );
+  });
+
+  test('generator creates a valid unique puzzle reproducibly', () {
+    const generator = SlitherlinkGenerator();
+    final first = generator.generate(
+      seed: 20260801,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    final repeated = generator.generate(
+      seed: 20260801,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    final solved = SlitherlinkState(
+      puzzle: first,
+      marks: {
+        for (final id in first.solution) id: SlitherEdgeMark.line,
+      },
+    );
+
+    expect(solved.isSolved, isTrue);
+    expect(const SlitherlinkSolver().hasUniqueSolution(first), isTrue);
+    expect(repeated.solution, first.solution);
+    expect(repeated.clues, first.clues);
+  });
+
+  test('generator creates a unique puzzle for every difficulty', () {
+    const generator = SlitherlinkGenerator();
+    const solver = SlitherlinkSolver();
+    for (final difficulty in PuzzleDifficulty.values) {
+      final puzzle = generator.generate(
+        seed: 8100 + difficulty.index,
+        difficulty: difficulty,
+      );
+      expect(solver.hasUniqueSolution(puzzle), isTrue, reason: difficulty.name);
+      expect(
+        puzzle.clues.expand((row) => row).whereType<int>().length,
+        lessThan(puzzle.rows * puzzle.columns),
+        reason: difficulty.name,
+      );
     }
   });
 
