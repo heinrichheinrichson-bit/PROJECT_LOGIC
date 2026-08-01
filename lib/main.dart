@@ -3507,6 +3507,34 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       showMoves: true,
                     ),
                     const SizedBox(height: 24),
+                    Text(
+                      'Nach Rastergröße',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    for (final size in const [4, 5, 6, 7]) ...[
+                      Builder(builder: (context) {
+                        final sizeResults = futoshikiResults
+                            .where(
+                                (result) => result.effectiveBoardSize == size)
+                            .toList(growable: false);
+                        final completed = sizeResults.fold<int>(
+                          0,
+                          (sum, result) => sum + result.completionCount,
+                        );
+                        final best = _bestResultSeconds(sizeResults);
+                        return _StatisticListCard(
+                          icon: Icons.grid_on_rounded,
+                          title: '$size × $size',
+                          subtitle: '$completed Rätsel abgeschlossen',
+                          trailing: best == null
+                              ? null
+                              : 'Bestzeit ${_formatLongTime(best)}',
+                        );
+                      }),
+                      const SizedBox(height: 10),
+                    ],
+                    const SizedBox(height: 14),
                     _DifficultyPerformanceSection(
                       statistics: futoshikiStatistics,
                       legacyResults: futoshikiResults,

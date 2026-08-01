@@ -45,19 +45,35 @@ void main() {
     expect(state.isSolved, isFalse);
   });
 
-  test('collection contains eight distinct puzzles per difficulty', () {
-    expect(futoshikiPuzzleCatalog, hasLength(24));
+  test('collection contains eight distinct puzzles per chapter', () {
+    expect(futoshikiPuzzleCatalog, hasLength(32));
     expect(
       futoshikiPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
-      hasLength(24),
+      hasLength(32),
     );
-    for (final difficulty in PuzzleDifficulty.values) {
+    for (final chapter in const [
+      (difficulty: PuzzleDifficulty.easy, size: 4),
+      (difficulty: PuzzleDifficulty.medium, size: 5),
+      (difficulty: PuzzleDifficulty.hard, size: 6),
+      (difficulty: PuzzleDifficulty.hard, size: 7),
+    ]) {
       expect(
-        futoshikiPuzzleCatalog
-            .where((puzzle) => puzzle.difficulty == difficulty),
+        futoshikiPuzzleCatalog.where((puzzle) =>
+            puzzle.difficulty == chapter.difficulty &&
+            puzzle.size == chapter.size),
         hasLength(8),
       );
     }
+  });
+
+  test('generator creates a unique 7x7 expert puzzle', () {
+    final puzzle = const FutoshikiGenerator().generate(
+      seed: 77007,
+      difficulty: PuzzleDifficulty.hard,
+      size: 7,
+    );
+    expect(puzzle.size, 7);
+    expect(const FutoshikiSolver().hasUniqueSolution(puzzle), isTrue);
   });
 
   testWidgets('game fits a narrow phone and supports a test completion',
@@ -115,6 +131,9 @@ void main() {
       elapsedSeconds: 83,
       moves: 7,
       hintsRemaining: 2,
+      candidates: {
+        '1:2': {1, 3, 5}
+      },
     ));
 
     final restored = await store.load();
@@ -124,6 +143,7 @@ void main() {
     expect(restored.elapsedSeconds, 83);
     expect(restored.moves, 7);
     expect(restored.hintsRemaining, 2);
+    expect(restored.candidates['1:2'], {1, 3, 5});
   });
 
   testWidgets('test solve counts for a daily Futoshiki puzzle', (tester) async {
@@ -159,5 +179,36 @@ void main() {
           .containsKey('futoshiki:${generated.id}'),
       isTrue,
     );
+  });
+
+  testWidgets('7x7 fits a narrow phone and candidate notes are saved',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'futoshiki_inequality_guide_seen_v1': true,
+    });
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final puzzle = const FutoshikiGenerator().generate(
+      seed: 77123,
+      difficulty: PuzzleDifficulty.hard,
+      size: 7,
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: FutoshikiGameScreen(puzzle: puzzle)),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text('Notizen'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, '1'));
+    await tester.pump(const Duration(milliseconds: 100));
+
+    final saved = await FutoshikiGameStore().load();
+    expect(saved, isNotNull);
+    expect(
+        saved!.candidates.values.any((values) => values.contains(1)), isTrue);
   });
 }

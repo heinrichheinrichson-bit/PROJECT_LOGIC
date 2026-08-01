@@ -12,40 +12,49 @@ class FutoshikiGenerator {
   FutoshikiPuzzle generate({
     required int seed,
     required PuzzleDifficulty difficulty,
+    int? size,
     String? id,
     String? title,
   }) {
     final random = Random(seed);
-    final size = switch (difficulty) {
-      PuzzleDifficulty.easy => 4,
-      PuzzleDifficulty.medium => 5,
-      PuzzleDifficulty.hard => 6,
-    };
-    final symbols = [for (var value = 1; value <= size; value++) value]
+    final boardSize = size ??
+        switch (difficulty) {
+          PuzzleDifficulty.easy => 4,
+          PuzzleDifficulty.medium => 5,
+          PuzzleDifficulty.hard => 6,
+        };
+    if (boardSize < 4 || boardSize > 7) {
+      throw ArgumentError.value(boardSize, 'size', 'must be between 4 and 7');
+    }
+    final symbols = [for (var value = 1; value <= boardSize; value++) value]
       ..shuffle(random);
-    final rowOrder = [for (var index = 0; index < size; index++) index]
+    final rowOrder = [for (var index = 0; index < boardSize; index++) index]
       ..shuffle(random);
-    final columnOrder = [for (var index = 0; index < size; index++) index]
+    final columnOrder = [for (var index = 0; index < boardSize; index++) index]
       ..shuffle(random);
     final solution = [
       for (final row in rowOrder)
         [
-          for (final column in columnOrder) symbols[(row + column) % size],
+          for (final column in columnOrder) symbols[(row + column) % boardSize],
         ],
     ];
 
     final adjacent = <((int, int), (int, int))>[];
-    for (var row = 0; row < size; row++) {
-      for (var column = 0; column < size; column++) {
-        if (column + 1 < size) adjacent.add(((row, column), (row, column + 1)));
-        if (row + 1 < size) adjacent.add(((row, column), (row + 1, column)));
+    for (var row = 0; row < boardSize; row++) {
+      for (var column = 0; column < boardSize; column++) {
+        if (column + 1 < boardSize) {
+          adjacent.add(((row, column), (row, column + 1)));
+        }
+        if (row + 1 < boardSize) {
+          adjacent.add(((row, column), (row + 1, column)));
+        }
       }
     }
     adjacent.shuffle(random);
     final inequalityTarget = switch (difficulty) {
-      PuzzleDifficulty.easy => 7,
-      PuzzleDifficulty.medium => 9,
-      PuzzleDifficulty.hard => 11,
+      PuzzleDifficulty.easy => boardSize + 3,
+      PuzzleDifficulty.medium => boardSize + 4,
+      PuzzleDifficulty.hard => boardSize + 5,
     };
     final inequalities = <FutoshikiInequality>[
       for (final pair in adjacent.take(inequalityTarget))
@@ -62,15 +71,15 @@ class FutoshikiGenerator {
       for (final row in solution) [for (final value in row) value],
     ];
     final positions = <(int, int)>[
-      for (var row = 0; row < size; row++)
-        for (var column = 0; column < size; column++) (row, column),
+      for (var row = 0; row < boardSize; row++)
+        for (var column = 0; column < boardSize; column++) (row, column),
     ]..shuffle(random);
     final minimumGivens = switch (difficulty) {
-      PuzzleDifficulty.easy => 6,
-      PuzzleDifficulty.medium => 5,
-      PuzzleDifficulty.hard => 4,
+      PuzzleDifficulty.easy => boardSize + 2,
+      PuzzleDifficulty.medium => boardSize,
+      PuzzleDifficulty.hard => boardSize - 2,
     };
-    var givenCount = size * size;
+    var givenCount = boardSize * boardSize;
     for (final position in positions) {
       if (givenCount <= minimumGivens) break;
       final previous = givens[position.$1][position.$2];
@@ -78,7 +87,7 @@ class FutoshikiGenerator {
       final candidate = FutoshikiPuzzle(
         id: 'candidate',
         title: 'candidate',
-        size: size,
+        size: boardSize,
         givens: givens,
         inequalities: inequalities,
         solution: solution,
@@ -93,7 +102,7 @@ class FutoshikiGenerator {
     return FutoshikiPuzzle(
       id: id ?? 'futoshiki-generated-${difficulty.name}-$seed',
       title: title ?? '${difficulty.label} · Zufallsrätsel',
-      size: size,
+      size: boardSize,
       givens: givens,
       inequalities: inequalities,
       solution: solution,

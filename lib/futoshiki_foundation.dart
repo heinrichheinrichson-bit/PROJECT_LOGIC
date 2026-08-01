@@ -18,6 +18,7 @@ class SavedFutoshikiGame {
     required this.moves,
     required this.hintsRemaining,
     this.mode = GameMode.generated,
+    this.candidates = const {},
   });
 
   final FutoshikiPuzzle puzzle;
@@ -26,6 +27,7 @@ class SavedFutoshikiGame {
   final int moves;
   final int hintsRemaining;
   final GameMode mode;
+  final Map<String, Set<int>> candidates;
 
   Map<String, Object?> toJson() => {
         'version': 1,
@@ -52,6 +54,10 @@ class SavedFutoshikiGame {
         'moves': moves,
         'hintsRemaining': hintsRemaining,
         'mode': mode.name,
+        'candidates': {
+          for (final entry in candidates.entries)
+            entry.key: entry.value.toList()..sort(),
+        },
       };
 
   factory SavedFutoshikiGame.fromJson(Map<String, Object?> json) {
@@ -95,6 +101,12 @@ class SavedFutoshikiGame {
       mode: GameMode.values.byName(
         json['mode'] as String? ?? GameMode.generated.name,
       ),
+      candidates: {
+        for (final entry in Map<String, Object?>.from(
+          json['candidates'] as Map? ?? const {},
+        ).entries)
+          entry.key: (entry.value! as List).cast<int>().toSet(),
+      },
     );
   }
 }
@@ -117,6 +129,23 @@ final List<FutoshikiPuzzle> futoshikiPuzzleCatalog = [
           _ => 'Kapitelabschluss',
         },
       ),
+  for (var index = 0; index < 8; index++)
+    const FutoshikiGenerator().generate(
+      seed: 8500 + index,
+      difficulty: PuzzleDifficulty.hard,
+      size: 7,
+      id: 'futoshiki-expert-${index + 1}',
+      title: switch (index) {
+        0 => 'Große Vergleiche',
+        1 => 'Lange Ketten',
+        2 => 'Sieben Wege',
+        3 => 'Dichte Ordnung',
+        4 => 'Weite Schlüsse',
+        5 => 'Zahlengeflecht',
+        6 => 'Expertenlogik',
+        _ => 'Meisterprüfung',
+      },
+    ),
 ];
 
 class FutoshikiGameStore {
@@ -267,7 +296,7 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
                 child: Icon(Icons.grid_view_rounded),
               ),
               title: const Text('Rätselsammlung'),
-              subtitle: const Text('24 ausgewählte Lern- und Logikrätsel'),
+              subtitle: const Text('32 ausgewählte Lern- und Logikrätsel'),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () async {
                 await Navigator.of(context).push(
@@ -323,6 +352,14 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
             ),
             const SizedBox(height: 12),
           ],
+          _DifficultyCard(
+            difficulty: PuzzleDifficulty.hard,
+            boardSize: 7,
+            title: 'Experte',
+            description: 'Große Raster für erfahrene Futoshiki-Fans',
+            onOpen: (puzzle) => _open(puzzle),
+          ),
+          const SizedBox(height: 12),
         ],
       ),
     );
@@ -411,10 +448,33 @@ class _FutoshikiCollectionScreenState extends State<FutoshikiCollectionScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          for (final difficulty in PuzzleDifficulty.values) ...[
+          for (final chapter in const [
+            (
+              title: 'Grundlagen',
+              difficulty: PuzzleDifficulty.easy,
+              size: 4,
+            ),
+            (
+              title: 'Sichere Vergleiche',
+              difficulty: PuzzleDifficulty.medium,
+              size: 5,
+            ),
+            (
+              title: 'Komplexe Beziehungen',
+              difficulty: PuzzleDifficulty.hard,
+              size: 6,
+            ),
+            (
+              title: 'Expertenraster',
+              difficulty: PuzzleDifficulty.hard,
+              size: 7,
+            ),
+          ]) ...[
             Builder(builder: (context) {
               final puzzles = futoshikiPuzzleCatalog
-                  .where((puzzle) => puzzle.difficulty == difficulty)
+                  .where((puzzle) =>
+                      puzzle.difficulty == chapter.difficulty &&
+                      puzzle.size == chapter.size)
                   .toList(growable: false);
               final solved = puzzles
                   .where((puzzle) =>
@@ -423,9 +483,9 @@ class _FutoshikiCollectionScreenState extends State<FutoshikiCollectionScreen> {
               return Card(
                 clipBehavior: Clip.antiAlias,
                 child: ExpansionTile(
-                  initiallyExpanded: difficulty == PuzzleDifficulty.easy,
-                  leading: CircleAvatar(child: Text('${difficulty.index + 1}')),
-                  title: Text(difficulty.label),
+                  initiallyExpanded: chapter.size == 4,
+                  leading: CircleAvatar(child: Text('${chapter.size}')),
+                  title: Text(chapter.title),
                   subtitle: Text('$solved von ${puzzles.length} gelöst'),
                   children: [
                     for (var index = 0; index < puzzles.length; index++)
@@ -457,37 +517,56 @@ class _FutoshikiCollectionScreenState extends State<FutoshikiCollectionScreen> {
 }
 
 class _DifficultyCard extends StatelessWidget {
-  const _DifficultyCard({required this.difficulty, required this.onOpen});
+  const _DifficultyCard({
+    required this.difficulty,
+    required this.onOpen,
+    this.boardSize,
+    this.title,
+    this.description,
+  });
 
   final PuzzleDifficulty difficulty;
   final ValueChanged<FutoshikiPuzzle> onOpen;
+  final int? boardSize;
+  final String? title;
+  final String? description;
 
   @override
   Widget build(BuildContext context) {
-    final size = switch (difficulty) {
-      PuzzleDifficulty.easy => 4,
-      PuzzleDifficulty.medium => 5,
-      PuzzleDifficulty.hard => 6,
-    };
+    final size = boardSize ??
+        switch (difficulty) {
+          PuzzleDifficulty.easy => 4,
+          PuzzleDifficulty.medium => 5,
+          PuzzleDifficulty.hard => 6,
+        };
     return Card(
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         minTileHeight: 86,
         leading: CircleAvatar(child: Text('$size')),
-        title: Text(difficulty.label),
-        subtitle: Text('${difficulty.description} · $size × $size'),
+        title: Text(title ?? difficulty.label),
+        subtitle:
+            Text('${description ?? difficulty.description} · $size × $size'),
         trailing: const Icon(Icons.play_arrow_rounded),
         onTap: () {
           final seed = DateTime.now().microsecondsSinceEpoch;
           final puzzle = const FutoshikiGenerator().generate(
             seed: seed,
             difficulty: difficulty,
+            size: size,
           );
           onOpen(puzzle);
         },
       ),
     );
   }
+}
+
+class _FutoshikiSnapshot {
+  const _FutoshikiSnapshot({required this.state, required this.candidates});
+
+  final FutoshikiState state;
+  final Map<String, Set<int>> candidates;
 }
 
 class FutoshikiGameScreen extends StatefulWidget {
@@ -509,8 +588,8 @@ class FutoshikiGameScreen extends StatefulWidget {
 class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
   static const _guideSeenKey = 'futoshiki_inequality_guide_seen_v1';
   late FutoshikiState _state;
-  final _history = <FutoshikiState>[];
-  final _redo = <FutoshikiState>[];
+  final _history = <_FutoshikiSnapshot>[];
+  final _redo = <_FutoshikiSnapshot>[];
   Timer? _timer;
   (int, int)? _selected;
   int _elapsedSeconds = 0;
@@ -518,6 +597,9 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
   int _hintsRemaining = 3;
   bool _showConflicts = true;
   bool _completionShown = false;
+  bool _candidateMode = false;
+  bool _autoAdvance = true;
+  Map<String, Set<int>> _candidates = {};
   final _saveStore = FutoshikiGameStore();
 
   @override
@@ -532,6 +614,11 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
     _elapsedSeconds = saved?.elapsedSeconds ?? 0;
     _moves = saved?.moves ?? 0;
     _hintsRemaining = saved?.hintsRemaining ?? 3;
+    _candidates = {
+      if (saved != null)
+        for (final entry in saved.candidates.entries)
+          entry.key: {...entry.value},
+    };
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && !_completionShown) {
         setState(() => _elapsedSeconds++);
@@ -567,8 +654,39 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
           moves: _moves,
           hintsRemaining: _hintsRemaining,
           mode: widget.mode,
+          candidates: _candidates,
         ),
       );
+
+  String _cellKey(int row, int column) => '$row:$column';
+
+  _FutoshikiSnapshot _snapshot() => _FutoshikiSnapshot(
+        state: _state,
+        candidates: {
+          for (final entry in _candidates.entries) entry.key: {...entry.value},
+        },
+      );
+
+  void _restore(_FutoshikiSnapshot snapshot) {
+    _state = snapshot.state;
+    _candidates = {
+      for (final entry in snapshot.candidates.entries)
+        entry.key: {...entry.value},
+    };
+  }
+
+  (int, int)? _nextEditableEmpty((int, int) current) {
+    final size = widget.puzzle.size;
+    for (var offset = 1; offset <= size * size; offset++) {
+      final index = (current.$1 * size + current.$2 + offset) % (size * size);
+      final row = index ~/ size;
+      final column = index % size;
+      if (!_state.isGiven(row, column) && _state.values[row][column] == null) {
+        return (row, column);
+      }
+    }
+    return null;
+  }
 
   Future<void> _showFirstRunGuide() async {
     final preferences = await SharedPreferences.getInstance();
@@ -612,6 +730,29 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
   void _setValue(int? value) {
     final selected = _selected;
     if (selected == null || _completionShown) return;
+    final key = _cellKey(selected.$1, selected.$2);
+    if (_candidateMode) {
+      final current = _candidates[key] ?? <int>{};
+      if (value == null && current.isEmpty) return;
+      setState(() {
+        _history.add(_snapshot());
+        final updated = {...current};
+        if (value == null) {
+          updated.clear();
+        } else if (!updated.add(value)) {
+          updated.remove(value);
+        }
+        if (updated.isEmpty) {
+          _candidates.remove(key);
+        } else {
+          _candidates[key] = updated;
+        }
+        _redo.clear();
+        _moves++;
+      });
+      unawaited(_saveGame());
+      return;
+    }
     final next = _state.setValue(selected.$1, selected.$2, value);
     if (identical(next, _state) ||
         next.values[selected.$1][selected.$2] ==
@@ -619,8 +760,12 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
       return;
     }
     setState(() {
-      _history.add(_state);
+      _history.add(_snapshot());
       _state = next;
+      _candidates.remove(key);
+      if (_autoAdvance && value != null) {
+        _selected = _nextEditableEmpty(selected) ?? selected;
+      }
       _redo.clear();
       _moves++;
     });
@@ -631,8 +776,8 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
   void _undo() {
     if (_history.isEmpty || _completionShown) return;
     setState(() {
-      _redo.add(_state);
-      _state = _history.removeLast();
+      _redo.add(_snapshot());
+      _restore(_history.removeLast());
       if (_moves > 0) _moves--;
     });
     unawaited(_saveGame());
@@ -641,8 +786,8 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
   void _redoMove() {
     if (_redo.isEmpty || _completionShown) return;
     setState(() {
-      _history.add(_state);
-      _state = _redo.removeLast();
+      _history.add(_snapshot());
+      _restore(_redo.removeLast());
       _moves++;
     });
     unawaited(_saveGame());
@@ -651,8 +796,9 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
   Future<void> _restart() async {
     if (!await confirmPuzzleRestart(context) || !mounted) return;
     setState(() {
-      _history.add(_state);
+      _history.add(_snapshot());
       _state = FutoshikiState(puzzle: widget.puzzle);
+      _candidates.clear();
       _redo.clear();
       _elapsedSeconds = 0;
       _moves = 0;
@@ -817,7 +963,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
     ];
     final leaveEmpty = almost && editable.isNotEmpty ? editable.last : null;
     setState(() {
-      _history.add(_state);
+      _history.add(_snapshot());
       var next = _state;
       for (final cell in editable) {
         if (cell == leaveEmpty) continue;
@@ -828,6 +974,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
         );
       }
       _state = next;
+      _candidates.clear();
       _selected = leaveEmpty;
       _redo.clear();
     });
@@ -912,6 +1059,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
                             state: _state,
                             selected: _selected,
                             conflicts: conflicts,
+                            candidates: _candidates,
                             onSelect: (row, column) {
                               if (!_state.isGiven(row, column)) {
                                 setState(() => _selected = (row, column));
@@ -943,6 +1091,24 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
                         icon: const Icon(Icons.backspace_outlined),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment(
+                        value: false,
+                        icon: Icon(Icons.edit_rounded),
+                        label: Text('Zahl'),
+                      ),
+                      ButtonSegment(
+                        value: true,
+                        icon: Icon(Icons.edit_note_rounded),
+                        label: Text('Notizen'),
+                      ),
+                    ],
+                    selected: {_candidateMode},
+                    onSelectionChanged: (selection) =>
+                        setState(() => _candidateMode = selection.first),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -994,6 +1160,15 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen> {
                     onChanged: (value) =>
                         setState(() => _showConflicts = value),
                   ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Automatisch weiter'),
+                    subtitle: const Text(
+                      'Wählt nach einer Zahl das nächste freie Feld aus.',
+                    ),
+                    value: _autoAdvance,
+                    onChanged: (value) => setState(() => _autoAdvance = value),
+                  ),
                 ],
               ),
             ),
@@ -1009,6 +1184,7 @@ class FutoshikiBoard extends StatelessWidget {
     required this.state,
     required this.selected,
     required this.conflicts,
+    this.candidates = const {},
     required this.onSelect,
     super.key,
   });
@@ -1016,6 +1192,7 @@ class FutoshikiBoard extends StatelessWidget {
   final FutoshikiState state;
   final (int, int)? selected;
   final Set<(int, int)> conflicts;
+  final Map<String, Set<int>> candidates;
   final void Function(int row, int column) onSelect;
 
   @override
@@ -1058,6 +1235,8 @@ class FutoshikiBoard extends StatelessWidget {
 
   Widget _cell(BuildContext context, int row, int column) {
     final value = state.values[row][column];
+    final notes = [...?candidates['$row:$column']];
+    notes.sort();
     final isSelected = selected == (row, column);
     final isConflict = conflicts.contains((row, column));
     final scheme = Theme.of(context).colorScheme;
@@ -1083,15 +1262,24 @@ class FutoshikiBoard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         onTap: () => onSelect(row, column),
         child: Center(
-          child: Text(
-            value?.toString() ?? '',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: state.isGiven(row, column)
-                      ? FontWeight.w800
-                      : FontWeight.w500,
-                  color: isConflict ? scheme.onErrorContainer : null,
+          child: value == null && notes.isNotEmpty
+              ? Text(
+                  notes.join('  '),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                )
+              : Text(
+                  value?.toString() ?? '',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: state.isGiven(row, column)
+                            ? FontWeight.w800
+                            : FontWeight.w500,
+                        color: isConflict ? scheme.onErrorContainer : null,
+                      ),
                 ),
-          ),
         ),
       ),
     );
