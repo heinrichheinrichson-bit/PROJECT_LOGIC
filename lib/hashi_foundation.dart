@@ -628,10 +628,19 @@ class HashiGameState {
   HashiGameState applyHint() {
     final hint = nextHintBridge;
     if (hint == null) return this;
+    final currentCount = bridgeCountBetween(hint.from, hint.to);
+    final nextCount =
+        currentCount < hint.count ? currentCount + 1 : currentCount - 1;
     final updated = bridges
         .where((bridge) => !_sameConnection(bridge, hint.from, hint.to))
-        .toList()
-      ..add(hint);
+        .toList();
+    if (nextCount > 0) {
+      updated.add(HashiBridge(
+        from: hint.from,
+        to: hint.to,
+        count: nextCount,
+      ));
+    }
     return HashiGameState(puzzle: puzzle, bridges: updated);
   }
 

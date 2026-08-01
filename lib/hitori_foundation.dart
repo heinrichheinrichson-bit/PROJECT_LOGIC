@@ -21,6 +21,7 @@ class SavedHitoriGame {
     required this.hintsRemaining,
     this.hintsUsed = 0,
     this.rewardedHints = 0,
+    this.mode = GameMode.generated,
   });
 
   final HitoriPuzzle puzzle;
@@ -30,6 +31,7 @@ class SavedHitoriGame {
   final int hintsRemaining;
   final int hintsUsed;
   final int rewardedHints;
+  final GameMode mode;
 
   Map<String, Object?> toJson() => {
         'version': 1,
@@ -51,6 +53,7 @@ class SavedHitoriGame {
         'hintsRemaining': hintsRemaining,
         'hintsUsed': hintsUsed,
         'rewardedHints': rewardedHints,
+        'mode': mode.name,
       };
 
   factory SavedHitoriGame.fromJson(Map<String, Object?> json) {
@@ -89,6 +92,9 @@ class SavedHitoriGame {
       hintsRemaining: json['hintsRemaining']! as int,
       hintsUsed: json['hintsUsed'] as int? ?? 0,
       rewardedHints: json['rewardedHints'] as int? ?? 0,
+      mode: GameMode.values.byName(
+        json['mode'] as String? ?? GameMode.generated.name,
+      ),
     );
   }
 }
@@ -127,7 +133,14 @@ class HitoriGameStore {
 }
 
 class HitoriHubScreen extends StatefulWidget {
-  const HitoriHubScreen({super.key});
+  const HitoriHubScreen({
+    this.onOpenDaily,
+    this.onOpenStatistics,
+    super.key,
+  });
+
+  final void Function(BuildContext context)? onOpenDaily;
+  final void Function(BuildContext context)? onOpenStatistics;
 
   @override
   State<HitoriHubScreen> createState() => _HitoriHubScreenState();
@@ -147,7 +160,11 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
     if (mounted) setState(() => _saved = saved);
   }
 
-  Future<void> _open(HitoriPuzzle puzzle, {SavedHitoriGame? saved}) async {
+  Future<void> _open(
+    HitoriPuzzle puzzle, {
+    SavedHitoriGame? saved,
+    GameMode mode = GameMode.generated,
+  }) async {
     if (saved == null && _saved != null) {
       final replace = await showDialog<bool>(
         context: context,
@@ -172,14 +189,18 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
       if (!mounted) return;
       if (replace != true) {
         final current = _saved!;
-        return _open(current.puzzle, saved: current);
+        return _open(current.puzzle, saved: current, mode: current.mode);
       }
       await HitoriGameStore().clear();
     }
     if (!mounted) return;
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
-        builder: (_) => HitoriGameScreen(puzzle: puzzle, savedGame: saved),
+        builder: (_) => HitoriGameScreen(
+          puzzle: puzzle,
+          savedGame: saved,
+          mode: saved?.mode ?? mode,
+        ),
       ),
     );
     await _refresh();
@@ -215,6 +236,31 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
               'Schwärze doppelte Zahlen, ohne schwarze Nachbarn zu erzeugen. '
               'Alle hellen Felder müssen verbunden bleiben.',
             ),
+            if (widget.onOpenDaily != null) ...[
+              const SizedBox(height: 20),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.calendar_month_outlined),
+                  title: const Text('Tagesrätsel & Kalender'),
+                  subtitle:
+                      const Text('Heute lösen oder verpasste Tage nachholen'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => widget.onOpenDaily!(context),
+                ),
+              ),
+            ],
+            if (widget.onOpenStatistics != null) ...[
+              const SizedBox(height: 12),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.query_stats_rounded),
+                  title: const Text('Hitori-Statistik'),
+                  subtitle: const Text('Bestzeiten, Spielzeit und Lösungswege'),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => widget.onOpenStatistics!(context),
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             Text('Zufallsrätsel',
                 style: Theme.of(context).textTheme.titleLarge),
@@ -248,10 +294,16 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
 }
 
 class HitoriGameScreen extends StatefulWidget {
-  const HitoriGameScreen({required this.puzzle, this.savedGame, super.key});
+  const HitoriGameScreen({
+    required this.puzzle,
+    this.savedGame,
+    this.mode = GameMode.generated,
+    super.key,
+  });
 
   final HitoriPuzzle puzzle;
   final SavedHitoriGame? savedGame;
+  final GameMode mode;
 
   @override
   State<HitoriGameScreen> createState() => _HitoriGameScreenState();
@@ -311,6 +363,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
         hintsRemaining: _hintsRemaining,
         hintsUsed: _hintsUsed,
         rewardedHints: _rewardedHints,
+        mode: widget.mode,
       ));
 
   Future<void> _showRulesGuide({bool force = false}) async {
@@ -525,11 +578,12 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
   Future<void> _complete({bool testCompletion = false}) async {
     if (_completionShown) return;
     setState(() => _completionShown = true);
-    if (!testCompletion) {
+    final countsForTesting = testCompletion && widget.mode == GameMode.daily;
+    if (!testCompletion || countsForTesting) {
       await GameStorage().recordCompletion(
         puzzleId: widget.puzzle.id,
         elapsedSeconds: _elapsedSeconds,
-        source: GameMode.generated,
+        source: widget.mode,
         difficulty: widget.puzzle.difficulty,
         boardSize: widget.puzzle.size,
         gameType: GameType.hitori,
@@ -554,7 +608,11 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
             Text('${_formatTime(_elapsedSeconds)} · $_moves Züge'),
             if (testCompletion) ...[
               const SizedBox(height: 8),
-              const Text('Testabschluss · keine Statistik'),
+              Text(
+                countsForTesting
+                    ? 'Testabschluss · im Kalender gewertet'
+                    : 'Testabschluss · keine Statistik',
+              ),
             ],
           ],
         ),
@@ -568,15 +626,20 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
               Navigator.pop(dialogContext);
               Navigator.pop(context);
             },
-            child: const Text('Hitori verlassen'),
+            child: Text(
+              widget.mode == GameMode.daily
+                  ? 'Zum Kalender'
+                  : 'Hitori verlassen',
+            ),
           ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              _openNextHitori();
-            },
-            child: const Text('Noch eins'),
-          ),
+          if (widget.mode != GameMode.daily)
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+                _openNextHitori();
+              },
+              child: const Text('Noch eins'),
+            ),
         ],
       ),
     );
@@ -589,7 +652,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
     );
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
-        builder: (_) => HitoriGameScreen(puzzle: puzzle),
+        builder: (_) => HitoriGameScreen(puzzle: puzzle, mode: widget.mode),
       ),
     );
   }
@@ -821,9 +884,15 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: _openNextHitori,
-                    icon: const Icon(Icons.auto_awesome_rounded),
-                    label: const Text('Noch ein Hitori'),
+                    onPressed: widget.mode == GameMode.daily
+                        ? () => Navigator.pop(context)
+                        : _openNextHitori,
+                    icon: Icon(widget.mode == GameMode.daily
+                        ? Icons.calendar_month_outlined
+                        : Icons.auto_awesome_rounded),
+                    label: Text(widget.mode == GameMode.daily
+                        ? 'Zum Kalender'
+                        : 'Noch ein Hitori'),
                   ),
                 ),
               ],

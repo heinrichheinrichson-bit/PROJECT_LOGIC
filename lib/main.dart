@@ -23,6 +23,7 @@ import 'features/binary_puzzle/domain/binary_puzzle_generator.dart';
 import 'features/hashi/domain/hashi_generator.dart';
 import 'features/futoshiki/domain/futoshiki_generator.dart';
 import 'features/futoshiki/domain/futoshiki_puzzle.dart';
+import 'features/hitori/domain/hitori_generator.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -326,7 +327,32 @@ class _HomeScreenState extends State<HomeScreen> {
                       enabled: true,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
-                          builder: (_) => const HitoriHubScreen(),
+                          builder: (_) => HitoriHubScreen(
+                            onOpenDaily: (hitoriContext) =>
+                                Navigator.of(hitoriContext).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const DailyArchiveScreen(
+                                  gameType: GameType.hitori,
+                                ),
+                              ),
+                            ),
+                            onOpenStatistics: (hitoriContext) async {
+                              final storage = GameStorage();
+                              final results = await storage.loadResults();
+                              final progress =
+                                  await storage.loadPlayerProgress();
+                              if (!hitoriContext.mounted) return;
+                              await Navigator.of(hitoriContext).push(
+                                MaterialPageRoute<void>(
+                                  builder: (_) => StatisticsScreen(
+                                    results: results,
+                                    progress: progress,
+                                    gameType: GameType.hitori,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -652,6 +678,7 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
         GameType.hashi => _hashiDailyRoute(summary),
         GameType.slitherlink => _slitherlinkDailyRoute(summary),
         GameType.futoshiki => _futoshikiDailyRoute(summary),
+        GameType.hitori => _hitoriDailyRoute(summary),
         _ => throw UnsupportedError('Tagesrätsel noch nicht verfügbar'),
       };
       if (!mounted) return;
@@ -743,6 +770,21 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
     return MaterialPageRoute<void>(
       builder: (_) => FutoshikiGameScreen(
         puzzle: puzzle,
+        mode: GameMode.daily,
+      ),
+    );
+  }
+
+  MaterialPageRoute<void> _hitoriDailyRoute(DailyChallengeSummary summary) {
+    final generated = const HitoriGenerator().generate(
+      seed: summary.seed,
+      difficulty: summary.difficulty,
+      id: summary.puzzleId,
+      title: 'Tagesrätsel · ${DailyChallengeService.formatDate(summary.day)}',
+    );
+    return MaterialPageRoute<void>(
+      builder: (_) => HitoriGameScreen(
+        puzzle: generated,
         mode: GameMode.daily,
       ),
     );
@@ -3207,6 +3249,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       _attempts,
       gameType: GameType.futoshiki,
     );
+    final hitoriStatistics = GameStatistics.fromAttempts(
+      _attempts,
+      gameType: GameType.hitori,
+    );
     final binairoResults = results.values
         .where((result) => result.gameType == GameType.binairo)
         .toList(growable: false);
@@ -3254,10 +3300,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         .map((result) => result.puzzleId)
         .toSet()
         .length;
+    final hitoriResults = results.values
+        .where((result) => result.gameType == GameType.hitori)
+        .toList(growable: false);
+    final hitoriCompleted = hitoriResults.fold<int>(
+      0,
+      (sum, result) => sum + result.completionCount,
+    );
     final isBinairoDetail = widget.gameType == GameType.binairo;
     final isHashiDetail = widget.gameType == GameType.hashi;
     final isSlitherlinkDetail = widget.gameType == GameType.slitherlink;
     final isFutoshikiDetail = widget.gameType == GameType.futoshiki;
+    final isHitoriDetail = widget.gameType == GameType.hitori;
     final isGameDetail = widget.gameType != null;
     final selectedStatistics = isBinairoDetail
         ? binairoStatistics
@@ -3267,7 +3321,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ? slitherlinkStatistics
                 : isFutoshikiDetail
                     ? futoshikiStatistics
-                    : GameStatistics.fromAttempts(_attempts);
+                    : isHitoriDetail
+                        ? hitoriStatistics
+                        : GameStatistics.fromAttempts(_attempts);
     final selectedCompleted = isBinairoDetail
         ? binairoCompleted
         : isHashiDetail
@@ -3276,7 +3332,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ? slitherlinkCompleted
                 : isFutoshikiDetail
                     ? futoshikiCompleted
-                    : totalCompleted;
+                    : isHitoriDetail
+                        ? hitoriCompleted
+                        : totalCompleted;
 
     return Scaffold(
       appBar: AppBar(
@@ -3582,6 +3640,49 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       legacyResults: futoshikiResults,
                       showMoves: true,
                     ),
+                  ] else if (isHitoriDetail) ...[
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.auto_awesome_outlined,
+                      title: 'Zufallsrätsel',
+                      subtitle:
+                          '${hitoriStatistics.completedForMode(GameMode.generated)} abgeschlossen',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.calendar_today_outlined,
+                      title: 'Tagesrätsel',
+                      subtitle:
+                          '${hitoriStatistics.completedForMode(GameMode.daily)} abgeschlossen',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
+                      icon: Icons.timer_outlined,
+                      title: 'Spielzeit',
+                      subtitle:
+                          _formatLongTime(hitoriStatistics.totalPlaySeconds),
+                      trailing: hitoriStatistics.averageSeconds == null
+                          ? null
+                          : 'Ø ${_formatLongTime(hitoriStatistics.averageSeconds!)}',
+                    ),
+                    const SizedBox(height: 24),
+                    _PerformanceStatisticsSection(
+                      statistics: hitoriStatistics,
+                      legacyBestSeconds: _bestResultSeconds(hitoriResults),
+                      showMoves: true,
+                    ),
+                    const SizedBox(height: 24),
+                    _ModePerformanceSection(
+                      statistics: hitoriStatistics,
+                      modes: const [GameMode.generated, GameMode.daily],
+                      showMoves: true,
+                    ),
+                    const SizedBox(height: 24),
+                    _DifficultyPerformanceSection(
+                      statistics: hitoriStatistics,
+                      legacyResults: hitoriResults,
+                      showMoves: true,
+                    ),
                   ] else ...[
                     const SizedBox(height: 12),
                     _StatisticListCard(
@@ -3693,6 +3794,29 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                             results: results,
                             progress: progress,
                             gameType: GameType.futoshiki,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    _GameStatisticsOverviewCard(
+                      gameType: GameType.hitori,
+                      icon: Icons.filter_b_and_w_outlined,
+                      completed: hitoriCompleted,
+                      catalogCompleted: 0,
+                      catalogTotal: 0,
+                      endlessCompleted: hitoriStatistics.completedForMode(
+                        GameMode.generated,
+                      ),
+                      solvedWithoutHints: hitoriStatistics.solvedWithoutHints,
+                      dailyCompleted:
+                          hitoriStatistics.completedForMode(GameMode.daily),
+                      onOpenDetails: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => StatisticsScreen(
+                            results: results,
+                            progress: progress,
+                            gameType: GameType.hitori,
                           ),
                         ),
                       ),
@@ -4187,6 +4311,7 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
     required this.endlessCompleted,
     required this.solvedWithoutHints,
     required this.onOpenDetails,
+    this.dailyCompleted,
   });
 
   final GameType gameType;
@@ -4197,6 +4322,7 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
   final int endlessCompleted;
   final int solvedWithoutHints;
   final VoidCallback onOpenDetails;
+  final int? dailyCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -4217,14 +4343,18 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
         subtitle: Text('$completed Rätsel abgeschlossen'),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
-          LinearProgressIndicator(value: progress.clamp(0, 1)),
-          const SizedBox(height: 12),
+          if (catalogTotal > 0) ...[
+            LinearProgressIndicator(value: progress.clamp(0, 1)),
+            const SizedBox(height: 12),
+          ],
           Row(
             children: [
               Expanded(
                 child: _CompactStatistic(
-                  value: '$catalogCompleted/$catalogTotal',
-                  label: 'Sammlung',
+                  value: catalogTotal > 0
+                      ? '$catalogCompleted/$catalogTotal'
+                      : '${dailyCompleted ?? 0}',
+                  label: catalogTotal > 0 ? 'Sammlung' : 'Tagesrätsel',
                 ),
               ),
               Expanded(

@@ -5,6 +5,7 @@ import 'package:project_logic_prototype/features/hitori/domain/hitori_generator.
 import 'package:project_logic_prototype/features/hitori/domain/hitori_puzzle.dart';
 import 'package:project_logic_prototype/features/hitori/domain/hitori_solver.dart';
 import 'package:project_logic_prototype/hitori_foundation.dart';
+import 'package:project_logic_prototype/game_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -267,6 +268,39 @@ void main() {
     expect(find.text('1 Tipps'), findsOneWidget);
   });
 
+  testWidgets('test solve counts for a daily Hitori puzzle', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'hitori_rules_guide_seen_v1': true,
+    });
+    final puzzle = const HitoriGenerator().generate(
+      seed: 20260801,
+      difficulty: PuzzleDifficulty.easy,
+      id: 'daily-hitori-2026-08-01',
+      title: 'Tagesrätsel',
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: HitoriGameScreen(
+        puzzle: puzzle,
+        mode: GameMode.daily,
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.bug_report_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sofort lösen'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Testabschluss · im Kalender gewertet'),
+      findsOneWidget,
+    );
+    expect(find.text('Zum Kalender'), findsWidgets);
+    expect(
+      (await GameStorage().loadResults()).containsKey('hitori:${puzzle.id}'),
+      isTrue,
+    );
+  });
+
   test('saved Hitori game preserves marks and time', () async {
     final puzzle = const HitoriGenerator().generate(
       seed: 9110,
@@ -280,11 +314,18 @@ void main() {
       elapsedSeconds: 64,
       moves: 3,
       hintsRemaining: 2,
+      hintsUsed: 2,
+      rewardedHints: 1,
+      mode: GameMode.daily,
     ));
     final restored = await store.load();
     expect(restored, isNotNull);
     expect(restored!.marks[cell], HitoriCellMark.shaded);
     expect(restored.elapsedSeconds, 64);
     expect(restored.moves, 3);
+    expect(restored.hintsRemaining, 2);
+    expect(restored.hintsUsed, 2);
+    expect(restored.rewardedHints, 1);
+    expect(restored.mode, GameMode.daily);
   });
 }

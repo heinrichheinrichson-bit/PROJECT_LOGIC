@@ -138,6 +138,28 @@ void main() {
     expect(find.text('7 × 7'), findsOneWidget);
   });
 
+  testWidgets('Hitori hub exposes calendar and detailed statistics',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await AppPreferences.load();
+    await tester.pumpWidget(ProjectLogicApp(preferences: preferences));
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Hitori'));
+    await tester.tap(find.text('Hitori'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tagesrätsel & Kalender'), findsOneWidget);
+    expect(find.text('Hitori-Statistik'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Hitori-Statistik'));
+    await tester.tap(find.text('Hitori-Statistik'));
+    await tester.pumpAndSettle();
+    expect(find.text('Hitori-Statistik'), findsOneWidget);
+    expect(find.text('Tagesrätsel'), findsOneWidget);
+    expect(find.text('Leistung'), findsOneWidget);
+    expect(find.text('Nach Schwierigkeit'), findsOneWidget);
+  });
+
   testWidgets('daily calendar tiles fit a narrow phone without overflow',
       (tester) async {
     SharedPreferences.setMockInitialValues({});

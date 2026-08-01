@@ -47,6 +47,8 @@ class ProgressSnapshot {
         GameType.binairo,
         GameType.hashi,
         GameType.slitherlink,
+        GameType.futoshiki,
+        GameType.hitori,
       ])
         service.summaryForGame(DateTime.now(), gameType).puzzleId,
     };
@@ -204,6 +206,22 @@ class PlayerProgressService {
           target: 1,
         ),
         _achievement(
+          id: 'futoshiki-first',
+          title: 'Ungleichungen gemeistert',
+          description: 'Vollende dein erstes Futoshiki-Rätsel.',
+          iconName: 'compare_arrows',
+          current: snapshot.completedForGame(GameType.futoshiki),
+          target: 1,
+        ),
+        _achievement(
+          id: 'hitori-first',
+          title: 'Einzelgänger',
+          description: 'Vollende dein erstes Hitori-Rätsel.',
+          iconName: 'filter_b_and_w',
+          current: snapshot.completedForGame(GameType.hitori),
+          target: 1,
+        ),
+        _achievement(
           id: 'streak-three',
           title: 'Dranbleiben',
           description: 'Spiele an 3 Tagen in Folge.',
@@ -272,6 +290,8 @@ class PlayerProgressService {
         GameType.binairo,
         GameType.hashi,
         GameType.slitherlink,
+        GameType.futoshiki,
+        GameType.hitori,
       ])
         dailyService.summaryForGame(today, gameType).puzzleId,
     };

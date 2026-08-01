@@ -84,6 +84,26 @@ void main() {
     expect(hinted.bridges.first.to, hashiPreviewBridges.first.to);
   });
 
+  test('a hint adds only one line when a double bridge is required', () {
+    const puzzle = HashiPuzzle(
+      id: 'double-hint',
+      title: 'Double hint',
+      size: 3,
+      difficulty: 1,
+      islands: [
+        HashiIsland(row: 1, column: 0, bridges: 2),
+        HashiIsland(row: 1, column: 2, bridges: 2),
+      ],
+      solution: [HashiBridge(from: 0, to: 1, count: 2)],
+    );
+
+    final firstHint = HashiGameState(puzzle: puzzle).applyHint();
+    final secondHint = firstHint.applyHint();
+
+    expect(firstHint.bridgeCountBetween(0, 1), 1);
+    expect(secondHint.bridgeCountBetween(0, 1), 2);
+  });
+
   test('incorrect bridges are detected against the stored solution', () {
     final game = HashiGameState(
       puzzle: hashiTutorialPuzzle,
