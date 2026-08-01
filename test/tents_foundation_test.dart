@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/core/domain/game_identity.dart';
 import 'package:project_logic_prototype/features/tents/domain/tents_difficulty_rater.dart';
+import 'package:project_logic_prototype/features/tents/domain/tents_catalog.dart';
 import 'package:project_logic_prototype/features/tents/domain/tents_generator.dart';
 import 'package:project_logic_prototype/features/tents/domain/tents_puzzle.dart';
 import 'package:project_logic_prototype/features/tents/domain/tents_solver.dart';
@@ -108,6 +109,22 @@ void main() {
     expect(ratings.map((rating) => rating.band), PuzzleDifficulty.values);
     expect(ratings[0].score, lessThan(ratings[1].score));
     expect(ratings[1].score, lessThan(ratings[2].score));
+  });
+
+  test('collection contains 28 distinct and uniquely solvable puzzles', () {
+    const solver = TentsSolver();
+    expect(tentsPuzzleCatalog, hasLength(28));
+    expect(
+        tentsPuzzleCatalog.map((puzzle) => puzzle.id).toSet(), hasLength(28));
+    for (final difficulty in PuzzleDifficulty.values) {
+      expect(
+        tentsPuzzleCatalog.where((puzzle) => puzzle.difficulty == difficulty),
+        hasLength(difficulty == PuzzleDifficulty.hard ? 8 : 10),
+      );
+    }
+    for (final puzzle in tentsPuzzleCatalog) {
+      expect(solver.hasUniqueSolution(puzzle), isTrue, reason: puzzle.id);
+    }
   });
 
   test('saved game preserves puzzle, marks, time, and moves', () async {

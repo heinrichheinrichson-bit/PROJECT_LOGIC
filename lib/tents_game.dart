@@ -9,6 +9,7 @@ import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/tents/domain/tents_generator.dart';
+import 'features/tents/domain/tents_catalog.dart';
 import 'features/tents/domain/tents_puzzle.dart';
 import 'game_storage.dart';
 
@@ -22,6 +23,7 @@ class SavedTentsGame {
     this.hintsUsed = 0,
     this.rewardedHints = 0,
     this.autoGrass = true,
+    this.mode = GameMode.generated,
   });
   final TentsPuzzle puzzle;
   final Map<TentsCell, TentsCellMark> marks;
@@ -31,6 +33,7 @@ class SavedTentsGame {
   final int hintsUsed;
   final int rewardedHints;
   final bool autoGrass;
+  final GameMode mode;
 
   Map<String, Object?> toJson() => {
         'version': 1,
@@ -55,6 +58,7 @@ class SavedTentsGame {
         'hintsUsed': hintsUsed,
         'rewardedHints': rewardedHints,
         'autoGrass': autoGrass,
+        'mode': mode.name,
       };
 
   factory SavedTentsGame.fromJson(Map<String, Object?> json) {
@@ -86,6 +90,8 @@ class SavedTentsGame {
       hintsUsed: json['hintsUsed'] as int? ?? 0,
       rewardedHints: json['rewardedHints'] as int? ?? 0,
       autoGrass: json['autoGrass'] as bool? ?? true,
+      mode: GameMode.values
+          .byName(json['mode'] as String? ?? GameMode.generated.name),
     );
   }
 }
@@ -125,6 +131,7 @@ class TentsHubScreen extends StatefulWidget {
 
 class _TentsHubScreenState extends State<TentsHubScreen> {
   SavedTentsGame? _saved;
+  Set<String> _completedIds = const {};
   @override
   void initState() {
     super.initState();
@@ -133,11 +140,22 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
 
   Future<void> _refresh() async {
     final saved = await TentsGameStore().load();
-    if (mounted) setState(() => _saved = saved);
+    final results = await GameStorage().loadResults();
+    if (mounted) {
+      setState(() {
+        _saved = saved;
+        _completedIds = results.keys
+            .where((key) => key.startsWith('${GameType.tents.name}:'))
+            .map((key) => key.substring('${GameType.tents.name}:'.length))
+            .toSet();
+      });
+    }
   }
 
   Future<void> _open(PuzzleDifficulty difficulty,
-      {SavedTentsGame? saved}) async {
+      {SavedTentsGame? saved,
+      TentsPuzzle? selectedPuzzle,
+      GameMode mode = GameMode.generated}) async {
     if (saved == null && _saved != null) {
       final replace = await showDialog<bool>(
         context: context,
@@ -162,17 +180,20 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
       );
       if (!mounted) return;
       if (replace != true) {
-        return _open(_saved!.puzzle.difficulty, saved: _saved);
+        return _open(_saved!.puzzle.difficulty,
+            saved: _saved, mode: _saved!.mode);
       }
       await TentsGameStore().clear();
     }
     final puzzle = saved?.puzzle ??
+        selectedPuzzle ??
         const TentsGenerator().generate(
             seed: DateTime.now().microsecondsSinceEpoch,
             difficulty: difficulty);
     if (!mounted) return;
     await Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => TentsGameScreen(puzzle: puzzle, savedGame: saved)));
+        builder: (_) => TentsGameScreen(
+            puzzle: puzzle, savedGame: saved, mode: saved?.mode ?? mode)));
     await _refresh();
   }
 
@@ -188,7 +209,8 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
                     subtitle: Text(
                         '${saved.puzzle.difficulty.label} \u00b7 ${saved.puzzle.size}\u00d7${saved.puzzle.size}'),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _open(saved.puzzle.difficulty, saved: saved))),
+                    onTap: () => _open(saved.puzzle.difficulty,
+                        saved: saved, mode: saved.mode))),
             const SizedBox(height: 16),
           ],
           Text('Zufallsr\u00e4tsel',
@@ -218,14 +240,51 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
               trailing: const Icon(Icons.play_arrow_rounded),
               onTap: () => _open(difficulty),
             )),
+          const SizedBox(height: 24),
+          Text('R\u00e4tselsammlung',
+              style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 8),
+          const Text('28 feste Expeditionen mit dauerhaftem Fortschritt.'),
+          const SizedBox(height: 8),
+          for (final difficulty in PuzzleDifficulty.values)
+            Card(
+              child: ExpansionTile(
+                leading: CircleAvatar(child: Text('${difficulty.index + 1}')),
+                title: Text(tentsChapterTitles[difficulty]!),
+                subtitle: Text(
+                  '${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty && _completedIds.contains(p.id)).length} '
+                  'von ${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty).length} gel\u00f6st',
+                ),
+                children: [
+                  for (final puzzle in tentsPuzzleCatalog
+                      .where((p) => p.difficulty == difficulty))
+                    ListTile(
+                      leading: Icon(_completedIds.contains(puzzle.id)
+                          ? Icons.check_circle_rounded
+                          : Icons.radio_button_unchecked_rounded),
+                      title: Text(puzzle.title),
+                      subtitle: Text('${puzzle.size} \u00d7 ${puzzle.size}'),
+                      trailing: const Icon(Icons.play_arrow_rounded),
+                      onTap: () => _open(difficulty,
+                          selectedPuzzle: puzzle, mode: GameMode.catalog),
+                    ),
+                ],
+              ),
+            ),
         ]),
       );
 }
 
 class TentsGameScreen extends StatefulWidget {
-  const TentsGameScreen({required this.puzzle, this.savedGame, super.key});
+  const TentsGameScreen({
+    required this.puzzle,
+    this.savedGame,
+    this.mode = GameMode.generated,
+    super.key,
+  });
   final TentsPuzzle puzzle;
   final SavedTentsGame? savedGame;
+  final GameMode mode;
   @override
   State<TentsGameScreen> createState() => _TentsGameScreenState();
 }
@@ -279,7 +338,8 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
       hintsRemaining: _hintsRemaining,
       hintsUsed: _hintsUsed,
       rewardedHints: _rewardedHints,
-      autoGrass: _autoGrass));
+      autoGrass: _autoGrass,
+      mode: widget.mode));
   void _tap(int row, int column) {
     if (_completed || widget.puzzle.trees.contains((row, column))) return;
     setState(() {
@@ -551,7 +611,7 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
       await GameStorage().recordCompletion(
           puzzleId: widget.puzzle.id,
           elapsedSeconds: _elapsed,
-          source: GameMode.generated,
+          source: widget.mode,
           difficulty: widget.puzzle.difficulty,
           boardSize: widget.puzzle.size,
           gameType: GameType.tents,
@@ -587,12 +647,22 @@ class _TentsGameScreenState extends State<TentsGameScreen> {
                 ]));
   }
 
-  void _next() => Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
-      builder: (_) => TentsGameScreen(
-          puzzle: const TentsGenerator().generate(
-              seed: DateTime.now().microsecondsSinceEpoch,
-              difficulty: widget.puzzle.difficulty,
-              size: widget.puzzle.size))));
+  void _next() {
+    final sameDifficulty = tentsPuzzleCatalog
+        .where((puzzle) => puzzle.difficulty == widget.puzzle.difficulty)
+        .toList(growable: false);
+    final index =
+        sameDifficulty.indexWhere((puzzle) => puzzle.id == widget.puzzle.id);
+    final puzzle = widget.mode == GameMode.catalog && index >= 0
+        ? sameDifficulty[(index + 1) % sameDifficulty.length]
+        : const TentsGenerator().generate(
+            seed: DateTime.now().microsecondsSinceEpoch,
+            difficulty: widget.puzzle.difficulty,
+            size: widget.puzzle.size,
+          );
+    Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
+        builder: (_) => TentsGameScreen(puzzle: puzzle, mode: widget.mode)));
+  }
 
   @override
   Widget build(BuildContext context) {
