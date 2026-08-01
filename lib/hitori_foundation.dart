@@ -9,6 +9,7 @@ import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/hitori/domain/hitori_generator.dart';
+import 'features/hitori/domain/hitori_catalog.dart';
 import 'features/hitori/domain/hitori_puzzle.dart';
 import 'game_storage.dart';
 
@@ -148,6 +149,7 @@ class HitoriHubScreen extends StatefulWidget {
 
 class _HitoriHubScreenState extends State<HitoriHubScreen> {
   SavedHitoriGame? _saved;
+  Map<String, PuzzleResult> _results = const {};
 
   @override
   void initState() {
@@ -157,8 +159,17 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
 
   Future<void> _refresh() async {
     final saved = await HitoriGameStore().load();
-    if (mounted) setState(() => _saved = saved);
+    final results = await GameStorage().loadResults();
+    if (mounted) {
+      setState(() {
+        _saved = saved;
+        _results = results;
+      });
+    }
   }
+
+  bool _isSolved(HitoriPuzzle puzzle) =>
+      _results.containsKey('${GameType.hitori.name}:${puzzle.id}');
 
   Future<void> _open(
     HitoriPuzzle puzzle, {
@@ -262,6 +273,56 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
               ),
             ],
             const SizedBox(height: 24),
+            Text('Rätselsammlung',
+                style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 6),
+            Text(
+              '${hitoriPuzzleCatalog.where(_isSolved).length} von '
+              '${hitoriPuzzleCatalog.length} Rätseln gelöst',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 10),
+            LinearProgressIndicator(
+              value: hitoriPuzzleCatalog.where(_isSolved).length /
+                  hitoriPuzzleCatalog.length,
+            ),
+            const SizedBox(height: 12),
+            for (final chapter in hitoriChapters) ...[
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: ExpansionTile(
+                  leading: CircleAvatar(child: Text('${chapter.number}')),
+                  title: Text(chapter.title),
+                  subtitle: Text(
+                    '${chapter.subtitle}\n'
+                    '${chapter.puzzles.where(_isSolved).length} von '
+                    '${chapter.puzzles.length} gelöst',
+                  ),
+                  children: [
+                    for (var index = 0; index < chapter.puzzles.length; index++)
+                      ListTile(
+                        leading: CircleAvatar(
+                          child: _isSolved(chapter.puzzles[index])
+                              ? const Icon(Icons.check_rounded)
+                              : Text('${index + 1}'),
+                        ),
+                        title: Text(chapter.puzzles[index].title),
+                        subtitle: Text(
+                          '${chapter.puzzles[index].size} × '
+                          '${chapter.puzzles[index].size}',
+                        ),
+                        trailing: const Icon(Icons.play_arrow_rounded),
+                        onTap: () => _open(
+                          chapter.puzzles[index],
+                          mode: GameMode.catalog,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            const SizedBox(height: 14),
             Text('Zufallsrätsel',
                 style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
@@ -636,20 +697,39 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
             FilledButton(
               onPressed: () {
                 Navigator.pop(dialogContext);
-                _openNextHitori();
+                _openNextPuzzle();
               },
-              child: const Text('Noch eins'),
+              child: Text(
+                widget.mode == GameMode.catalog
+                    ? (_nextCatalogPuzzle == null
+                        ? 'Zur Sammlung'
+                        : 'Nächstes Rätsel')
+                    : 'Noch eins',
+              ),
             ),
         ],
       ),
     );
   }
 
-  void _openNextHitori() {
-    final puzzle = const HitoriGenerator().generate(
-      seed: DateTime.now().microsecondsSinceEpoch,
-      difficulty: widget.puzzle.difficulty,
-    );
+  HitoriPuzzle? get _nextCatalogPuzzle {
+    final index = hitoriPuzzleCatalog
+        .indexWhere((puzzle) => puzzle.id == widget.puzzle.id);
+    if (index < 0 || index + 1 >= hitoriPuzzleCatalog.length) return null;
+    return hitoriPuzzleCatalog[index + 1];
+  }
+
+  void _openNextPuzzle() {
+    if (widget.mode == GameMode.catalog && _nextCatalogPuzzle == null) {
+      Navigator.pop(context);
+      return;
+    }
+    final puzzle = widget.mode == GameMode.catalog
+        ? _nextCatalogPuzzle!
+        : const HitoriGenerator().generate(
+            seed: DateTime.now().microsecondsSinceEpoch,
+            difficulty: widget.puzzle.difficulty,
+          );
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => HitoriGameScreen(puzzle: puzzle, mode: widget.mode),
@@ -886,13 +966,19 @@ class _HitoriGameScreenState extends State<HitoriGameScreen> {
                   child: OutlinedButton.icon(
                     onPressed: widget.mode == GameMode.daily
                         ? () => Navigator.pop(context)
-                        : _openNextHitori,
+                        : _openNextPuzzle,
                     icon: Icon(widget.mode == GameMode.daily
                         ? Icons.calendar_month_outlined
-                        : Icons.auto_awesome_rounded),
+                        : widget.mode == GameMode.catalog
+                            ? Icons.skip_next_rounded
+                            : Icons.auto_awesome_rounded),
                     label: Text(widget.mode == GameMode.daily
                         ? 'Zum Kalender'
-                        : 'Noch ein Hitori'),
+                        : widget.mode == GameMode.catalog
+                            ? (_nextCatalogPuzzle == null
+                                ? 'Zur Sammlung'
+                                : 'Nächstes Rätsel')
+                            : 'Noch ein Hitori'),
                   ),
                 ),
               ],

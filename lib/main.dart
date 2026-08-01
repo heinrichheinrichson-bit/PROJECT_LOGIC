@@ -24,6 +24,7 @@ import 'features/hashi/domain/hashi_generator.dart';
 import 'features/futoshiki/domain/futoshiki_generator.dart';
 import 'features/futoshiki/domain/futoshiki_puzzle.dart';
 import 'features/hitori/domain/hitori_generator.dart';
+import 'features/hitori/domain/hitori_catalog.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -3307,6 +3308,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       0,
       (sum, result) => sum + result.completionCount,
     );
+    final hitoriCollectionCompleted = hitoriResults
+        .where((result) => result.effectiveSource == GameMode.catalog)
+        .map((result) => result.puzzleId)
+        .toSet()
+        .length;
     final isBinairoDetail = widget.gameType == GameType.binairo;
     final isHashiDetail = widget.gameType == GameType.hashi;
     final isSlitherlinkDetail = widget.gameType == GameType.slitherlink;
@@ -3643,6 +3649,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   ] else if (isHitoriDetail) ...[
                     const SizedBox(height: 12),
                     _StatisticListCard(
+                      icon: Icons.collections_bookmark_outlined,
+                      title: 'Rätselsammlung',
+                      subtitle:
+                          '$hitoriCollectionCompleted von ${hitoriPuzzleCatalog.length} gelöst',
+                      trailing:
+                          '${((hitoriCollectionCompleted / hitoriPuzzleCatalog.length) * 100).round()} %',
+                    ),
+                    const SizedBox(height: 12),
+                    _StatisticListCard(
                       icon: Icons.auto_awesome_outlined,
                       title: 'Zufallsrätsel',
                       subtitle:
@@ -3674,7 +3689,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     const SizedBox(height: 24),
                     _ModePerformanceSection(
                       statistics: hitoriStatistics,
-                      modes: const [GameMode.generated, GameMode.daily],
+                      modes: const [
+                        GameMode.catalog,
+                        GameMode.generated,
+                        GameMode.daily,
+                      ],
                       showMoves: true,
                     ),
                     const SizedBox(height: 24),
@@ -3803,14 +3822,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       gameType: GameType.hitori,
                       icon: Icons.filter_b_and_w_outlined,
                       completed: hitoriCompleted,
-                      catalogCompleted: 0,
-                      catalogTotal: 0,
+                      catalogCompleted: hitoriCollectionCompleted,
+                      catalogTotal: hitoriPuzzleCatalog.length,
                       endlessCompleted: hitoriStatistics.completedForMode(
                         GameMode.generated,
                       ),
                       solvedWithoutHints: hitoriStatistics.solvedWithoutHints,
-                      dailyCompleted:
-                          hitoriStatistics.completedForMode(GameMode.daily),
                       onOpenDetails: () => Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => StatisticsScreen(
@@ -4311,7 +4328,6 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
     required this.endlessCompleted,
     required this.solvedWithoutHints,
     required this.onOpenDetails,
-    this.dailyCompleted,
   });
 
   final GameType gameType;
@@ -4322,7 +4338,6 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
   final int endlessCompleted;
   final int solvedWithoutHints;
   final VoidCallback onOpenDetails;
-  final int? dailyCompleted;
 
   @override
   Widget build(BuildContext context) {
@@ -4353,7 +4368,7 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
                 child: _CompactStatistic(
                   value: catalogTotal > 0
                       ? '$catalogCompleted/$catalogTotal'
-                      : '${dailyCompleted ?? 0}',
+                      : '0',
                   label: catalogTotal > 0 ? 'Sammlung' : 'Tagesrätsel',
                 ),
               ),

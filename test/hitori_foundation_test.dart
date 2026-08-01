@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/core/domain/game_identity.dart';
 import 'package:project_logic_prototype/features/hitori/domain/hitori_generator.dart';
+import 'package:project_logic_prototype/features/hitori/domain/hitori_catalog.dart';
 import 'package:project_logic_prototype/features/hitori/domain/hitori_puzzle.dart';
 import 'package:project_logic_prototype/features/hitori/domain/hitori_solver.dart';
 import 'package:project_logic_prototype/hitori_foundation.dart';
@@ -68,6 +69,36 @@ void main() {
       expect(first.solution, second.solution);
       expect(solver.hasUniqueSolution(first), isTrue);
       expect(solver.solve(first), first.solution);
+    }
+  });
+
+  test('collection contains 28 unique and uniquely solvable puzzles', () {
+    const solver = HitoriSolver();
+    expect(hitoriChapters, hasLength(3));
+    expect(
+        hitoriChapters.map((chapter) => chapter.puzzles.length), [10, 10, 8]);
+    expect(hitoriPuzzleCatalog, hasLength(28));
+    expect(
+      hitoriPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
+      hasLength(28),
+    );
+    for (final puzzle in hitoriPuzzleCatalog) {
+      expect(solver.hasUniqueSolution(puzzle), isTrue, reason: puzzle.id);
+      expect(solver.solve(puzzle), puzzle.solution, reason: puzzle.id);
+    }
+  });
+
+  test('generator stays unique across a representative seed sample', () {
+    const generator = HitoriGenerator();
+    const solver = HitoriSolver();
+    for (final difficulty in PuzzleDifficulty.values) {
+      for (var sample = 0; sample < 6; sample++) {
+        final puzzle = generator.generate(
+          seed: 18000 + difficulty.index * 100 + sample,
+          difficulty: difficulty,
+        );
+        expect(solver.hasUniqueSolution(puzzle), isTrue, reason: puzzle.id);
+      }
     }
   });
 
@@ -144,6 +175,29 @@ void main() {
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('collection completion offers the next puzzle', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'hitori_rules_guide_seen_v1': true,
+    });
+    final puzzle = hitoriPuzzleCatalog.first;
+    await tester.pumpWidget(MaterialApp(
+      home: HitoriGameScreen(
+        puzzle: puzzle,
+        mode: GameMode.catalog,
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.bug_report_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sofort lösen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nächstes Rätsel'), findsWidgets);
+
+    await tester.tap(find.text('Brett ansehen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nächstes Rätsel'), findsOneWidget);
   });
 
   testWidgets('show hint highlights its cell without applying the answer',
