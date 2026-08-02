@@ -208,110 +208,181 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
     final accent = AppTheme.gameColors['tents']!;
     return Scaffold(
       appBar: AppBar(title: const Text('Zelte & B\u00e4ume')),
-      body: ListView(padding: const EdgeInsets.all(20), children: [
-        if (_saved case final saved?) ...[
-          PuzzleHubAction(
-            icon: Icons.play_circle_outline_rounded,
-            title: 'Rätsel fortsetzen',
-            subtitle:
-                '${saved.puzzle.difficulty.label} · ${saved.puzzle.size} × ${saved.puzzle.size}',
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (_saved case final saved?) ...[
+            PuzzleHubAction(
+              icon: Icons.play_circle_outline_rounded,
+              title: 'Rätsel fortsetzen',
+              subtitle:
+                  '${saved.puzzle.difficulty.label} · ${saved.puzzle.size} × ${saved.puzzle.size}',
+              accent: accent,
+              prominent: true,
+              onTap: () => _open(saved.puzzle.difficulty,
+                  saved: saved, mode: saved.mode),
+            ),
+            const SizedBox(height: 16),
+          ],
+          PuzzleHubHeader(
+            icon: Icons.park_rounded,
+            title: 'Plane ein ruhiges Waldlager',
+            description: 'Ordne jedem Baum genau ein Zelt zu. Jeder Start '
+                'erzeugt ein neues, eindeutig lösbares Brett.',
             accent: accent,
-            prominent: true,
-            onTap: () =>
-                _open(saved.puzzle.difficulty, saved: saved, mode: saved.mode),
+            progress: _completedIds.length / tentsPuzzleCatalog.length,
+            progressLabel:
+                '${_completedIds.length} von ${tentsPuzzleCatalog.length} Expeditionen gelöst',
           ),
-          const SizedBox(height: 16),
-        ],
-        PuzzleHubHeader(
-          icon: Icons.park_rounded,
-          title: 'Plane ein ruhiges Waldlager',
-          description: 'Ordne jedem Baum genau ein Zelt zu. Jeder Start '
-              'erzeugt ein neues, eindeutig lösbares Brett.',
-          accent: accent,
-          progress: _completedIds.length / tentsPuzzleCatalog.length,
-          progressLabel:
-              '${_completedIds.length} von ${tentsPuzzleCatalog.length} Expeditionen gelöst',
-        ),
-        const SizedBox(height: 20),
-        if (widget.onOpenDaily != null) ...[
+          const SizedBox(height: 20),
+          if (widget.onOpenDaily != null) ...[
+            PuzzleHubAction(
+              icon: Icons.calendar_today_outlined,
+              title: 'Tagesrätsel & Kalender',
+              subtitle: 'Heute spielen oder vergangene Tage nachholen',
+              accent: accent,
+              onTap: () => widget.onOpenDaily!(context),
+            ),
+            const SizedBox(height: 12),
+          ],
           PuzzleHubAction(
-            icon: Icons.calendar_today_outlined,
-            title: 'Tagesrätsel & Kalender',
-            subtitle: 'Heute spielen oder vergangene Tage nachholen',
+            icon: Icons.apps_rounded,
+            title: 'Rätselsammlung',
+            subtitle:
+                '${tentsPuzzleCatalog.length} feste Expeditionen entdecken',
             accent: accent,
-            onTap: () => widget.onOpenDaily!(context),
+            onTap: () async {
+              await Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => _TentsCollectionScreen(
+                  completedIds: _completedIds,
+                  onOpen: (puzzle) => _open(puzzle.difficulty,
+                      selectedPuzzle: puzzle, mode: GameMode.catalog),
+                ),
+              ));
+              await _refresh();
+            },
           ),
           const SizedBox(height: 12),
-        ],
-        if (widget.onOpenStatistics != null) ...[
           PuzzleHubAction(
-            icon: Icons.query_stats_outlined,
-            title: 'Zelte-&-Bäume-Statistik',
-            subtitle: 'Bestzeiten, Spielzeit und Expeditionen',
+            icon: Icons.auto_awesome_rounded,
+            title: 'Zufallsrätsel',
+            subtitle: 'Größe und Schwierigkeit auswählen',
             accent: accent,
-            onTap: () => widget.onOpenStatistics!(context),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => _TentsRandomScreen(onOpen: _open),
+            )),
           ),
-          const SizedBox(height: 24),
-        ],
-        Text('Zufallsr\u00e4tsel',
-            style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 12),
-        for (final difficulty in PuzzleDifficulty.values)
-          Card(
-              child: ListTile(
-            leading: Icon(switch (difficulty) {
-              PuzzleDifficulty.easy => Icons.eco_outlined,
-              PuzzleDifficulty.medium => Icons.park_outlined,
-              PuzzleDifficulty.hard => Icons.forest_outlined,
-            }),
-            title: Text(difficulty.label),
-            subtitle: Text('${switch (difficulty) {
-              PuzzleDifficulty.easy => 6,
-              PuzzleDifficulty.medium => 8,
-              PuzzleDifficulty.hard => 10
-            }} \u00d7 ${switch (difficulty) {
-              PuzzleDifficulty.easy => 6,
-              PuzzleDifficulty.medium => 8,
-              PuzzleDifficulty.hard => 10
-            }}'),
-            trailing: const Icon(Icons.play_arrow_rounded),
-            onTap: () => _open(difficulty),
-          )),
-        const SizedBox(height: 24),
-        Text('R\u00e4tselsammlung',
-            style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 8),
-        Text(
-            '${tentsPuzzleCatalog.length} feste Expeditionen mit dauerhaftem Fortschritt.'),
-        const SizedBox(height: 8),
-        for (final difficulty in PuzzleDifficulty.values)
-          Card(
-            child: ExpansionTile(
-              leading: CircleAvatar(child: Text('${difficulty.index + 1}')),
-              title: Text(tentsChapterTitles[difficulty]!),
-              subtitle: Text(
-                '${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty && _completedIds.contains(p.id)).length} '
-                'von ${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty).length} gel\u00f6st',
-              ),
-              children: [
-                for (final puzzle in tentsPuzzleCatalog
-                    .where((p) => p.difficulty == difficulty))
-                  ListTile(
-                    leading: Icon(_completedIds.contains(puzzle.id)
-                        ? Icons.check_circle_rounded
-                        : Icons.radio_button_unchecked_rounded),
-                    title: Text(puzzle.title),
-                    subtitle: Text('${puzzle.size} \u00d7 ${puzzle.size}'),
-                    trailing: const Icon(Icons.play_arrow_rounded),
-                    onTap: () => _open(difficulty,
-                        selectedPuzzle: puzzle, mode: GameMode.catalog),
-                  ),
-              ],
+          if (widget.onOpenStatistics != null) ...[
+            const SizedBox(height: 12),
+            PuzzleHubAction(
+              icon: Icons.query_stats_outlined,
+              title: 'Zelte-&-Bäume-Statistik',
+              subtitle: 'Bestzeiten, Spielzeit und Expeditionen',
+              accent: accent,
+              onTap: () => widget.onOpenStatistics!(context),
             ),
+          ],
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => const PuzzleRulesScreen(
+                title: 'Zelte & Bäume',
+                introduction:
+                    'Bilde eindeutige Paare aus jeweils einem Baum und einem Zelt.',
+                rules: [
+                  'Jeder Baum erhält genau ein Zelt auf einem direkt waagerecht oder senkrecht benachbarten Feld.',
+                  'Jedes Zelt gehört genau zu einem Baum. Zelte dürfen sich auch diagonal nicht berühren.',
+                  'Die Zahlen am Rand geben die genaue Zahl der Zelte in jeder Zeile und Spalte an.',
+                ],
+                interaction:
+                    'Tippen wechselt ein freies Feld von leer zu Zelt, zu Gras und wieder zu leer.',
+              ),
+            )),
+            icon: const Icon(Icons.menu_book_rounded),
+            label: const Text('Regeln ansehen'),
           ),
-      ]),
+        ]),
+      ),
     );
   }
+}
+
+class _TentsCollectionScreen extends StatelessWidget {
+  const _TentsCollectionScreen(
+      {required this.completedIds, required this.onOpen});
+  final Set<String> completedIds;
+  final Future<void> Function(TentsPuzzle puzzle) onOpen;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Zelte-&-Bäume-Sammlung')),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            for (final difficulty in PuzzleDifficulty.values)
+              Card(
+                child: ExpansionTile(
+                  leading: CircleAvatar(child: Text('${difficulty.index + 1}')),
+                  title: Text(tentsChapterTitles[difficulty]!),
+                  subtitle: Text(
+                    '${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty && completedIds.contains(p.id)).length} von '
+                    '${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty).length} gelöst',
+                  ),
+                  children: [
+                    for (final puzzle in tentsPuzzleCatalog
+                        .where((p) => p.difficulty == difficulty))
+                      ListTile(
+                        leading: Icon(completedIds.contains(puzzle.id)
+                            ? Icons.check_circle_rounded
+                            : Icons.radio_button_unchecked_rounded),
+                        title: Text(puzzle.title),
+                        subtitle: Text('${puzzle.size} × ${puzzle.size}'),
+                        trailing: const Icon(Icons.play_arrow_rounded),
+                        onTap: () => onOpen(puzzle),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      );
+}
+
+class _TentsRandomScreen extends StatelessWidget {
+  const _TentsRandomScreen({required this.onOpen});
+  final Future<void> Function(PuzzleDifficulty difficulty) onOpen;
+
+  int _size(PuzzleDifficulty difficulty) => switch (difficulty) {
+        PuzzleDifficulty.easy => 6,
+        PuzzleDifficulty.medium => 8,
+        PuzzleDifficulty.hard => 10,
+      };
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Zelte-&-Bäume-Zufallsrätsel')),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            for (final difficulty in PuzzleDifficulty.values)
+              Card(
+                child: ListTile(
+                  minTileHeight: 82,
+                  leading: Icon(switch (difficulty) {
+                    PuzzleDifficulty.easy => Icons.eco_outlined,
+                    PuzzleDifficulty.medium => Icons.park_outlined,
+                    PuzzleDifficulty.hard => Icons.forest_outlined,
+                  }),
+                  title: Text(difficulty.label),
+                  subtitle: Text('${_size(difficulty)} × ${_size(difficulty)}'),
+                  trailing: const Icon(Icons.play_arrow_rounded),
+                  onTap: () => onOpen(difficulty),
+                ),
+              ),
+          ],
+        ),
+      );
 }
 
 class TentsGameScreen extends StatefulWidget {

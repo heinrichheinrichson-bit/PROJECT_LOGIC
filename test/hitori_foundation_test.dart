@@ -176,6 +176,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Sammlungsfortschritt: 1 von 28'), findsOneWidget);
+    await tester.tap(find.text('Rätselsammlung'));
+    await tester.pumpAndSettle();
     expect(find.text('Doppelte entdecken'), findsOneWidget);
   });
 

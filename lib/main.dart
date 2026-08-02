@@ -568,6 +568,24 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                     const SizedBox(height: 12),
                   ],
                   _HomeAction(
+                    icon: Icons.calendar_today_outlined,
+                    title: 'Tagesrätsel & Kalender',
+                    subtitle: _results.containsKey(_dailyChallenge!.puzzleId)
+                        ? 'Heute gelöst · ${_dailyChallenge!.difficulty.label} · ${_dailyChallenge!.size} × ${_dailyChallenge!.size}'
+                        : 'Heute offen · ${_dailyChallenge!.difficulty.label} · ${_dailyChallenge!.size} × ${_dailyChallenge!.size}',
+                    enabled: true,
+                    accent: AppTheme.gameColors['binairo'],
+                    onTap: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const DailyArchiveScreen(),
+                        ),
+                      );
+                      await _refresh();
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _HomeAction(
                     icon: Icons.play_arrow_rounded,
                     title: 'Rätselsammlung',
                     subtitle: 'Wähle ein handverlesenes Rätsel',
@@ -600,24 +618,6 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   ),
                   const SizedBox(height: 12),
                   _HomeAction(
-                    icon: Icons.calendar_today_outlined,
-                    title: 'Tagesrätsel & Kalender',
-                    subtitle: _results.containsKey(_dailyChallenge!.puzzleId)
-                        ? 'Heute gelöst · ${_dailyChallenge!.difficulty.label} · ${_dailyChallenge!.size} × ${_dailyChallenge!.size}'
-                        : 'Heute offen · ${_dailyChallenge!.difficulty.label} · ${_dailyChallenge!.size} × ${_dailyChallenge!.size}',
-                    enabled: true,
-                    accent: AppTheme.gameColors['binairo'],
-                    onTap: () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const DailyArchiveScreen(),
-                        ),
-                      );
-                      await _refresh();
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _HomeAction(
                     icon: Icons.bar_chart_rounded,
                     title: 'Binärpuzzle-Statistik',
                     subtitle:
@@ -636,6 +636,26 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                       );
                       await _refresh();
                     },
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: () =>
+                        Navigator.of(context).push(MaterialPageRoute<void>(
+                      builder: (_) => const PuzzleRulesScreen(
+                        title: 'Binärpuzzle',
+                        introduction:
+                            'Fülle das Raster ausschließlich mit 0 und 1.',
+                        rules: [
+                          'In jeder Zeile und Spalte stehen gleich viele Nullen und Einsen.',
+                          'Nie dürfen drei gleiche Zahlen direkt nebeneinander oder untereinander stehen.',
+                          'Keine zwei vollständigen Zeilen oder Spalten dürfen identisch sein.',
+                        ],
+                        interaction:
+                            'Tippen wechselt ein freies Feld von leer zu 0, zu 1 und wieder zu leer.',
+                      ),
+                    )),
+                    icon: const Icon(Icons.menu_book_rounded),
+                    label: const Text('Regeln ansehen'),
                   ),
                 ],
               ],

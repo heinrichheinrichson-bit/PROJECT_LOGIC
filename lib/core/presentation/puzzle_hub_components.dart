@@ -152,3 +152,48 @@ class PuzzleHubAction extends StatelessWidget {
     );
   }
 }
+
+class PuzzleRulesScreen extends StatelessWidget {
+  const PuzzleRulesScreen({
+    required this.title,
+    required this.introduction,
+    required this.rules,
+    required this.interaction,
+    super.key,
+  });
+
+  final String title;
+  final String introduction;
+  final List<String> rules;
+  final String interaction;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: Text('$title-Regeln')),
+        body: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            Text(introduction, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 24),
+            for (var index = 0; index < rules.length; index++) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(radius: 16, child: Text('${index + 1}')),
+                  const SizedBox(width: 14),
+                  Expanded(child: Text(rules[index])),
+                ],
+              ),
+              const SizedBox(height: 18),
+            ],
+            const Divider(height: 32),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.touch_app_outlined),
+              title: const Text('Bedienung'),
+              subtitle: Text(interaction),
+            ),
+          ],
+        ),
+      );
+}

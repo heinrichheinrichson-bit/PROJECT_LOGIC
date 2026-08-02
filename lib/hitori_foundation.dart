@@ -226,121 +226,202 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
     final solved = hitoriPuzzleCatalog.where(_isSolved).length;
     return Scaffold(
       appBar: AppBar(title: const Text('Hitori')),
-      body: ListView(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        children: [
-          if (_saved case final saved?) ...[
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (_saved case final saved?) ...[
+              PuzzleHubAction(
+                icon: Icons.play_circle_outline_rounded,
+                title: 'Rätsel fortsetzen',
+                subtitle:
+                    '${saved.puzzle.difficulty.label} · ${saved.puzzle.size} × '
+                    '${saved.puzzle.size} · ${_formatTime(saved.elapsedSeconds)}',
+                accent: accent,
+                prominent: true,
+                onTap: () => _open(saved.puzzle, saved: saved),
+              ),
+              const SizedBox(height: 20),
+            ],
+            PuzzleHubHeader(
+              icon: Icons.filter_b_and_w_rounded,
+              title: 'Finde die einzelnen Zahlen',
+              description:
+                  'Schwärze doppelte Zahlen. Schwarze Felder dürfen sich nicht '
+                  'berühren und alle hellen Felder bleiben verbunden.',
+              accent: accent,
+              progress: solved / hitoriPuzzleCatalog.length,
+              progressLabel:
+                  'Sammlungsfortschritt: $solved von ${hitoriPuzzleCatalog.length}',
+            ),
+            if (widget.onOpenDaily != null) ...[
+              const SizedBox(height: 20),
+              PuzzleHubAction(
+                icon: Icons.calendar_month_outlined,
+                title: 'Tagesrätsel & Kalender',
+                subtitle: 'Heute lösen oder verpasste Tage nachholen',
+                accent: accent,
+                onTap: () => widget.onOpenDaily!(context),
+              ),
+            ],
+            if (widget.onOpenStatistics != null) ...[
+              const SizedBox(height: 12),
+            ],
             PuzzleHubAction(
-              icon: Icons.play_circle_outline_rounded,
-              title: 'Rätsel fortsetzen',
+              icon: Icons.apps_rounded,
+              title: 'Rätselsammlung',
               subtitle:
-                  '${saved.puzzle.difficulty.label} · ${saved.puzzle.size} × '
-                  '${saved.puzzle.size} · ${_formatTime(saved.elapsedSeconds)}',
+                  '${hitoriPuzzleCatalog.length} handverlesene Hitori-Rätsel',
               accent: accent,
-              prominent: true,
-              onTap: () => _open(saved.puzzle, saved: saved),
+              onTap: () async {
+                await Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => _HitoriCollectionScreen(
+                    isSolved: _isSolved,
+                    onOpen: (puzzle) => _open(puzzle, mode: GameMode.catalog),
+                  ),
+                ));
+                await _refresh();
+              },
             ),
-            const SizedBox(height: 20),
-          ],
-          PuzzleHubHeader(
-            icon: Icons.filter_b_and_w_rounded,
-            title: 'Finde die einzelnen Zahlen',
-            description:
-                'Schwärze doppelte Zahlen. Schwarze Felder dürfen sich nicht '
-                'berühren und alle hellen Felder bleiben verbunden.',
-            accent: accent,
-            progress: solved / hitoriPuzzleCatalog.length,
-            progressLabel:
-                'Sammlungsfortschritt: $solved von ${hitoriPuzzleCatalog.length}',
-          ),
-          if (widget.onOpenDaily != null) ...[
-            const SizedBox(height: 20),
-            PuzzleHubAction(
-              icon: Icons.calendar_month_outlined,
-              title: 'Tagesrätsel & Kalender',
-              subtitle: 'Heute lösen oder verpasste Tage nachholen',
-              accent: accent,
-              onTap: () => widget.onOpenDaily!(context),
-            ),
-          ],
-          if (widget.onOpenStatistics != null) ...[
             const SizedBox(height: 12),
             PuzzleHubAction(
-              icon: Icons.query_stats_rounded,
-              title: 'Hitori-Statistik',
-              subtitle: 'Bestzeiten, Spielzeit und Lösungswege',
+              icon: Icons.auto_awesome_rounded,
+              title: 'Zufallsrätsel',
+              subtitle: 'Größe und Schwierigkeit auswählen',
               accent: accent,
-              onTap: () => widget.onOpenStatistics!(context),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => _HitoriRandomScreen(onOpen: _open),
+              )),
             ),
-          ],
-          const SizedBox(height: 24),
-          Text('Rätselsammlung', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 12),
-          for (final chapter in hitoriChapters) ...[
-            Card(
-              clipBehavior: Clip.antiAlias,
-              child: ExpansionTile(
-                leading: CircleAvatar(child: Text('${chapter.number}')),
-                title: Text(chapter.title),
-                subtitle: Text(
-                  '${chapter.subtitle}\n'
-                  '${chapter.puzzles.where(_isSolved).length} von '
-                  '${chapter.puzzles.length} gelöst',
-                ),
-                children: [
-                  for (var index = 0; index < chapter.puzzles.length; index++)
-                    ListTile(
-                      leading: CircleAvatar(
-                        child: _isSolved(chapter.puzzles[index])
-                            ? const Icon(Icons.check_rounded)
-                            : Text('${index + 1}'),
-                      ),
-                      title: Text(chapter.puzzles[index].title),
-                      subtitle: Text(
-                        '${chapter.puzzles[index].size} × '
-                        '${chapter.puzzles[index].size}',
-                      ),
-                      trailing: const Icon(Icons.play_arrow_rounded),
-                      onTap: () => _open(
-                        chapter.puzzles[index],
-                        mode: GameMode.catalog,
-                      ),
-                    ),
-                ],
+            if (widget.onOpenStatistics != null) ...[
+              const SizedBox(height: 12),
+              PuzzleHubAction(
+                icon: Icons.query_stats_rounded,
+                title: 'Hitori-Statistik',
+                subtitle: 'Bestzeiten, Spielzeit und Lösungswege',
+                accent: accent,
+                onTap: () => widget.onOpenStatistics!(context),
               ),
-            ),
-            const SizedBox(height: 10),
-          ],
-          const SizedBox(height: 14),
-          Text('Zufallsrätsel', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 12),
-          for (final difficulty in PuzzleDifficulty.values) ...[
-            Card(
-              child: ListTile(
-                minTileHeight: 82,
-                leading: CircleAvatar(
-                  child: Text('${5 + difficulty.index}'),
-                ),
-                title: Text(difficulty.label),
-                subtitle: Text(
-                  '${difficulty.description} · ${5 + difficulty.index} × ${5 + difficulty.index}',
-                ),
-                trailing: const Icon(Icons.play_arrow_rounded),
-                onTap: () {
-                  final puzzle = const HitoriGenerator().generate(
-                    seed: DateTime.now().microsecondsSinceEpoch,
-                    difficulty: difficulty,
-                  );
-                  _open(puzzle);
-                },
-              ),
-            ),
+            ],
             const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: () =>
+                  Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => const HitoriRulesScreen(),
+              )),
+              icon: const Icon(Icons.menu_book_rounded),
+              label: const Text('Regeln ansehen'),
+            ),
           ],
-        ],
+        ),
       ),
     );
   }
+}
+
+class _HitoriCollectionScreen extends StatelessWidget {
+  const _HitoriCollectionScreen({required this.isSolved, required this.onOpen});
+  final bool Function(HitoriPuzzle puzzle) isSolved;
+  final Future<void> Function(HitoriPuzzle puzzle) onOpen;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Hitori-Rätselsammlung')),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            for (final chapter in hitoriChapters)
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: ExpansionTile(
+                  leading: CircleAvatar(child: Text('${chapter.number}')),
+                  title: Text(chapter.title),
+                  subtitle: Text('${chapter.subtitle}\n'
+                      '${chapter.puzzles.where(isSolved).length} von ${chapter.puzzles.length} gelöst'),
+                  children: [
+                    for (var index = 0; index < chapter.puzzles.length; index++)
+                      ListTile(
+                        leading: CircleAvatar(
+                          child: isSolved(chapter.puzzles[index])
+                              ? const Icon(Icons.check_rounded)
+                              : Text('${index + 1}'),
+                        ),
+                        title: Text(chapter.puzzles[index].title),
+                        subtitle: Text(
+                            '${chapter.puzzles[index].size} × ${chapter.puzzles[index].size}'),
+                        trailing: const Icon(Icons.play_arrow_rounded),
+                        onTap: () => onOpen(chapter.puzzles[index]),
+                      ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      );
+}
+
+class _HitoriRandomScreen extends StatelessWidget {
+  const _HitoriRandomScreen({required this.onOpen});
+  final Future<void> Function(HitoriPuzzle puzzle) onOpen;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Hitori-Zufallsrätsel')),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            for (final difficulty in PuzzleDifficulty.values)
+              Card(
+                child: ListTile(
+                  minTileHeight: 82,
+                  leading: CircleAvatar(child: Text('${5 + difficulty.index}')),
+                  title: Text(difficulty.label),
+                  subtitle: Text(
+                      '${difficulty.description} · ${5 + difficulty.index} × ${5 + difficulty.index}'),
+                  trailing: const Icon(Icons.play_arrow_rounded),
+                  onTap: () => onOpen(const HitoriGenerator().generate(
+                    seed: DateTime.now().microsecondsSinceEpoch,
+                    difficulty: difficulty,
+                  )),
+                ),
+              ),
+          ],
+        ),
+      );
+}
+
+class HitoriRulesScreen extends StatelessWidget {
+  const HitoriRulesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Hitori-Regeln')),
+        body: ListView(
+          padding: const EdgeInsets.all(24),
+          children: const [
+            _HitoriRule(
+                number: '1',
+                title: 'Doppelte Zahlen entfernen',
+                text:
+                    'In jeder Zeile und Spalte darf jede Zahl nur einmal hell bleiben.'),
+            SizedBox(height: 18),
+            _HitoriRule(
+                number: '2',
+                title: 'Schwarze Felder trennen',
+                text:
+                    'Zwei schwarze Felder dürfen sich niemals oben, unten, links oder rechts berühren.'),
+            SizedBox(height: 18),
+            _HitoriRule(
+                number: '3',
+                title: 'Helle Fläche verbinden',
+                text:
+                    'Alle hell gebliebenen Felder müssen einen einzigen zusammenhängenden Bereich bilden.'),
+            SizedBox(height: 24),
+            Text('Tippen: offen → schwärzen → als sicher markieren → offen'),
+          ],
+        ),
+      );
 }
 
 class HitoriGameScreen extends StatefulWidget {

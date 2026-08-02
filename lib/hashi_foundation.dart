@@ -808,6 +808,16 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                   onTap: () => _openPuzzle(_nextPuzzle),
                 ),
                 const SizedBox(height: 12),
+                if (widget.onOpenDaily != null) ...[
+                  PuzzleHubAction(
+                    icon: Icons.calendar_today_outlined,
+                    title: 'Tagesrätsel & Kalender',
+                    subtitle: 'Heute spielen oder vergangene Tage nachholen',
+                    accent: accent,
+                    onTap: widget.onOpenDaily,
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 PuzzleHubAction(
                   icon: Icons.apps_rounded,
                   title: 'Rätselsammlung',
@@ -834,16 +844,6 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                     ),
                   ),
                 ),
-                if (widget.onOpenDaily != null) ...[
-                  const SizedBox(height: 12),
-                  PuzzleHubAction(
-                    icon: Icons.calendar_today_outlined,
-                    title: 'Tagesrätsel & Kalender',
-                    subtitle: 'Heute spielen oder vergangene Tage nachholen',
-                    accent: accent,
-                    onTap: widget.onOpenDaily,
-                  ),
-                ],
                 if (widget.onOpenStatistics != null) ...[
                   const SizedBox(height: 12),
                   PuzzleHubAction(

@@ -210,6 +210,7 @@ class FutoshikiHubScreen extends StatefulWidget {
 
 class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
   SavedFutoshikiGame? _saved;
+  Map<String, PuzzleResult> _results = const {};
 
   @override
   void initState() {
@@ -219,7 +220,13 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
 
   Future<void> _refresh() async {
     final saved = await FutoshikiGameStore().load();
-    if (mounted) setState(() => _saved = saved);
+    final results = await GameStorage().loadResults();
+    if (mounted) {
+      setState(() {
+        _saved = saved;
+        _results = results;
+      });
+    }
   }
 
   Future<void> _open(FutoshikiPuzzle puzzle,
@@ -269,6 +276,10 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
   @override
   Widget build(BuildContext context) {
     final accent = AppTheme.gameColors['futoshiki']!;
+    final solved = futoshikiPuzzleCatalog
+        .where((puzzle) =>
+            _results.containsKey('${GameType.futoshiki.name}:${puzzle.id}'))
+        .length;
     return Scaffold(
       appBar: AppBar(title: const Text('Futoshiki')),
       body: ListView(
@@ -293,23 +304,11 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
             description: 'Fülle jede Zeile und Spalte mit allen Zahlen. '
                 'Jedes Ungleichheitszeichen muss stimmen.',
             accent: accent,
+            progress: solved / futoshikiPuzzleCatalog.length,
+            progressLabel:
+                '$solved von ${futoshikiPuzzleCatalog.length} Rätseln gelöst',
           ),
           const SizedBox(height: 24),
-          PuzzleHubAction(
-            icon: Icons.grid_view_rounded,
-            title: 'Rätselsammlung',
-            subtitle: '32 ausgewählte Lern- und Logikrätsel',
-            accent: accent,
-            onTap: () async {
-              await Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const FutoshikiCollectionScreen(),
-                ),
-              );
-              await _refresh();
-            },
-          ),
-          const SizedBox(height: 12),
           PuzzleHubAction(
             icon: Icons.calendar_today_outlined,
             title: 'Tagesrätsel & Kalender',
@@ -321,39 +320,90 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
           ),
           const SizedBox(height: 12),
           PuzzleHubAction(
-            icon: Icons.bar_chart_rounded,
-            title: 'Futoshiki-Statistik',
-            subtitle: 'Bestzeiten, Spielzeit und Fortschritt',
+            icon: Icons.grid_view_rounded,
+            title: 'Rätselsammlung',
+            subtitle:
+                '${futoshikiPuzzleCatalog.length} ausgewählte Lern- und Logikrätsel',
             accent: accent,
-            onTap: widget.onOpenStatistics == null
-                ? null
-                : () => widget.onOpenStatistics!(context),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Zufallsrätsel',
-            style: Theme.of(context).textTheme.titleLarge,
+            onTap: () async {
+              await Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => const FutoshikiCollectionScreen(),
+              ));
+              await _refresh();
+            },
           ),
           const SizedBox(height: 12),
-          for (final difficulty in PuzzleDifficulty.values) ...[
-            _DifficultyCard(
-              difficulty: difficulty,
-              onOpen: (puzzle) => _open(puzzle),
-            ),
+          PuzzleHubAction(
+            icon: Icons.auto_awesome_rounded,
+            title: 'Zufallsrätsel',
+            subtitle: 'Größe und Schwierigkeit auswählen',
+            accent: accent,
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => _FutoshikiRandomScreen(onOpen: _open),
+            )),
+          ),
+          if (widget.onOpenStatistics != null) ...[
             const SizedBox(height: 12),
+            PuzzleHubAction(
+              icon: Icons.bar_chart_rounded,
+              title: 'Futoshiki-Statistik',
+              subtitle: 'Bestzeiten, Spielzeit und Fortschritt',
+              accent: accent,
+              onTap: () => widget.onOpenStatistics!(context),
+            ),
           ],
-          _DifficultyCard(
-            difficulty: PuzzleDifficulty.hard,
-            boardSize: 7,
-            title: 'Experte',
-            description: 'Große Raster für erfahrene Futoshiki-Fans',
-            onOpen: (puzzle) => _open(puzzle),
-          ),
           const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => const PuzzleRulesScreen(
+                title: 'Futoshiki',
+                introduction: 'Fülle das Raster mit logisch passenden Zahlen.',
+                rules: [
+                  'Jede Zahl von 1 bis zur Rastergröße kommt in jeder Zeile genau einmal vor.',
+                  'Auch in jeder Spalte darf jede Zahl nur einmal vorkommen.',
+                  'Alle Ungleichheitszeichen zwischen benachbarten Feldern müssen stimmen.',
+                ],
+                interaction:
+                    'Feld auswählen und unten eine Zahl setzen. Im Notizmodus kannst du Kandidaten vormerken.',
+              ),
+            )),
+            icon: const Icon(Icons.menu_book_rounded),
+            label: const Text('Regeln ansehen'),
+          ),
         ],
       ),
     );
   }
+}
+
+class _FutoshikiRandomScreen extends StatelessWidget {
+  const _FutoshikiRandomScreen({required this.onOpen});
+  final Future<void> Function(FutoshikiPuzzle puzzle,
+      {SavedFutoshikiGame? saved}) onOpen;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Futoshiki-Zufallsrätsel')),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            for (final difficulty in PuzzleDifficulty.values) ...[
+              _DifficultyCard(
+                difficulty: difficulty,
+                onOpen: (puzzle) => onOpen(puzzle),
+              ),
+              const SizedBox(height: 12),
+            ],
+            _DifficultyCard(
+              difficulty: PuzzleDifficulty.hard,
+              boardSize: 7,
+              title: 'Experte',
+              description: 'Große Raster für erfahrene Futoshiki-Fans',
+              onOpen: (puzzle) => onOpen(puzzle),
+            ),
+          ],
+        ),
+      );
 }
 
 class FutoshikiCollectionScreen extends StatefulWidget {

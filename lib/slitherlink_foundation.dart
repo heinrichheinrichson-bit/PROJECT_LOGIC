@@ -542,34 +542,28 @@ class SlitherlinkHubScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  PuzzleHubHeader(
-                    icon: Icons.gesture_rounded,
-                    title: 'Eine einzige Schleife',
-                    description: 'Verbinde die Punkte zu einer geschlossenen '
-                        'Schleife. Die Zahlen zeigen, wie viele Feldseiten '
-                        'zur Linie gehören.',
-                    accent: accent,
+                  FutureBuilder<Map<String, PuzzleResult>>(
+                    future: GameStorage().loadResults(),
+                    builder: (context, snapshot) {
+                      final results = snapshot.data ?? const {};
+                      final solved = slitherlinkPuzzleCatalog
+                          .where((puzzle) => results.containsKey(
+                              '${GameType.slitherlink.name}:${puzzle.id}'))
+                          .length;
+                      return PuzzleHubHeader(
+                        icon: Icons.gesture_rounded,
+                        title: 'Eine einzige Schleife',
+                        description:
+                            'Verbinde die Punkte zu einer geschlossenen Schleife. Die Zahlen zeigen, wie viele Feldseiten zur Linie gehören.',
+                        accent: accent,
+                        progress: solved / slitherlinkPuzzleCatalog.length,
+                        progressLabel:
+                            '$solved von ${slitherlinkPuzzleCatalog.length} Rätseln gelöst',
+                      );
+                    },
                   ),
                   const SizedBox(height: 18),
                   const _SlitherResumeCard(),
-                  Card(
-                    child: ListTile(
-                      leading: const CircleAvatar(
-                        child: Icon(Icons.school_outlined),
-                      ),
-                      title: const Text('Die erste Schleife'),
-                      subtitle: const Text('Interaktiver Einstieg · 4 × 4'),
-                      trailing: const Icon(Icons.play_arrow_rounded),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const SlitherlinkGameScreen(
-                            puzzle: slitherlinkTutorialPuzzle,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
                   if (onOpenDaily != null) ...[
                     PuzzleHubAction(
                       icon: Icons.calendar_today_outlined,
@@ -579,9 +573,32 @@ class SlitherlinkHubScreen extends StatelessWidget {
                       accent: accent,
                       onTap: () => onOpenDaily!(context),
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 12),
                   ],
+                  PuzzleHubAction(
+                    icon: Icons.apps_rounded,
+                    title: 'Rätselsammlung',
+                    subtitle:
+                        '${slitherlinkPuzzleCatalog.length} eindeutig lösbare Schleifen',
+                    accent: accent,
+                    onTap: () =>
+                        Navigator.of(context).push(MaterialPageRoute<void>(
+                      builder: (_) => const _SlitherlinkCollectionScreen(),
+                    )),
+                  ),
+                  const SizedBox(height: 12),
+                  PuzzleHubAction(
+                    icon: Icons.auto_awesome_rounded,
+                    title: 'Zufallsrätsel',
+                    subtitle: 'Schwierigkeit auswählen und neu erzeugen',
+                    accent: accent,
+                    onTap: () =>
+                        Navigator.of(context).push(MaterialPageRoute<void>(
+                      builder: (_) => const _SlitherlinkRandomScreen(),
+                    )),
+                  ),
                   if (onOpenStatistics != null) ...[
+                    const SizedBox(height: 12),
                     PuzzleHubAction(
                       icon: Icons.insights_outlined,
                       title: 'Slitherlink-Statistik',
@@ -589,60 +606,26 @@ class SlitherlinkHubScreen extends StatelessWidget {
                       accent: accent,
                       onTap: () => onOpenStatistics!(context),
                     ),
-                    const SizedBox(height: 18),
                   ],
-                  Text(
-                    'Rätselsammlung',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '36 eindeutig lösbare Rätsel in neun Kapiteln – vom Einstieg bis zur Meisterschleife.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                  const SizedBox(height: 10),
-                  for (final difficulty in PuzzleDifficulty.values)
-                    _SlitherCollectionChapter(difficulty: difficulty),
-                  const SizedBox(height: 18),
-                  Text(
-                    'Zufallsrätsel',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Neu erzeugt und vor dem Start auf eine eindeutige Lösung geprüft.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                  const SizedBox(height: 10),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: [
-                          for (final difficulty in PuzzleDifficulty.values)
-                            FilledButton.tonalIcon(
-                              onPressed: () => _startRandom(
-                                context,
-                                difficulty,
-                              ),
-                              icon: Icon(switch (difficulty) {
-                                PuzzleDifficulty.easy => Icons.eco_outlined,
-                                PuzzleDifficulty.medium =>
-                                  Icons.psychology_alt_outlined,
-                                PuzzleDifficulty.hard =>
-                                  Icons.local_fire_department_outlined,
-                              }),
-                              label: Text(difficulty.label),
-                            ),
+                  const SizedBox(height: 12),
+                  TextButton.icon(
+                    onPressed: () =>
+                        Navigator.of(context).push(MaterialPageRoute<void>(
+                      builder: (_) => const PuzzleRulesScreen(
+                        title: 'Slitherlink',
+                        introduction:
+                            'Zeichne genau eine geschlossene Schleife.',
+                        rules: [
+                          'Die Linie verläuft nur waagerecht oder senkrecht zwischen den Punkten.',
+                          'Eine Zahl zeigt, wie viele ihrer vier Feldseiten Teil der Schleife sind.',
+                          'Die Linie darf sich nicht verzweigen oder kreuzen und muss eine einzige Schleife bilden.',
                         ],
+                        interaction:
+                            'Tippen wechselt eine Kante von leer zu Linie, zu ausgeschlossen und wieder zu leer.',
                       ),
-                    ),
+                    )),
+                    icon: const Icon(Icons.menu_book_rounded),
+                    label: const Text('Regeln ansehen'),
                   ),
                 ],
               ),
@@ -652,22 +635,50 @@ class SlitherlinkHubScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Future<void> _startRandom(
-    BuildContext context,
-    PuzzleDifficulty difficulty,
-  ) async {
+class _SlitherlinkCollectionScreen extends StatelessWidget {
+  const _SlitherlinkCollectionScreen();
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Slitherlink-Rätselsammlung')),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            Card(
+              child: ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.school_outlined)),
+                title: const Text('Die erste Schleife'),
+                subtitle: const Text('Interaktiver Einstieg · 4 × 4'),
+                trailing: const Icon(Icons.play_arrow_rounded),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => const SlitherlinkGameScreen(
+                      puzzle: slitherlinkTutorialPuzzle),
+                )),
+              ),
+            ),
+            const SizedBox(height: 12),
+            for (final difficulty in PuzzleDifficulty.values)
+              _SlitherCollectionChapter(difficulty: difficulty),
+          ],
+        ),
+      );
+}
+
+class _SlitherlinkRandomScreen extends StatelessWidget {
+  const _SlitherlinkRandomScreen();
+
+  Future<void> _start(BuildContext context, PuzzleDifficulty difficulty) async {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (_) => const AlertDialog(
-        content: Row(
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 18),
-            Expanded(child: Text('Eindeutiges Rätsel wird erstellt …')),
-          ],
-        ),
+        content: Row(children: [
+          CircularProgressIndicator(),
+          SizedBox(width: 18),
+          Expanded(child: Text('Eindeutiges Rätsel wird erstellt …')),
+        ]),
       ),
     );
     await Future<void>.delayed(const Duration(milliseconds: 30));
@@ -678,21 +689,43 @@ class SlitherlinkHubScreen extends StatelessWidget {
       );
       if (!context.mounted) return;
       Navigator.of(context).pop();
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) => SlitherlinkGameScreen(puzzle: puzzle),
-        ),
-      );
+      await Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => SlitherlinkGameScreen(puzzle: puzzle),
+      ));
     } on Object {
       if (!context.mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Das Zufallsrätsel konnte nicht erstellt werden.'),
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Das Zufallsrätsel konnte nicht erstellt werden.'),
+      ));
     }
   }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Slitherlink-Zufallsrätsel')),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            for (final difficulty in PuzzleDifficulty.values)
+              Card(
+                child: ListTile(
+                  minTileHeight: 82,
+                  leading: Icon(switch (difficulty) {
+                    PuzzleDifficulty.easy => Icons.eco_outlined,
+                    PuzzleDifficulty.medium => Icons.psychology_alt_outlined,
+                    PuzzleDifficulty.hard =>
+                      Icons.local_fire_department_outlined,
+                  }),
+                  title: Text(difficulty.label),
+                  subtitle: Text(difficulty.description),
+                  trailing: const Icon(Icons.play_arrow_rounded),
+                  onTap: () => _start(context, difficulty),
+                ),
+              ),
+          ],
+        ),
+      );
 }
 
 class _SlitherResumeCard extends StatefulWidget {
