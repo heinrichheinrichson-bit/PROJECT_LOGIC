@@ -197,3 +197,78 @@ class PuzzleRulesScreen extends StatelessWidget {
         ),
       );
 }
+
+class PuzzleGameStatusChip extends StatelessWidget {
+  const PuzzleGameStatusChip({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    super.key,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final chip = Chip(
+      avatar: Icon(icon, size: 18),
+      label: Text(label),
+      side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+    );
+    if (onTap == null) return chip;
+    return Tooltip(
+      message: 'Hinweis',
+      child: Semantics(
+        button: true,
+        label: label,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(999),
+          child: chip,
+        ),
+      ),
+    );
+  }
+}
+
+class PuzzleGameRulesButton extends StatelessWidget {
+  const PuzzleGameRulesButton({required this.onPressed, super.key});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => TextButton.icon(
+        onPressed: onPressed,
+        icon: const Icon(Icons.menu_book_outlined),
+        label: const Text('Spielregeln & Bedienung'),
+      );
+}
+
+Future<void> showPuzzleGameOptions(
+  BuildContext context, {
+  required List<Widget> children,
+}) =>
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Spielhilfen',
+                style: Theme.of(sheetContext).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              ...children,
+            ],
+          ),
+        ),
+      ),
+    );

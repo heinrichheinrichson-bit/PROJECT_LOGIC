@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -1075,27 +1076,61 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
       appBar: AppBar(
         title: Text('${widget.puzzle.difficulty.label} · Futoshiki'),
         actions: [
-          PopupMenuButton<String>(
-            tooltip: 'Testwerkzeuge',
-            icon: const Icon(Icons.bug_report_outlined),
-            onSelected: (value) {
-              if (value == 'almost') _debugSolve(almost: true);
-              if (value == 'solve') _debugSolve(almost: false);
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'almost', child: Text('Fast lösen')),
-              PopupMenuItem(value: 'solve', child: Text('Sofort lösen')),
-            ],
+          if (kDebugMode)
+            PopupMenuButton<String>(
+              tooltip: 'Testwerkzeuge',
+              icon: const Icon(Icons.bug_report_outlined),
+              onSelected: (value) {
+                if (value == 'almost') _debugSolve(almost: true);
+                if (value == 'solve') _debugSolve(almost: false);
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'almost', child: Text('Fast lösen')),
+                PopupMenuItem(value: 'solve', child: Text('Sofort lösen')),
+              ],
+            ),
+          IconButton(
+            tooltip: 'Rückgängig',
+            onPressed: _history.isEmpty ? null : _undo,
+            icon: const Icon(Icons.undo_rounded),
           ),
           IconButton(
-            tooltip: 'Hinweis',
-            onPressed: _hint,
-            icon: const Icon(Icons.lightbulb_outline),
+            tooltip: 'Wiederholen',
+            onPressed: _redo.isEmpty ? null : _redoMove,
+            icon: const Icon(Icons.redo_rounded),
           ),
           IconButton(
             tooltip: 'Neu starten',
             onPressed: _restart,
             icon: const Icon(Icons.restart_alt_rounded),
+          ),
+          IconButton(
+            tooltip: 'Spielhilfen',
+            onPressed: () => showPuzzleGameOptions(context, children: [
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Regelfehler markieren'),
+                subtitle: const Text(
+                    'Zeigt doppelte Zahlen und falsche Ungleichheiten.'),
+                value: _showConflicts,
+                onChanged: (value) {
+                  setState(() => _showConflicts = value);
+                  Navigator.pop(context);
+                },
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Automatisch weiter'),
+                subtitle: const Text(
+                    'Wählt nach einer Zahl das nächste freie Feld aus.'),
+                value: _autoAdvance,
+                onChanged: (value) {
+                  setState(() => _autoAdvance = value);
+                  Navigator.pop(context);
+                },
+              ),
+            ]),
+            icon: const Icon(Icons.tune_rounded),
           ),
         ],
       ),
@@ -1118,9 +1153,11 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
                           text: _formatTime(_elapsedSeconds)),
                       _Status(
                           icon: Icons.touch_app_outlined, text: '$_moves Züge'),
-                      _Status(
-                          icon: Icons.lightbulb_outline,
-                          text: premium ? 'Premium' : '$_hintsRemaining Tipps'),
+                      PuzzleGameStatusChip(
+                        icon: Icons.lightbulb_outline,
+                        label: premium ? 'Premium' : '$_hintsRemaining Tipps',
+                        onTap: _hint,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -1197,26 +1234,6 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
                     onSelectionChanged: (selection) =>
                         setState(() => _candidateMode = selection.first),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _history.isEmpty ? null : _undo,
-                          icon: const Icon(Icons.undo_rounded),
-                          label: const Text('Rückgängig'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _redo.isEmpty ? null : _redoMove,
-                          icon: const Icon(Icons.redo_rounded),
-                          label: const Text('Wiederholen'),
-                        ),
-                      ),
-                    ],
-                  ),
                   if (_completionShown) ...[
                     const SizedBox(height: 12),
                     SizedBox(
@@ -1238,46 +1255,22 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
                       ),
                     ),
                   ],
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Regelfehler markieren'),
-                    subtitle: const Text(
-                        'Zeigt doppelte Zahlen und falsche Ungleichheiten.'),
-                    value: _showConflicts,
-                    onChanged: (value) =>
-                        setState(() => _showConflicts = value),
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Automatisch weiter'),
-                    subtitle: const Text(
-                      'Wählt nach einer Zahl das nächste freie Feld aus.',
-                    ),
-                    value: _autoAdvance,
-                    onChanged: (value) => setState(() => _autoAdvance = value),
-                  ),
-                  const Card(
-                    child: ExpansionTile(
-                      leading: Icon(Icons.menu_book_outlined),
-                      title: Text('So funktioniert es'),
-                      childrenPadding: EdgeInsets.fromLTRB(18, 0, 18, 18),
-                      children: [
-                        Text(
-                          'Trage in jede Zeile und Spalte jede Zahl genau '
-                          'einmal ein. Bei einem 5 × 5-Raster sind das die '
-                          'Zahlen 1 bis 5.',
+                  PuzzleGameRulesButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const PuzzleRulesScreen(
+                          title: 'Futoshiki',
+                          introduction:
+                              'Fülle das Raster mit Zahlen und beachte alle Ungleichheiten.',
+                          rules: [
+                            'Jede Zahl kommt in jeder Zeile genau einmal vor.',
+                            'Jede Zahl kommt in jeder Spalte genau einmal vor.',
+                            'Das Ungleichheitszeichen zeigt stets zur kleineren Zahl.',
+                          ],
+                          interaction:
+                              'Wähle ein Feld und danach eine Zahl. Im Notizmodus kannst du mehrere Kandidaten eintragen.',
                         ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Das Ungleichheitszeichen zeigt immer zur kleineren '
-                          'Zahl. Beispiel: 2 < 4 und 5 > 3.',
-                        ),
-                        SizedBox(height: 10),
-                        Text(
-                          'Nutze bereits gesetzte Zahlen und die Zeichen '
-                          'gemeinsam, um mögliche Werte auszuschließen.',
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ],

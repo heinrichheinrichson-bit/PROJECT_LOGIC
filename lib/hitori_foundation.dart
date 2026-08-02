@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -882,29 +883,47 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
       appBar: AppBar(
         title: Text(_screenTitle),
         actions: [
-          PopupMenuButton<String>(
-            tooltip: 'Testwerkzeuge',
-            icon: const Icon(Icons.bug_report_outlined),
-            onSelected: (value) => _debugSolve(almost: value == 'almost'),
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'almost', child: Text('Fast lösen')),
-              PopupMenuItem(value: 'solve', child: Text('Sofort lösen')),
-            ],
+          if (kDebugMode)
+            PopupMenuButton<String>(
+              tooltip: 'Testwerkzeuge',
+              icon: const Icon(Icons.bug_report_outlined),
+              onSelected: (value) => _debugSolve(almost: value == 'almost'),
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'almost', child: Text('Fast lösen')),
+                PopupMenuItem(value: 'solve', child: Text('Sofort lösen')),
+              ],
+            ),
+          IconButton(
+            tooltip: 'Rückgängig',
+            onPressed: _history.isEmpty ? null : _undo,
+            icon: const Icon(Icons.undo_rounded),
           ),
           IconButton(
-            tooltip: 'Regeln',
-            onPressed: () => _showRulesGuide(force: true),
-            icon: const Icon(Icons.help_outline_rounded),
-          ),
-          IconButton(
-            tooltip: 'Hinweis',
-            onPressed: _hint,
-            icon: const Icon(Icons.lightbulb_outline),
+            tooltip: 'Wiederholen',
+            onPressed: _redo.isEmpty ? null : _redoMove,
+            icon: const Icon(Icons.redo_rounded),
           ),
           IconButton(
             tooltip: 'Neu starten',
             onPressed: _restart,
             icon: const Icon(Icons.restart_alt_rounded),
+          ),
+          IconButton(
+            tooltip: 'Spielhilfen',
+            onPressed: () => showPuzzleGameOptions(context, children: [
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Regelfehler markieren'),
+                subtitle: const Text(
+                    'Markiert doppelte Zahlen und benachbarte schwarze Felder.'),
+                value: _showConflicts,
+                onChanged: (value) {
+                  setState(() => _showConflicts = value);
+                  Navigator.pop(context);
+                },
+              ),
+            ]),
+            icon: const Icon(Icons.tune_rounded),
           ),
         ],
       ),
@@ -925,9 +944,10 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
                     avatar: const Icon(Icons.touch_app_outlined, size: 18),
                     label: Text('$_moves Züge'),
                   ),
-                  Chip(
-                    avatar: const Icon(Icons.lightbulb_outline, size: 18),
-                    label: Text(premium ? 'Premium' : '$_hintsRemaining Tipps'),
+                  PuzzleGameStatusChip(
+                    icon: Icons.lightbulb_outline,
+                    label: premium ? 'Premium' : '$_hintsRemaining Tipps',
+                    onTap: _hint,
                   ),
                 ],
               ),
@@ -1076,26 +1096,6 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _history.isEmpty ? null : _undo,
-                      icon: const Icon(Icons.undo_rounded),
-                      label: const Text('Rückgängig'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _redo.isEmpty ? null : _redoMove,
-                      icon: const Icon(Icons.redo_rounded),
-                      label: const Text('Wiederholen'),
-                    ),
-                  ),
-                ],
-              ),
               if (_completionShown) ...[
                 const SizedBox(height: 12),
                 SizedBox(
@@ -1117,42 +1117,8 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
                   ),
                 ),
               ],
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Regelfehler markieren'),
-                subtitle: Text(
-                  !_state.openCellsConnected
-                      ? 'Der helle Bereich ist momentan getrennt.'
-                      : 'Markiert doppelte Zahlen und benachbarte schwarze Felder.',
-                ),
-                value: _showConflicts,
-                onChanged: (value) => setState(() => _showConflicts = value),
-              ),
-              Card(
-                child: ExpansionTile(
-                  leading: const Icon(Icons.menu_book_outlined),
-                  title: const Text('So funktioniert es'),
-                  childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-                  children: [
-                    const Text(
-                      'Schwärze so viele doppelte Zahlen, dass jede Zahl pro '
-                      'Zeile und Spalte nur einmal hell bleibt. Schwarze Felder '
-                      'dürfen sich nicht seitlich berühren. Die übrigen hellen '
-                      'Felder müssen vollständig miteinander verbunden bleiben. '
-                      'Felder, die sicher hell bleiben, kannst du zur Orientierung '
-                      'als sicher markieren.',
-                    ),
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: () => _showRulesGuide(force: true),
-                        icon: const Icon(Icons.school_outlined),
-                        label: const Text('Regeln Schritt für Schritt'),
-                      ),
-                    ),
-                  ],
-                ),
+              PuzzleGameRulesButton(
+                onPressed: () => _showRulesGuide(force: true),
               ),
             ],
           ),

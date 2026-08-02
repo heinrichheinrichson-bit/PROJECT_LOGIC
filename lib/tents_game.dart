@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -810,24 +811,55 @@ class _TentsGameScreenState extends State<TentsGameScreen>
             title: Text(
                 '${widget.puzzle.difficulty.label} \u00b7 Zelte & B\u00e4ume'),
             actions: [
-              PopupMenuButton<String>(
-                  tooltip: 'Testwerkzeuge',
-                  icon: const Icon(Icons.bug_report_outlined),
-                  onSelected: (v) => _debugSolve(v == 'almost'),
-                  itemBuilder: (_) => const [
-                        PopupMenuItem(
-                            value: 'almost', child: Text('Fast l\u00f6sen')),
-                        PopupMenuItem(
-                            value: 'solve', child: Text('Sofort l\u00f6sen'))
-                      ]),
+              if (kDebugMode)
+                PopupMenuButton<String>(
+                    tooltip: 'Testwerkzeuge',
+                    icon: const Icon(Icons.bug_report_outlined),
+                    onSelected: (v) => _debugSolve(v == 'almost'),
+                    itemBuilder: (_) => const [
+                          PopupMenuItem(
+                              value: 'almost', child: Text('Fast l\u00f6sen')),
+                          PopupMenuItem(
+                              value: 'solve', child: Text('Sofort l\u00f6sen'))
+                        ]),
               IconButton(
-                  onPressed: _hint,
-                  tooltip: 'Hinweis',
-                  icon: const Icon(Icons.lightbulb_outline_rounded)),
+                  onPressed: _history.isEmpty ? null : _undo,
+                  tooltip: 'Rückgängig',
+                  icon: const Icon(Icons.undo_rounded)),
+              IconButton(
+                  onPressed: _redo.isEmpty ? null : _redoMove,
+                  tooltip: 'Wiederholen',
+                  icon: const Icon(Icons.redo_rounded)),
               IconButton(
                   onPressed: _restart,
                   tooltip: 'Neu starten',
-                  icon: const Icon(Icons.restart_alt_rounded))
+                  icon: const Icon(Icons.restart_alt_rounded)),
+              IconButton(
+                  onPressed: () => showPuzzleGameOptions(context, children: [
+                        SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Hilfsgras automatisch anzeigen'),
+                            subtitle: const Text(
+                                'Blendet sichere Ausschlussfelder dynamisch ein.'),
+                            value: _autoGrass,
+                            onChanged: (value) {
+                              setState(() => _autoGrass = value);
+                              unawaited(_save());
+                              Navigator.pop(context);
+                            }),
+                        SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Regelfehler markieren'),
+                            subtitle: const Text(
+                                'Zeigt sich berührende Zelte und falsche Anzahlen.'),
+                            value: _showConflicts,
+                            onChanged: (value) {
+                              setState(() => _showConflicts = value);
+                              Navigator.pop(context);
+                            })
+                      ]),
+                  tooltip: 'Spielhilfen',
+                  icon: const Icon(Icons.tune_rounded))
             ]),
         body: SafeArea(
             child: LayoutBuilder(
@@ -842,14 +874,14 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                             avatar:
                                 const Icon(Icons.touch_app_outlined, size: 18),
                             label: Text('$_moves Z\u00fcge')),
-                        Chip(
-                            avatar:
-                                const Icon(Icons.lightbulb_outline, size: 18),
-                            label: Text((PreferencesScope.maybeOf(context)
+                        PuzzleGameStatusChip(
+                            icon: Icons.lightbulb_outline,
+                            label: (PreferencesScope.maybeOf(context)
                                         ?.premiumSimulationEnabled ??
                                     false)
                                 ? 'Premium'
-                                : '$_hintsRemaining Tipps'))
+                                : '$_hintsRemaining Tipps',
+                            onTap: _hint)
                       ]),
                       const SizedBox(height: 12),
                       const Text('Tippen: leer \u2192 Zelt \u2192 Gras'),
@@ -879,20 +911,6 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                           textAlign: TextAlign.center,
                         ),
                       ],
-                      const SizedBox(height: 16),
-                      Row(children: [
-                        Expanded(
-                            child: OutlinedButton.icon(
-                                onPressed: _history.isEmpty ? null : _undo,
-                                icon: const Icon(Icons.undo_rounded),
-                                label: const Text('R\u00fcckg\u00e4ngig'))),
-                        const SizedBox(width: 12),
-                        Expanded(
-                            child: OutlinedButton.icon(
-                                onPressed: _redo.isEmpty ? null : _redoMove,
-                                icon: const Icon(Icons.redo_rounded),
-                                label: const Text('Wiederholen')))
-                      ]),
                       if (_completed)
                         Padding(
                             padding: const EdgeInsets.only(top: 12),
@@ -908,40 +926,21 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                                     label: Text(widget.mode == GameMode.daily
                                         ? 'Zum Kalender'
                                         : 'Noch ein R\u00e4tsel')))),
-                      SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Hilfsgras automatisch anzeigen'),
-                          subtitle: const Text(
-                              'Blendet sichere Ausschlussfelder dynamisch ein. Beim Entfernen eines Zelts verschwinden sie wieder.'),
-                          value: _autoGrass,
-                          onChanged: (value) {
-                            setState(() => _autoGrass = value);
-                            unawaited(_save());
-                          }),
-                      SwitchListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Regelfehler markieren'),
-                          subtitle: const Text(
-                              'Zeigt sich ber\u00fchrende Zelte und falsche Anzahlen.'),
-                          value: _showConflicts,
-                          onChanged: (v) => setState(() => _showConflicts = v)),
-                      const ExpansionTile(
-                          leading: Icon(Icons.menu_book_outlined),
-                          title: Text('So funktioniert es'),
-                          childrenPadding: EdgeInsets.all(16),
-                          children: [
-                            Text(
-                                'Ordne jedem Baum genau ein Zelt zu. Das zugeordnete Zelt muss direkt waagerecht oder senkrecht neben seinem Baum stehen.'),
-                            SizedBox(height: 10),
-                            Text(
-                                'Wichtig: Ein Zelt darf neben mehreren B\u00e4umen stehen und ein Baum neben mehreren Zelten. Entscheidend ist, dass sich alle B\u00e4ume und Zelte vollst\u00e4ndig zu eindeutigen 1:1-Paaren verbinden lassen.'),
-                            SizedBox(height: 10),
-                            Text(
-                                'Zelte d\u00fcrfen sich weder seitlich noch diagonal ber\u00fchren. Die Zahlen am Rand zeigen, wie viele Zelte in der jeweiligen Zeile oder Spalte stehen.'),
-                            SizedBox(height: 10),
-                            Text(
-                                'Gras ist eine freiwillige Notiz: Damit markierst du Felder, auf denen sicher kein Zelt stehen kann.')
-                          ]),
+                      PuzzleGameRulesButton(
+                          onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                  builder: (_) => const PuzzleRulesScreen(
+                                      title: 'Zelte & B\u00e4ume',
+                                      introduction:
+                                          'Ordne jedem Baum genau ein Zelt zu.',
+                                      rules: [
+                                        'Ein Zelt steht direkt waagerecht oder senkrecht neben seinem Baum.',
+                                        'Alle B\u00e4ume und Zelte m\u00fcssen sich zu eindeutigen 1:1-Paaren verbinden lassen.',
+                                        'Zelte d\u00fcrfen sich weder seitlich noch diagonal ber\u00fchren.',
+                                        'Die Randzahlen nennen die Zelte pro Zeile und Spalte.'
+                                      ],
+                                      interaction:
+                                          'Tippe ein Feld: leer \u2192 Zelt \u2192 Gras. Gras ist eine freiwillige Ausschlussnotiz.')))),
                     ])))));
   }
 }

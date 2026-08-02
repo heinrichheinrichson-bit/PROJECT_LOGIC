@@ -1528,14 +1528,33 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                 ],
               ),
             IconButton(
-              tooltip: 'Hinweis',
-              onPressed: _completionShown ? null : _hint,
-              icon: const Icon(Icons.lightbulb_outline),
+              tooltip: 'Rückgängig',
+              onPressed: _history.isEmpty ? null : _undo,
+              icon: const Icon(Icons.undo_rounded),
+            ),
+            IconButton(
+              tooltip: 'Wiederholen',
+              onPressed: _redo.isEmpty ? null : _redoMove,
+              icon: const Icon(Icons.redo_rounded),
             ),
             IconButton(
               tooltip: 'Neu starten',
               onPressed: _restart,
               icon: const Icon(Icons.restart_alt_rounded),
+            ),
+            IconButton(
+              tooltip: 'Spielhilfen',
+              onPressed: () => showPuzzleGameOptions(context, children: const [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.fact_check_outlined),
+                  title: Text('Regelfehler'),
+                  subtitle: Text(
+                    'Ungültige Abzweigungen und Zahlenkonflikte werden direkt am Brett markiert.',
+                  ),
+                ),
+              ]),
+              icon: const Icon(Icons.tune_rounded),
             ),
           ],
         ),
@@ -1557,12 +1576,13 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                       label: '$_moves Züge',
                     ),
                     const SizedBox(width: 8),
-                    _SlitherStatus(
+                    PuzzleGameStatusChip(
                       icon: Icons.lightbulb_outline,
                       label:
                           PreferencesScope.of(context).premiumSimulationEnabled
                               ? 'Premium'
                               : '${_hintBudget.remainingHints} Tipps',
+                      onTap: _completionShown ? null : _hint,
                     ),
                   ],
                 ),
@@ -1591,8 +1611,8 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                       ],
                     ),
                   ),
-                  icon: const Icon(Icons.help_outline_rounded, size: 19),
-                  label: const Text('Spielregeln und Bedienung'),
+                  icon: const Icon(Icons.menu_book_outlined, size: 19),
+                  label: const Text('Spielregeln & Bedienung'),
                 ),
               ),
               Expanded(
@@ -1610,28 +1630,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.tonalIcon(
-                        onPressed: _history.isEmpty ? null : _undo,
-                        icon: const Icon(Icons.undo_rounded),
-                        label: const Text('Rückgängig'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton.tonalIcon(
-                        onPressed: _redo.isEmpty ? null : _redoMove,
-                        icon: const Icon(Icons.redo_rounded),
-                        label: const Text('Wiederholen'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 12),
             ],
           ),
         ),

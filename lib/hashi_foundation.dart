@@ -1916,9 +1916,6 @@ class _HashiGameScreenState extends State<HashiGameScreen>
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final premium = PreferencesScope.of(context).premiumSimulationEnabled;
-    final hintLabel = premium
-        ? 'Tipp · Premium'
-        : 'Tipp · ${_hintBudget.remainingHints} übrig';
     final bridgeCounts = List<int>.generate(
       _game.puzzle.islands.length,
       _game.bridgeCountAt,
@@ -2016,11 +2013,6 @@ class _HashiGameScreenState extends State<HashiGameScreen>
               ],
             ),
           IconButton(
-            tooltip: hintLabel,
-            onPressed: _completionShown ? null : _useHint,
-            icon: const Icon(Icons.lightbulb_outline_rounded),
-          ),
-          IconButton(
             tooltip: 'Rückgängig',
             onPressed: _completionShown || _history.isEmpty ? null : _undo,
             icon: const Icon(Icons.undo_rounded),
@@ -2031,27 +2023,26 @@ class _HashiGameScreenState extends State<HashiGameScreen>
             icon: const Icon(Icons.redo_rounded),
           ),
           IconButton(
-            tooltip: _showMistakes
-                ? 'Fehleranzeige ausschalten'
-                : 'Fehleranzeige einschalten',
-            onPressed: () {
-              setState(() => _showMistakes = !_showMistakes);
-              _showActionMessage(
-                _showMistakes
-                    ? 'Fehleranzeige aktiviert'
-                    : 'Fehleranzeige deaktiviert',
-              );
-            },
-            icon: Icon(
-              _showMistakes
-                  ? Icons.fact_check_rounded
-                  : Icons.fact_check_outlined,
-            ),
-          ),
-          IconButton(
             tooltip: 'Neu starten',
             onPressed: _restart,
             icon: const Icon(Icons.refresh_rounded),
+          ),
+          IconButton(
+            tooltip: 'Spielhilfen',
+            onPressed: () => showPuzzleGameOptions(context, children: [
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Regelfehler markieren'),
+                subtitle: const Text(
+                    'Zeigt unzulässige Brücken und Zahlenkonflikte.'),
+                value: _showMistakes,
+                onChanged: (value) {
+                  setState(() => _showMistakes = value);
+                  Navigator.pop(context);
+                },
+              ),
+            ]),
+            icon: const Icon(Icons.tune_rounded),
           ),
         ],
       ),
@@ -2086,6 +2077,7 @@ class _HashiGameScreenState extends State<HashiGameScreen>
                         label: premium
                             ? 'Tipps · Premium'
                             : '${_hintBudget.remainingHints} Tipps',
+                        onTap: _completionShown ? null : _useHint,
                       ),
                     ],
                   ),
@@ -2169,34 +2161,11 @@ class _HashiGameScreenState extends State<HashiGameScreen>
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colors.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.lightbulb_outline_rounded,
-                          size: 20,
-                          color: colors.primary,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            '1× verbinden, 2× doppeln, 3× entfernen. Tipp, Undo, Redo und optionale Fehleranzeige helfen beim Lösen.',
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: colors.onSurfaceVariant,
-                                    ),
-                          ),
-                        ),
-                      ],
+                  PuzzleGameRulesButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const HashiRulesScreen(),
+                      ),
                     ),
                   ),
                 ],
@@ -2210,17 +2179,15 @@ class _HashiGameScreenState extends State<HashiGameScreen>
 }
 
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.icon, required this.label});
+  const _StatusChip({required this.icon, required this.label, this.onTap});
 
   final IconData icon;
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      avatar: Icon(icon, size: 18),
-      label: Text(label),
-    );
+    return PuzzleGameStatusChip(icon: icon, label: label, onTap: onTap);
   }
 }
 

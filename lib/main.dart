@@ -1982,9 +1982,6 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       for (final issue in issues) ...issue.cells,
     };
     final premium = PreferencesScope.of(context).premiumSimulationEnabled;
-    final hintLabel = premium
-        ? 'Logischer Hinweis · Premium'
-        : 'Logischer Hinweis · ${_hintBudget.remainingHints} übrig';
 
     return PopScope(
       canPop: false,
@@ -2075,14 +2072,41 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                 ],
               ),
             IconButton(
-              tooltip: hintLabel,
-              onPressed: puzzle.isSolved ? null : _showHint,
-              icon: const Icon(Icons.lightbulb_outline_rounded),
+              tooltip: 'Rückgängig',
+              onPressed: puzzle.canUndo ? _undo : null,
+              icon: const Icon(Icons.undo_rounded),
+            ),
+            IconButton(
+              tooltip: 'Wiederholen',
+              onPressed: puzzle.canRedo ? _redo : null,
+              icon: const Icon(Icons.redo_rounded),
             ),
             IconButton(
               tooltip: 'Zurücksetzen',
               onPressed: _reset,
               icon: const Icon(Icons.restart_alt),
+            ),
+            IconButton(
+              tooltip: 'Spielhilfen',
+              onPressed: () => showPuzzleGameOptions(
+                context,
+                children: [
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Regelfehler markieren'),
+                    subtitle: const Text(
+                      'Markiert direkte Widersprüche, ohne die Lösung zu verraten.',
+                    ),
+                    value: showIssues,
+                    onChanged: (value) {
+                      setState(() => showIssues = value);
+                      PreferencesScope.of(context).setShowRuleIssues(value);
+                      Navigator.pop(context);
+                    },
+                  ),
+                ],
+              ),
+              icon: const Icon(Icons.tune_rounded),
             ),
           ],
         ),
@@ -2100,6 +2124,10 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                       filled: puzzle.filledEditableCellCount,
                       total: puzzle.editableCellCount,
                       progress: puzzle.progress,
+                      hintLabel: premium
+                          ? 'Premium'
+                          : '${_hintBudget.remainingHints} Tipps',
+                      onHint: puzzle.isSolved ? null : _showHint,
                     ),
                     const SizedBox(height: 12),
                     _StatusCard(
@@ -2121,47 +2149,24 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                         onCellPressed: _cycleCell,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FilledButton.tonalIcon(
-                            onPressed: puzzle.canUndo ? _undo : null,
-                            icon: const Icon(Icons.undo),
-                            label: const Text('Rückgängig'),
+                    const SizedBox(height: 12),
+                    PuzzleGameRulesButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const PuzzleRulesScreen(
+                            title: 'Binärpuzzle',
+                            introduction:
+                                'Setze 0 und 1 nach drei klaren Regeln.',
+                            rules: [
+                              'In jeder Zeile und Spalte stehen gleich viele Nullen und Einsen.',
+                              'Nie dürfen drei gleiche Zahlen direkt nebeneinander stehen.',
+                              'Keine zwei Zeilen oder Spalten dürfen identisch sein.',
+                            ],
+                            interaction: 'Tippe ein freies Feld: leer → 0 → 1.',
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: FilledButton.tonalIcon(
-                            onPressed: puzzle.canRedo ? _redo : null,
-                            icon: const Icon(Icons.redo),
-                            label: const Text('Wiederholen'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: puzzle.isSolved ? null : _showHint,
-                      icon: const Icon(Icons.lightbulb_outline_rounded),
-                      label: Text(hintLabel),
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Regelfehler markieren'),
-                      subtitle: const Text(
-                        'Markiert direkte Widersprüche, ohne die Lösung zu verraten.',
                       ),
-                      value: showIssues,
-                      onChanged: (value) {
-                        setState(() => showIssues = value);
-                        PreferencesScope.of(context).setShowRuleIssues(value);
-                      },
                     ),
-                    const SizedBox(height: 10),
-                    _RulesPanel(issues: showIssues ? issues : const []),
                   ],
                 ),
               ),
@@ -2677,12 +2682,16 @@ class _GameInfoBar extends StatelessWidget {
     required this.filled,
     required this.total,
     required this.progress,
+    required this.hintLabel,
+    required this.onHint,
   });
 
   final int elapsedSeconds;
   final int filled;
   final int total;
   final double progress;
+  final String hintLabel;
+  final VoidCallback? onHint;
 
   @override
   Widget build(BuildContext context) {
@@ -2699,7 +2708,13 @@ class _GameInfoBar extends StatelessWidget {
                 const SizedBox(width: 7),
                 Text('$minutes:${seconds.toString().padLeft(2, '0')}'),
                 const Spacer(),
-                Text('$filled von $total Feldern gelöst'),
+                Text('$filled/$total Felder'),
+                const SizedBox(width: 10),
+                PuzzleGameStatusChip(
+                  icon: Icons.lightbulb_outline_rounded,
+                  label: hintLabel,
+                  onTap: onHint,
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -5143,57 +5158,6 @@ class _StatusCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _RulesPanel extends StatelessWidget {
-  const _RulesPanel({required this.issues});
-
-  final List<RuleIssue> issues;
-
-  @override
-  Widget build(BuildContext context) {
-    return ExpansionTile(
-      initiallyExpanded: issues.isNotEmpty,
-      tilePadding: EdgeInsets.zero,
-      title: const Text('So funktioniert es'),
-      childrenPadding: const EdgeInsets.only(bottom: 12),
-      children: [
-        const _RuleLine(
-            'In jeder Reihe und Spalte stehen gleich viele 0 und 1.'),
-        const _RuleLine(
-            'Drei gleiche Zahlen dürfen nie direkt aufeinanderfolgen.'),
-        const _RuleLine(
-            'Keine zwei fertigen Reihen oder Spalten dürfen identisch sein.'),
-        if (issues.isNotEmpty) ...[
-          const Divider(height: 24),
-          for (final issue in issues)
-            _RuleLine(issue.message, icon: Icons.warning_amber_rounded),
-        ],
-      ],
-    );
-  }
-}
-
-class _RuleLine extends StatelessWidget {
-  const _RuleLine(this.text, {this.icon = Icons.check});
-
-  final String text;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 10),
-          Expanded(child: Text(text)),
-        ],
       ),
     );
   }
