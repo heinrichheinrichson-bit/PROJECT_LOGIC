@@ -3,6 +3,8 @@ import 'package:project_logic_prototype/game_logic.dart';
 import 'package:project_logic_prototype/game_storage.dart';
 import 'package:project_logic_prototype/player_progress_system.dart';
 import 'package:project_logic_prototype/core/progress/experience_event.dart';
+import 'package:project_logic_prototype/core/statistics/puzzle_attempt.dart';
+import 'package:project_logic_prototype/daily_challenge.dart';
 
 void main() {
   const service = PlayerProgressService();
@@ -116,8 +118,10 @@ void main() {
       date: DateTime(2026, 7, 31),
     );
 
-    expect(firstDay[1].isCompleted, isTrue);
-    expect(nextDay[1].isCompleted, isFalse);
+    expect(firstDay, hasLength(3));
+    expect(nextDay, hasLength(3));
+    expect(
+        firstDay.map((goal) => goal.id), isNot(nextDay.map((goal) => goal.id)));
     expect(firstDay.first.id, isNot(nextDay.first.id));
   });
 
@@ -172,7 +176,91 @@ void main() {
     expect(weekly.first.isCompleted, isTrue);
     expect(weekly.first.id, contains('2026-08-03'));
   });
+
+  test('mission XP is complete, idempotent, and date-specific', () {
+    final day = DateTime(2026, 8, 8, 12);
+    const dailyService = DailyChallengeService();
+    final attempts = <PuzzleAttempt>[
+      _attempt(
+        id: 'daily',
+        puzzleId: dailyService.summaryForGame(day, GameType.binairo).puzzleId,
+        gameType: GameType.binairo,
+        mode: GameMode.daily,
+        date: day,
+        difficulty: PuzzleDifficulty.hard,
+      ),
+      _attempt(
+        id: 'generated',
+        puzzleId: 'generated-1',
+        gameType: GameType.hashi,
+        mode: GameMode.generated,
+        date: day,
+        difficulty: PuzzleDifficulty.hard,
+      ),
+      _attempt(
+        id: 'catalog',
+        puzzleId: 'catalog-1',
+        gameType: GameType.slitherlink,
+        mode: GameMode.catalog,
+        date: day,
+      ),
+      _attempt(
+        id: 'extra-1',
+        puzzleId: 'generated-2',
+        gameType: GameType.futoshiki,
+        mode: GameMode.generated,
+        date: day.subtract(const Duration(days: 1)),
+      ),
+      _attempt(
+        id: 'extra-2',
+        puzzleId: 'catalog-2',
+        gameType: GameType.hitori,
+        mode: GameMode.catalog,
+        date: day.subtract(const Duration(days: 2)),
+      ),
+    ];
+    final snapshot = ProgressSnapshot(
+      results: const {},
+      progress: const PlayerProgress.empty(),
+      catalogPuzzleIds: const {},
+      attempts: attempts,
+    );
+
+    final first = service.synchronizeMissionXp(snapshot, const [], now: day);
+    final second = service.synchronizeMissionXp(snapshot, first,
+        now: day.add(const Duration(hours: 1)));
+
+    expect(first, isNotEmpty);
+    expect(first.map((event) => event.id).toSet(), hasLength(first.length));
+    expect(second, hasLength(first.length));
+    expect(first.every((event) => event.points > 0), isTrue);
+    expect(
+      first.any(
+          (event) => event.referenceId?.endsWith('daily-complete') ?? false),
+      isTrue,
+    );
+  });
 }
+
+PuzzleAttempt _attempt({
+  required String id,
+  required String puzzleId,
+  required GameType gameType,
+  required GameMode mode,
+  required DateTime date,
+  PuzzleDifficulty difficulty = PuzzleDifficulty.easy,
+}) =>
+    PuzzleAttempt(
+      id: id,
+      gameType: gameType,
+      puzzleId: puzzleId,
+      mode: mode,
+      difficulty: difficulty,
+      boardSize: 6,
+      startedAt: date.subtract(const Duration(minutes: 1)),
+      completedAt: date,
+      elapsedSeconds: 60,
+    );
 
 // Daily missions deliberately use an injected date so tests do not depend on
 // the machine clock.

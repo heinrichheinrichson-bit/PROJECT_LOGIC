@@ -154,7 +154,7 @@ def build():
     set_font(header.add_run("PROJECT LOGIC  ·  TESTREFERENZ"), size=8.5, bold=True, color=MUTED)
     footer = section.footer.paragraphs[0]
     footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    set_font(footer.add_run("XP-Balance v2 · Stand 8. August 2026"), size=8.5, color=MUTED)
+    set_font(footer.add_run("XP-Balance v3 · Stand 8. August 2026"), size=8.5, color=MUTED)
 
     kicker = doc.add_paragraph()
     kicker.paragraph_format.space_after = Pt(2)
@@ -245,9 +245,40 @@ def build():
     set_table_geometry(table, [3960, 3600, 1800])
     style_table(table)
 
-    add_heading(doc, "3. Noch geplant – derzeit 0 XP", 1)
+    add_heading(doc, "3. Tages- und Wochenziele", 1)
+    doc.add_paragraph("Die sichtbaren Ziele wechseln reproduzierbar mit dem Datum beziehungsweise der Kalenderwoche. Ein Ziel kann wegen seiner eindeutigen Kennung nur einmal XP vergeben.")
+    mission_rows = [
+        ("Ein einzelnes Tagesziel", "5 XP"),
+        ("Alle drei Tagesziele", "+15 XP Komplettbonus"),
+        ("Ein einzelnes Wochenziel", "40 XP"),
+        ("Beide Wochenziele", "+30 XP Komplettbonus"),
+    ]
+    table = doc.add_table(rows=1, cols=2)
+    table.rows[0].cells[0].text = "Abschluss"
+    table.rows[0].cells[1].text = "Belohnung"
+    for label, points in mission_rows:
+        cells = table.add_row().cells
+        cells[0].text = label
+        cells[1].text = points
+    set_table_geometry(table, [6840, 2520])
+    style_table(table)
+
+    add_heading(doc, "Rotation und Testverhalten", 2)
+    mission_notes = [
+        "Heute: Das Tagesrätsel ist immer dabei; zwei weitere Ziele rotieren zwischen Zufallsrätsel, Sammlung, ohne Hinweis und zwei Spielarten.",
+        "Diese Woche: Zwei Ziele rotieren zwischen drei aktiven Tagen, drei Spielarten, fünf Rätseln, drei Lösungen ohne Hinweis und zwei schweren Rätseln.",
+        "Alle Fortschritte werden aus dem Abschlussverlauf der jeweiligen Tages- oder Wochenperiode berechnet; Lebenszeitwerte zählen nicht versehentlich in Wochenziele hinein.",
+        "Im XP-Verlauf erscheinen Einzelziele als Missionsbelohnung und vollständige Zielsets als eigener Komplettbonus.",
+    ]
+    for text in mission_notes:
+        p = doc.add_paragraph(style="List Bullet")
+        p.paragraph_format.left_indent = Inches(0.375)
+        p.paragraph_format.first_line_indent = Inches(-0.188)
+        p.paragraph_format.space_after = Pt(4)
+        p.add_run(text)
+
+    add_heading(doc, "4. Noch geplant – derzeit 0 XP", 1)
     planned = [
-        "Tägliche und wöchentliche Missionen: eigene Abschlussbelohnungen nach dem Balancing-Test.",
         "Streak-Eis, Erinnerungen und rückwirkendes Einfrieren: keine XP-Kaufmöglichkeit; Motivation statt Pay-to-win.",
         "Saisonale Ereignisse: später separate Event-XP, erst wenn das Ereignissystem existiert.",
         "Premiumkauf und Werbung: niemals direkte XP. Premium entfernt Reibung, kauft aber keinen Fortschritt.",

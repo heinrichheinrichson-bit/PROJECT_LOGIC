@@ -59,4 +59,12 @@ class ExperiencePointsPolicy {
         'large-board' => 50,
         _ => 50,
       };
+
+  static int mission(String id) {
+    if (id.endsWith('-daily-complete')) return 15;
+    if (id.endsWith('-weekly-complete')) return 30;
+    if (id.startsWith('daily-')) return 5;
+    if (id.startsWith('week-')) return 40;
+    return 0;
+  }
 }

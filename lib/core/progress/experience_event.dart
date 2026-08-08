@@ -1,4 +1,8 @@
-enum ExperienceEventKind { puzzleCompleted, achievementUnlocked }
+enum ExperienceEventKind {
+  puzzleCompleted,
+  achievementUnlocked,
+  missionCompleted,
+}
 
 /// Append-only XP entry. The awarded amount is stored, not recalculated, so
 /// balancing changes never remove XP a player already earned.

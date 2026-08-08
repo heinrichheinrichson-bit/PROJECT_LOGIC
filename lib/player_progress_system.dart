@@ -3,6 +3,7 @@ import 'game_logic.dart';
 import 'game_storage.dart';
 import 'core/progress/experience_event.dart';
 import 'core/progress/experience_points_policy.dart';
+import 'core/statistics/puzzle_attempt.dart';
 
 enum ProgressGoalKind { achievement, mission }
 
@@ -11,11 +12,13 @@ class ProgressSnapshot {
     required this.results,
     required this.progress,
     required this.catalogPuzzleIds,
+    this.attempts = const [],
   });
 
   final Map<String, PuzzleResult> results;
   final PlayerProgress progress;
   final Set<String> catalogPuzzleIds;
+  final List<PuzzleAttempt> attempts;
 
   int get totalCompleted => progress.totalCompleted;
 
@@ -63,6 +66,12 @@ class ProgressSnapshot {
   }
 
   int completionsTodayBySource(PuzzleSource source, DateTime date) {
+    if (attempts.isNotEmpty) {
+      return attempts
+          .where((attempt) =>
+              attempt.mode == source && _isSameDay(attempt.completedAt, date))
+          .length;
+    }
     final day = DateTime(date.year, date.month, date.day);
     return results.values.where((result) {
       final completed = result.completedAt;
@@ -71,6 +80,29 @@ class ProgressSnapshot {
       return result.effectiveSource == source && completedDay == day;
     }).length;
   }
+
+  List<PuzzleAttempt> attemptsOnDay(DateTime date) => attempts
+      .where((attempt) => _isSameDay(attempt.completedAt, date))
+      .toList(growable: false);
+
+  List<PuzzleAttempt> attemptsInWeek(DateTime date) {
+    final day = DateTime(date.year, date.month, date.day);
+    final monday = day.subtract(Duration(days: day.weekday - 1));
+    final sunday = monday.add(const Duration(days: 7));
+    return attempts.where((attempt) {
+      final completed = DateTime(
+        attempt.completedAt.year,
+        attempt.completedAt.month,
+        attempt.completedAt.day,
+      );
+      return !completed.isBefore(monday) && completed.isBefore(sunday);
+    }).toList(growable: false);
+  }
+
+  static bool _isSameDay(DateTime first, DateTime second) =>
+      first.year == second.year &&
+      first.month == second.month &&
+      first.day == second.day;
 
   int get completionsToday {
     final now = DateTime.now();
@@ -378,25 +410,24 @@ class PlayerProgressService {
       ])
         dailyService.summaryForGame(today, gameType).puzzleId,
     };
-    final completedDaily = snapshot.results.values.any(
-      (result) =>
-          result.effectiveSource == PuzzleSource.daily &&
-          dailyPuzzleIds.contains(result.puzzleId),
-    );
+    final dayAttempts = snapshot.attemptsOnDay(today);
+    final completedDaily = dayAttempts.isNotEmpty
+        ? dayAttempts.any(
+            (attempt) =>
+                attempt.mode == GameMode.daily &&
+                dailyPuzzleIds.contains(attempt.puzzleId),
+          )
+        : snapshot.results.values.any(
+            (result) =>
+                result.effectiveSource == PuzzleSource.daily &&
+                dailyPuzzleIds.contains(result.puzzleId),
+          );
     final generatedToday =
         snapshot.completionsTodayBySource(PuzzleSource.generated, today);
     final catalogToday =
         snapshot.completionsTodayBySource(PuzzleSource.catalog, today);
 
-    return [
-      _mission(
-        id: 'daily-${_dateKey(today)}-challenge',
-        title: 'Heute dran',
-        description: 'Löse das heutige Tagesrätsel.',
-        iconName: 'today',
-        current: completedDaily ? 1 : 0,
-        target: 1,
-      ),
+    final optional = [
       _mission(
         id: 'daily-${_dateKey(today)}-generator',
         title: 'Neue Herausforderung',
@@ -413,6 +444,36 @@ class PlayerProgressService {
         current: catalogToday,
         target: 1,
       ),
+      _mission(
+        id: 'daily-${_dateKey(today)}-no-hint',
+        title: 'Ganz ohne Hilfe',
+        description: 'Löse heute ein Rätsel ohne Hinweis.',
+        iconName: 'psychology',
+        current: dayAttempts.where((attempt) => attempt.hintsUsed == 0).length,
+        target: 1,
+      ),
+      _mission(
+        id: 'daily-${_dateKey(today)}-variety',
+        title: 'Doppelte Abwechslung',
+        description: 'Löse heute zwei verschiedene Spielarten.',
+        iconName: 'category',
+        current: dayAttempts.map((attempt) => attempt.gameType).toSet().length,
+        target: 2,
+      ),
+    ];
+    final rotation =
+        today.difference(DateTime(2026)).inDays.abs() % optional.length;
+    return [
+      _mission(
+        id: 'daily-${_dateKey(today)}-challenge',
+        title: 'Heute dran',
+        description: 'Löse das heutige Tagesrätsel.',
+        iconName: 'today',
+        current: completedDaily ? 1 : 0,
+        target: 1,
+      ),
+      optional[rotation],
+      optional[(rotation + 1) % optional.length],
     ];
   }
 
@@ -426,25 +487,61 @@ class PlayerProgressService {
     final today = date ?? DateTime.now();
     final weekStart = today.subtract(Duration(days: today.weekday - 1));
     final weekId = _dateKey(weekStart);
-    return [
+    final attempts = snapshot.attemptsInWeek(today);
+    final activeDays = attempts.isEmpty
+        ? snapshot.activeDaysInWeek(today)
+        : attempts
+            .map((attempt) => _dateKey(attempt.completedAt))
+            .toSet()
+            .length;
+    final optional = [
       _mission(
         id: 'week-$weekId-active-days',
         title: 'Dreimal Zeit zum Denken',
         description:
             'Löse an drei verschiedenen Tagen dieser Woche ein Rätsel.',
         iconName: 'date_range',
-        current: snapshot.activeDaysInWeek(today),
+        current: activeDays,
         target: 3,
       ),
       _mission(
         id: 'week-$weekId-variety',
-        title: 'Abwechslungsreich',
-        description: 'Entdecke langfristig alle sechs Spielarten.',
+        title: 'Abwechslungsreiche Woche',
+        description: 'Löse diese Woche drei verschiedene Spielarten.',
         iconName: 'category',
-        current: snapshot.distinctGamesCompleted,
-        target: GameType.values.length,
+        current: attempts.map((attempt) => attempt.gameType).toSet().length,
+        target: 3,
+      ),
+      _mission(
+        id: 'week-$weekId-five-puzzles',
+        title: 'Fünf klare Momente',
+        description: 'Löse diese Woche fünf Rätsel.',
+        iconName: 'extension',
+        current: attempts.length,
+        target: 5,
+      ),
+      _mission(
+        id: 'week-$weekId-no-hint',
+        title: 'Aus eigener Kraft',
+        description: 'Löse diese Woche drei Rätsel ohne Hinweis.',
+        iconName: 'psychology',
+        current: attempts.where((attempt) => attempt.hintsUsed == 0).length,
+        target: 3,
+      ),
+      _mission(
+        id: 'week-$weekId-hard',
+        title: 'Schwere Kost',
+        description: 'Löse diese Woche zwei schwere Rätsel.',
+        iconName: 'local_fire_department',
+        current: attempts
+            .where((attempt) => attempt.difficulty == PuzzleDifficulty.hard)
+            .length,
+        target: 2,
       ),
     ];
+    final rotation = (weekStart.difference(DateTime(2026)).inDays.abs() ~/ 7) %
+        optional.length;
+    return [optional[rotation], optional[(rotation + 1) % optional.length]];
   }
 
   List<ProgressGoal> longTermMissions(ProgressSnapshot snapshot) => [
@@ -500,6 +597,96 @@ class PlayerProgressService {
     }
     return events.values.toList(growable: false)
       ..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
+  }
+
+  List<ExperienceEvent> synchronizeMissionXp(
+    ProgressSnapshot snapshot,
+    Iterable<ExperienceEvent> existing, {
+    DateTime? now,
+  }) {
+    final current = now ?? DateTime.now();
+    final events = {for (final event in existing) event.id: event};
+    final dates = <String, DateTime>{
+      _dateKey(current): DateTime(current.year, current.month, current.day),
+      for (final attempt in snapshot.attempts)
+        _dateKey(attempt.completedAt): DateTime(
+          attempt.completedAt.year,
+          attempt.completedAt.month,
+          attempt.completedAt.day,
+        ),
+    };
+
+    for (final day in dates.values) {
+      final goals = dailyMissions(snapshot, date: day);
+      final occurredAt = _latestAttemptAt(snapshot.attemptsOnDay(day), current);
+      for (final goal in goals.where((goal) => goal.isCompleted)) {
+        _addMissionEvent(events, goal.id, occurredAt);
+      }
+      if (goals.every((goal) => goal.isCompleted)) {
+        _addMissionEvent(
+          events,
+          'daily-${_dateKey(day)}-daily-complete',
+          occurredAt,
+        );
+      }
+    }
+
+    final weeks = <String, DateTime>{};
+    for (final day in dates.values) {
+      final start = day.subtract(Duration(days: day.weekday - 1));
+      weeks[_dateKey(start)] = start;
+    }
+    for (final week in weeks.values) {
+      final goals = weeklyMissions(snapshot, date: week);
+      final occurredAt =
+          _latestAttemptAt(snapshot.attemptsInWeek(week), current);
+      for (final goal in goals.where((goal) => goal.isCompleted)) {
+        _addMissionEvent(events, goal.id, occurredAt);
+      }
+      if (goals.every((goal) => goal.isCompleted)) {
+        _addMissionEvent(
+          events,
+          'week-${_dateKey(week)}-weekly-complete',
+          occurredAt,
+        );
+      }
+    }
+
+    return events.values.toList(growable: false)
+      ..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
+  }
+
+  void _addMissionEvent(
+    Map<String, ExperienceEvent> events,
+    String missionId,
+    DateTime occurredAt,
+  ) {
+    final points = ExperiencePointsPolicy.mission(missionId);
+    if (points <= 0) return;
+    final id = 'mission:$missionId';
+    events.putIfAbsent(
+      id,
+      () => ExperienceEvent(
+        id: id,
+        kind: ExperienceEventKind.missionCompleted,
+        points: points,
+        occurredAt: occurredAt,
+        referenceId: missionId,
+      ),
+    );
+  }
+
+  DateTime _latestAttemptAt(
+    Iterable<PuzzleAttempt> attempts,
+    DateTime fallback,
+  ) {
+    DateTime? latest;
+    for (final attempt in attempts) {
+      if (latest == null || attempt.completedAt.isAfter(latest)) {
+        latest = attempt.completedAt;
+      }
+    }
+    return latest ?? fallback;
   }
 
   PlayerRank rank(

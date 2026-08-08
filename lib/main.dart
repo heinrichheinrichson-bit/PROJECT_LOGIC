@@ -8,6 +8,7 @@ import 'app_preferences.dart';
 import 'app_theme.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/progress/experience_event.dart';
+import 'core/progress/experience_points_policy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
@@ -3334,6 +3335,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           ...hitoriPuzzleCatalog.map((puzzle) => puzzle.id),
           ...tentsPuzzleCatalog.map((puzzle) => puzzle.id),
         },
+        attempts: _attempts,
       );
 
   @override
@@ -3349,16 +3351,19 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     final storage = GameStorage();
     final results = await storage.loadResults();
     final progress = await storage.loadPlayerProgress();
+    final attempts = await storage.loadAttempts();
     final freshSnapshot = ProgressSnapshot(
       results: results,
       progress: progress,
       catalogPuzzleIds: _snapshot.catalogPuzzleIds,
+      attempts: attempts,
     );
     final existing = await storage.loadExperienceEvents();
-    final synchronized =
+    final withAchievements =
         service.synchronizeAchievementXp(freshSnapshot, existing.values);
+    final synchronized =
+        service.synchronizeMissionXp(freshSnapshot, withAchievements);
     await storage.saveExperienceEvents(synchronized);
-    final attempts = await storage.loadAttempts();
     if (!mounted) return;
     setState(() {
       _results = results;
@@ -3467,10 +3472,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                           for (final event in recentXp.take(6))
                             ListTile(
                               dense: true,
-                              leading: Icon(event.kind ==
-                                      ExperienceEventKind.achievementUnlocked
-                                  ? Icons.emoji_events_outlined
-                                  : Icons.extension_outlined),
+                              leading: Icon(_xpEventIcon(event)),
                               title: Text(_xpEventTitle(
                                 event,
                                 attemptsById,
@@ -3528,6 +3530,11 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                   const SizedBox(height: 10),
                   for (final mission in dailyMissions)
                     _ProgressGoalCard(goal: mission),
+                  if (dailyMissions.every((mission) => mission.isCompleted))
+                    const _MissionSetBonusCard(
+                      title: 'Alle Tagesziele geschafft',
+                      points: 15,
+                    ),
                   const SizedBox(height: 20),
                   Text(
                     'Diese Woche',
@@ -3543,6 +3550,11 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                   const SizedBox(height: 10),
                   for (final mission in weeklyMissions)
                     _ProgressGoalCard(goal: mission),
+                  if (weeklyMissions.every((mission) => mission.isCompleted))
+                    const _MissionSetBonusCard(
+                      title: 'Alle Wochenziele geschafft',
+                      points: 30,
+                    ),
                   const SizedBox(height: 20),
                   Text(
                     'Langzeitziele',
@@ -3610,6 +3622,9 @@ String _xpEventTitle(
   if (event.kind == ExperienceEventKind.achievementUnlocked) {
     return achievementTitles[event.referenceId] ?? 'Erfolg freigeschaltet';
   }
+  if (event.kind == ExperienceEventKind.missionCompleted) {
+    return _missionEventTitle(event.referenceId ?? '');
+  }
   final attempt = attempts[event.referenceId];
   if (attempt == null) return 'Rätsel abgeschlossen';
   final mode = switch (attempt.mode) {
@@ -3628,6 +3643,11 @@ String _xpEventDetail(
 ) {
   if (event.kind == ExperienceEventKind.achievementUnlocked) {
     return 'Einmaliger Erfolgsbonus';
+  }
+  if (event.kind == ExperienceEventKind.missionCompleted) {
+    return (event.referenceId ?? '').endsWith('-complete')
+        ? 'Komplettbonus'
+        : 'Missionsbelohnung';
   }
   final attempt = attempts[event.referenceId];
   if (attempt == null) return 'Abschlussbonus';
@@ -3667,10 +3687,7 @@ class _XpHistoryScreen extends StatelessWidget {
                   vertical: 6,
                 ),
                 leading: CircleAvatar(
-                  child: Icon(
-                      event.kind == ExperienceEventKind.achievementUnlocked
-                          ? Icons.emoji_events_outlined
-                          : Icons.extension_outlined),
+                  child: Icon(_xpEventIcon(event)),
                 ),
                 title: Text(_xpEventTitle(
                   event,
@@ -3701,6 +3718,26 @@ String _xpDate(DateTime value) {
   return '$day.$month.${local.year} · $hour:$minute';
 }
 
+IconData _xpEventIcon(ExperienceEvent event) => switch (event.kind) {
+      ExperienceEventKind.achievementUnlocked => Icons.emoji_events_outlined,
+      ExperienceEventKind.missionCompleted => Icons.task_alt_rounded,
+      ExperienceEventKind.puzzleCompleted => Icons.extension_outlined,
+    };
+
+String _missionEventTitle(String id) {
+  if (id.endsWith('-daily-complete')) return 'Alle Tagesziele geschafft';
+  if (id.endsWith('-weekly-complete')) return 'Alle Wochenziele geschafft';
+  if (id.endsWith('-challenge')) return 'Heute dran';
+  if (id.endsWith('-generator')) return 'Neue Herausforderung';
+  if (id.endsWith('-catalog')) return 'Aus der Sammlung';
+  if (id.endsWith('-active-days')) return 'Dreimal Zeit zum Denken';
+  if (id.endsWith('-five-puzzles')) return 'Fünf klare Momente';
+  if (id.endsWith('-hard')) return 'Schwere Kost';
+  if (id.endsWith('-no-hint')) return 'Aus eigener Kraft';
+  if (id.endsWith('-variety')) return 'Abwechslungsreich';
+  return 'Mission geschafft';
+}
+
 class _ProgressGoalCard extends StatelessWidget {
   const _ProgressGoalCard({required this.goal});
 
@@ -3710,6 +3747,9 @@ class _ProgressGoalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final completed = goal.isCompleted;
     final colors = Theme.of(context).colorScheme;
+    final reward = goal.kind == ProgressGoalKind.mission
+        ? ExperiencePointsPolicy.mission(goal.id)
+        : 0;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -3762,6 +3802,16 @@ class _ProgressGoalCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(goal.description),
+                  if (reward > 0) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      '+$reward XP',
+                      style: TextStyle(
+                        color: colors.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 10),
                   TweenAnimationBuilder<double>(
                     duration: const Duration(milliseconds: 550),
@@ -3796,6 +3846,31 @@ class _ProgressGoalCard extends StatelessWidget {
         'park' => Icons.park_outlined,
         _ => Icons.emoji_events_outlined,
       };
+}
+
+class _MissionSetBonusCard extends StatelessWidget {
+  const _MissionSetBonusCard({required this.title, required this.points});
+
+  final String title;
+  final int points;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Card(
+      color: colors.primaryContainer,
+      child: ListTile(
+        leading: Icon(Icons.workspace_premium_rounded,
+            color: colors.onPrimaryContainer),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+        subtitle: const Text('Komplettbonus gutgeschrieben'),
+        trailing: Text(
+          '+$points XP',
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
+      ),
+    );
+  }
 }
 
 class StatisticsScreen extends StatefulWidget {

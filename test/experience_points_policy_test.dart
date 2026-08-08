@@ -70,5 +70,22 @@ void main() {
       );
       expect(ExperiencePointsPolicy.achievement('catalog-complete'), 400);
     });
+
+    test('rewards mission goals and their completion bonuses', () {
+      expect(ExperiencePointsPolicy.mission('daily-2026-08-08-generated'), 5);
+      expect(
+        ExperiencePointsPolicy.mission(
+          'daily-2026-08-08-daily-complete',
+        ),
+        15,
+      );
+      expect(ExperiencePointsPolicy.mission('week-2026-32-active-days'), 40);
+      expect(
+        ExperiencePointsPolicy.mission(
+          'week-2026-32-weekly-complete',
+        ),
+        30,
+      );
+    });
   });
 }
