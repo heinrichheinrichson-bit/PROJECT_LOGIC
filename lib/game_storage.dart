@@ -654,6 +654,14 @@ class GameStorage {
     );
 
     final attempts = await loadAttempts();
+    // Results aggregate best times for a puzzle. XP repeats also need the
+    // mode, because equal ids in the collection and calendar are independent.
+    final repeated = attempts.any(
+      (attempt) =>
+          attempt.gameType == gameType &&
+          attempt.mode == source &&
+          attempt.puzzleId == puzzleId,
+    );
     final attemptId =
         '${completionTime.microsecondsSinceEpoch}-${gameType.name}-$puzzleId';
     attempts.add(PuzzleAttempt(
@@ -680,7 +688,7 @@ class GameStorage {
       source: source,
       difficulty: difficulty,
       hintsUsed: hintsUsed,
-      repeated: existing != null,
+      repeated: repeated,
     );
     experienceEvents.putIfAbsent(
       'completion:$attemptId',
@@ -705,7 +713,9 @@ class GameStorage {
         elapsedSeconds: elapsedSeconds,
         puzzleData: dailyPuzzleData,
       );
-      snapshots[snapshot.storageKey] = snapshot;
+      // The first solved state is the archive. Replaying a date must not
+      // replace its original board, solve time, or completion timestamp.
+      snapshots.putIfAbsent(snapshot.storageKey, () => snapshot);
       await preferences.setString(
         _dailySnapshotsKey,
         jsonEncode(snapshots.values.map((value) => value.toJson()).toList()),

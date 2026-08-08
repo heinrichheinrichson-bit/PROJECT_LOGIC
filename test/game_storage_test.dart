@@ -481,6 +481,43 @@ void main() {
     expect(await storage.loadDailySnapshots(), isEmpty);
   });
 
+  test('daily archive keeps the original solved state after a replay',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = GameStorage();
+    final originalTime = DateTime(2026, 8, 8, 9);
+    await storage.recordCompletion(
+      puzzleId: 'daily-immutable',
+      elapsedSeconds: 95,
+      source: PuzzleSource.daily,
+      difficulty: PuzzleDifficulty.medium,
+      boardSize: 6,
+      completedAt: originalTime,
+      dailyPuzzleData: const {
+        'kind': 'binairo',
+        'solution': [0, 1, 1, 0],
+      },
+    );
+    await storage.recordCompletion(
+      puzzleId: 'daily-immutable',
+      elapsedSeconds: 12,
+      source: PuzzleSource.daily,
+      difficulty: PuzzleDifficulty.medium,
+      boardSize: 6,
+      completedAt: originalTime.add(const Duration(minutes: 5)),
+      dailyPuzzleData: const {
+        'kind': 'binairo',
+        'solution': [1, 0, 0, 1],
+      },
+    );
+
+    final snapshot =
+        (await storage.loadDailySnapshots())['binairo:daily-immutable']!;
+    expect(snapshot.completedAt, originalTime);
+    expect(snapshot.elapsedSeconds, 95);
+    expect(snapshot.puzzleData['solution'], [0, 1, 1, 0]);
+  });
+
   test('completion XP is stored as an append-only event', () async {
     SharedPreferences.setMockInitialValues({});
     final storage = GameStorage();
@@ -546,6 +583,31 @@ void main() {
     final events = (await storage.loadExperienceEvents()).values.toList()
       ..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
     expect(events.map((event) => event.points), [30, 5, 70, 0]);
+  });
+
+  test('same puzzle id in another mode receives its own first-completion XP',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = GameStorage();
+    final catalogXp = await storage.recordCompletion(
+      puzzleId: 'shared-id',
+      elapsedSeconds: 30,
+      source: PuzzleSource.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 4,
+      completedAt: DateTime(2026, 8, 8, 10),
+    );
+    final dailyXp = await storage.recordCompletion(
+      puzzleId: 'shared-id',
+      elapsedSeconds: 30,
+      source: PuzzleSource.daily,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 4,
+      completedAt: DateTime(2026, 8, 8, 11),
+    );
+
+    expect(catalogXp, 30);
+    expect(dailyXp, 45);
   });
 
   test('XP ledger salvages valid entries and rebuilds damaged completions',
