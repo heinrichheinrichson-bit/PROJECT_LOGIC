@@ -3390,7 +3390,9 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
       for (final goal in achievements) goal.id: goal.title,
     };
     final attemptsById = {for (final attempt in _attempts) attempt.id: attempt};
-    final recentXp = _experienceEvents.toList()
+    final recentXp = _experienceEvents
+        .where((event) => event.points > 0)
+        .toList()
       ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
     final totalXp =
         _experienceEvents.fold<int>(0, (sum, event) => sum + event.points);
@@ -3482,6 +3484,28 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                                 '+${event.points} XP',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          if (recentXp.length > 6)
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => _XpHistoryScreen(
+                                        events: recentXp,
+                                        attempts: attemptsById,
+                                        achievementTitles: achievementTitles,
+                                      ),
+                                    ),
+                                  ),
+                                  icon: const Icon(Icons.history_rounded),
+                                  label: const Text(
+                                      'Gesamten XP-Verlauf anzeigen'),
                                 ),
                               ),
                             ),
@@ -3614,6 +3638,67 @@ String _xpEventDetail(
   return noHintBonus == 0
       ? '${attempt.difficulty.label} · $base XP Grundwert'
       : '${attempt.difficulty.label} · $base Grundwert + 10 ohne Hinweis';
+}
+
+class _XpHistoryScreen extends StatelessWidget {
+  const _XpHistoryScreen({
+    required this.events,
+    required this.attempts,
+    required this.achievementTitles,
+  });
+
+  final List<ExperienceEvent> events;
+  final Map<String, PuzzleAttempt> attempts;
+  final Map<String, String> achievementTitles;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('XP-Verlauf')),
+        body: Center(
+          child: ListView.separated(
+            padding: const EdgeInsets.all(20),
+            itemCount: events.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final event = events[index];
+              return ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 6,
+                ),
+                leading: CircleAvatar(
+                  child: Icon(
+                      event.kind == ExperienceEventKind.achievementUnlocked
+                          ? Icons.emoji_events_outlined
+                          : Icons.extension_outlined),
+                ),
+                title: Text(_xpEventTitle(
+                  event,
+                  attempts,
+                  achievementTitles,
+                )),
+                subtitle: Text(
+                  '${_xpEventDetail(event, attempts)}\n${_xpDate(event.occurredAt)}',
+                ),
+                isThreeLine: true,
+                trailing: Text(
+                  '+${event.points} XP',
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+}
+
+String _xpDate(DateTime value) {
+  final local = value.toLocal();
+  final day = local.day.toString().padLeft(2, '0');
+  final month = local.month.toString().padLeft(2, '0');
+  final hour = local.hour.toString().padLeft(2, '0');
+  final minute = local.minute.toString().padLeft(2, '0');
+  return '$day.$month.${local.year} · $hour:$minute';
 }
 
 class _ProgressGoalCard extends StatelessWidget {

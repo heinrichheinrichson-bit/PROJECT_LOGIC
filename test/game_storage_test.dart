@@ -473,4 +473,55 @@ void main() {
     expect(events, hasLength(1));
     expect(events.values.single.points, 30);
   });
+
+  test('completion XP distinguishes new puzzles, repeats and daily puzzles',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = GameStorage();
+
+    final firstCatalog = await storage.recordCompletion(
+      puzzleId: 'catalog-easy',
+      elapsedSeconds: 30,
+      source: PuzzleSource.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 4,
+      hintsUsed: 0,
+      completedAt: DateTime(2026, 8, 2, 10),
+    );
+    final repeatedCatalog = await storage.recordCompletion(
+      puzzleId: 'catalog-easy',
+      elapsedSeconds: 25,
+      source: PuzzleSource.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 4,
+      hintsUsed: 0,
+      completedAt: DateTime(2026, 8, 2, 10, 5),
+    );
+    final firstDaily = await storage.recordCompletion(
+      puzzleId: 'daily-hard',
+      elapsedSeconds: 90,
+      source: PuzzleSource.daily,
+      difficulty: PuzzleDifficulty.hard,
+      boardSize: 6,
+      hintsUsed: 0,
+      completedAt: DateTime(2026, 8, 2, 11),
+    );
+    final repeatedDaily = await storage.recordCompletion(
+      puzzleId: 'daily-hard',
+      elapsedSeconds: 80,
+      source: PuzzleSource.daily,
+      difficulty: PuzzleDifficulty.hard,
+      boardSize: 6,
+      hintsUsed: 0,
+      completedAt: DateTime(2026, 8, 2, 11, 5),
+    );
+
+    expect(firstCatalog, 30);
+    expect(repeatedCatalog, 5);
+    expect(firstDaily, 70);
+    expect(repeatedDaily, 0);
+    final events = (await storage.loadExperienceEvents()).values.toList()
+      ..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
+    expect(events.map((event) => event.points), [30, 5, 70, 0]);
+  });
 }

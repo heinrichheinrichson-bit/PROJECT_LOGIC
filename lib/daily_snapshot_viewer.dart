@@ -102,6 +102,9 @@ class _SnapshotBoard extends StatelessWidget {
   Widget build(BuildContext context) {
     final kind = snapshot.puzzleData['kind'];
     if (kind == 'hashi' || kind == 'slitherlink') {
+      if (!_validPaintedSnapshot(snapshot)) {
+        return const _UnavailableSnapshotCard();
+      }
       return AspectRatio(
         aspectRatio: 1,
         child: Card(
@@ -115,6 +118,7 @@ class _SnapshotBoard extends StatelessWidget {
       );
     }
     final cells = _cells(context);
+    if (cells == null) return const _UnavailableSnapshotCard();
     final size = snapshot.boardSize;
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -130,7 +134,7 @@ class _SnapshotBoard extends StatelessWidget {
     );
   }
 
-  List<Widget> _cells(BuildContext context) {
+  List<Widget>? _cells(BuildContext context) {
     final data = snapshot.puzzleData;
     final size = snapshot.boardSize;
     final kind = data['kind'];
@@ -138,7 +142,8 @@ class _SnapshotBoard extends StatelessWidget {
     if (kind == 'binairo') {
       final palette =
           AppTheme.boardPalette('binairo', Theme.of(context).brightness);
-      final solution = _matrix(data['solution']);
+      final solution = _matrix(data['solution'], size);
+      if (solution == null) return null;
       final clues = _pairs(data['clues']).map((e) => '${e.$1}:${e.$2}').toSet();
       return [
         for (var row = 0; row < size; row++)
@@ -160,7 +165,8 @@ class _SnapshotBoard extends StatelessWidget {
       ];
     }
     if (kind == 'hitori') {
-      final grid = _matrix(data['grid']);
+      final grid = _matrix(data['grid'], size);
+      if (grid == null) return null;
       final shaded =
           _pairs(data['shaded']).map((e) => '${e.$1}:${e.$2}').toSet();
       return [
@@ -195,18 +201,56 @@ class _SnapshotBoard extends StatelessWidget {
             ),
       ];
     }
-    final solution = _matrix(data['solution']);
+    final solution = _matrix(data['solution'], size);
+    if (solution == null) return null;
     final givens = data['givens'] is List ? data['givens'] as List : const [];
+    final validGivens = givens.length == size &&
+        givens.every((row) => row is List && row.length == size);
     return [
       for (var row = 0; row < size; row++)
         for (var column = 0; column < size; column++)
           _Cell(
             label: '${solution[row][column]}',
             background: colors.amber,
-            emphasized:
-                givens.isNotEmpty && ((givens[row] as List)[column] != null),
+            emphasized: validGivens && ((givens[row] as List)[column] != null),
           ),
     ];
+  }
+}
+
+class _UnavailableSnapshotCard extends StatelessWidget {
+  const _UnavailableSnapshotCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Icon(
+              Icons.inventory_2_outlined,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Dieses archivierte Brett kann in dieser Version nicht '
+              'dargestellt werden.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Dein Kalendereintrag und dein Fortschritt bleiben erhalten.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -386,17 +430,59 @@ class _SlitherlinkSnapshotPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-List<List<int>> _matrix(Object? raw) => (raw as List)
-    .map((row) => (row as List).map((value) => (value as num).toInt()).toList())
-    .toList();
+List<List<int>>? _matrix(Object? raw, int size) {
+  if (size <= 0 || raw is! List || raw.length != size) return null;
+  final result = <List<int>>[];
+  for (final rawRow in raw) {
+    if (rawRow is! List || rawRow.length != size) return null;
+    final row = <int>[];
+    for (final value in rawRow) {
+      if (value is! num) return null;
+      row.add(value.toInt());
+    }
+    result.add(row);
+  }
+  return result;
+}
 
 List<(int, int)> _pairs(Object? raw) => [
-      for (final item in raw as List? ?? const [])
-        (
-          ((item as List)[0] as num).toInt(),
-          (item[1] as num).toInt(),
-        ),
+      for (final item in raw is List ? raw : const [])
+        if (item is List &&
+            item.length >= 2 &&
+            item[0] is num &&
+            item[1] is num)
+          (
+            (item[0] as num).toInt(),
+            (item[1] as num).toInt(),
+          ),
     ];
+
+bool _validPaintedSnapshot(DailyPuzzleSnapshot snapshot) {
+  final data = snapshot.puzzleData;
+  if (data['kind'] == 'hashi') {
+    final islands = data['islands'];
+    final bridges = data['bridges'];
+    return islands is List &&
+        bridges is List &&
+        islands.every((item) =>
+            item is List && item.length >= 3 && item.every((v) => v is num)) &&
+        bridges.every((item) =>
+            item is List && item.length >= 3 && item.every((v) => v is num));
+  }
+  final rows = data['rows'];
+  final columns = data['columns'];
+  final clues = data['clues'];
+  final lines = data['lines'];
+  return rows is num &&
+      rows > 0 &&
+      columns is num &&
+      columns > 0 &&
+      clues is List &&
+      clues.length == rows.toInt() * columns.toInt() &&
+      clues.every((value) => value == null || value is num) &&
+      lines is List &&
+      lines.every((value) => value is String);
+}
 
 class _SnapshotColors {
   final teal = const Color(0xff00796b);
