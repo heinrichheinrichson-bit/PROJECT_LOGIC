@@ -79,6 +79,25 @@ class ProgressSnapshot {
       return DateTime(completed.year, completed.month, completed.day) == day;
     }).length;
   }
+
+  int activeDaysInWeek(DateTime date) {
+    final day = DateTime(date.year, date.month, date.day);
+    final monday = day.subtract(Duration(days: day.weekday - 1));
+    final sunday = monday.add(const Duration(days: 6));
+    return progress.completedDays
+        .map(DateTime.tryParse)
+        .whereType<DateTime>()
+        .where(
+      (value) {
+        final completed = DateTime(value.year, value.month, value.day);
+        return !completed.isBefore(monday) && !completed.isAfter(sunday);
+      },
+    ).length;
+  }
+
+  int get distinctGamesCompleted => GameType.values
+      .where((gameType) => completedForGame(gameType) > 0)
+      .length;
 }
 
 class ProgressGoal {
@@ -248,6 +267,14 @@ class PlayerProgressService {
           target: 7,
         ),
         _achievement(
+          id: 'streak-thirty',
+          title: 'Fester Bestandteil',
+          description: 'Spiele an 30 Tagen in Folge.',
+          iconName: 'local_fire_department',
+          current: snapshot.progress.bestStreak,
+          target: 30,
+        ),
+        _achievement(
           id: 'daily-seven',
           title: 'Jeden Tag ein Rätsel',
           description: 'Löse 7 Tagesrätsel.',
@@ -256,12 +283,52 @@ class PlayerProgressService {
           target: 7,
         ),
         _achievement(
+          id: 'daily-thirty',
+          title: 'Kalenderfreund',
+          description: 'Löse 30 Tagesrätsel.',
+          iconName: 'calendar_month',
+          current: snapshot.dailyCompleted,
+          target: 30,
+        ),
+        _achievement(
           id: 'generator-ten',
           title: 'Freie Wahl',
           description: 'Löse 10 generierte Rätsel.',
           iconName: 'auto_awesome',
           current: snapshot.generatedCompleted,
           target: 10,
+        ),
+        _achievement(
+          id: 'generator-fifty',
+          title: 'Immer etwas Neues',
+          description: 'Löse 50 frei erzeugte Rätsel.',
+          iconName: 'auto_awesome',
+          current: snapshot.generatedCompleted,
+          target: 50,
+        ),
+        _achievement(
+          id: 'all-games',
+          title: 'Vielseitiger Denker',
+          description: 'Löse mindestens ein Rätsel in jeder Spielart.',
+          iconName: 'category',
+          current: snapshot.distinctGamesCompleted,
+          target: GameType.values.length,
+        ),
+        _achievement(
+          id: 'play-hour',
+          title: 'Eine Stunde Logik',
+          description: 'Verbringe insgesamt eine Stunde beim Rätseln.',
+          iconName: 'timer',
+          current: snapshot.progress.totalPlaySeconds,
+          target: 60 * 60,
+        ),
+        _achievement(
+          id: 'play-ten-hours',
+          title: 'Zeit für klare Gedanken',
+          description: 'Verbringe insgesamt zehn Stunden beim Rätseln.',
+          iconName: 'timer',
+          current: snapshot.progress.totalPlaySeconds,
+          target: 10 * 60 * 60,
         ),
         _achievement(
           id: 'catalog-complete',
@@ -350,6 +417,34 @@ class PlayerProgressService {
 
   List<ProgressGoal> missions(ProgressSnapshot snapshot) =>
       longTermMissions(snapshot);
+
+  List<ProgressGoal> weeklyMissions(
+    ProgressSnapshot snapshot, {
+    DateTime? date,
+  }) {
+    final today = date ?? DateTime.now();
+    final weekStart = today.subtract(Duration(days: today.weekday - 1));
+    final weekId = _dateKey(weekStart);
+    return [
+      _mission(
+        id: 'week-$weekId-active-days',
+        title: 'Dreimal Zeit zum Denken',
+        description:
+            'Löse an drei verschiedenen Tagen dieser Woche ein Rätsel.',
+        iconName: 'date_range',
+        current: snapshot.activeDaysInWeek(today),
+        target: 3,
+      ),
+      _mission(
+        id: 'week-$weekId-variety',
+        title: 'Abwechslungsreich',
+        description: 'Entdecke langfristig alle sechs Spielarten.',
+        iconName: 'category',
+        current: snapshot.distinctGamesCompleted,
+        target: GameType.values.length,
+      ),
+    ];
+  }
 
   List<ProgressGoal> longTermMissions(ProgressSnapshot snapshot) => [
         _mission(

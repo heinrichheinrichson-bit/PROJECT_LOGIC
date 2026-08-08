@@ -3195,6 +3195,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     const service = PlayerProgressService();
     final rank = _persistedRank ?? service.rank(snapshot);
     final dailyMissions = service.dailyMissions(snapshot);
+    final weeklyMissions = service.weeklyMissions(snapshot);
     final longTermMissions = service.longTermMissions(snapshot);
     final achievements = service.achievements(snapshot);
     final unlockedCount = achievements.where((goal) => goal.isCompleted).length;
@@ -3273,6 +3274,21 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                   ),
                   const SizedBox(height: 10),
                   for (final mission in dailyMissions)
+                    _ProgressGoalCard(goal: mission),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Diese Woche',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Zwei ruhige Wochenziele – ohne täglichen Druck.',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  for (final mission in weeklyMissions)
                     _ProgressGoalCard(goal: mission),
                   const SizedBox(height: 20),
                   Text(

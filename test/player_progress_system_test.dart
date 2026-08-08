@@ -153,6 +153,25 @@ void main() {
     );
     expect(snapshot.catalogCompleted, 1);
   });
+
+  test('weekly active-day mission counts unique days in the current week', () {
+    const snapshot = ProgressSnapshot(
+      results: {},
+      progress: PlayerProgress(
+        totalCompleted: 3,
+        totalPlaySeconds: 90,
+        completedDays: ['2026-08-03', '2026-08-05', '2026-08-07'],
+      ),
+      catalogPuzzleIds: {},
+    );
+    final weekly = service.weeklyMissions(
+      snapshot,
+      date: DateTime(2026, 8, 7),
+    );
+    expect(weekly.first.current, 3);
+    expect(weekly.first.isCompleted, isTrue);
+    expect(weekly.first.id, contains('2026-08-03'));
+  });
 }
 
 // Daily missions deliberately use an injected date so tests do not depend on
