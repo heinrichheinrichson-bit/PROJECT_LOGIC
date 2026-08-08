@@ -98,6 +98,30 @@ void main() {
       throwsA(isA<CloudRevisionConflict>()),
     );
   });
+
+  test('cloud snapshots have a versioned validated storage format', () {
+    final uploadedAt = DateTime.utc(2026, 8, 8, 14, 30);
+    final snapshot = CloudSnapshot(
+      backup: '{"backup":true}',
+      fingerprint: 'a1b2c3d4',
+      revision: 'revision-7',
+      uploadedAt: uploadedAt,
+    );
+
+    final restored = CloudSnapshot.fromJson(snapshot.toJson());
+    expect(restored.backup, snapshot.backup);
+    expect(restored.fingerprint, snapshot.fingerprint);
+    expect(restored.revision, snapshot.revision);
+    expect(restored.uploadedAt, uploadedAt);
+    expect(
+      () => CloudSnapshot.fromJson({...snapshot.toJson(), 'revision': ''}),
+      throwsFormatException,
+    );
+    expect(
+      () => CloudSnapshot.fromJson({...snapshot.toJson(), 'schemaVersion': 2}),
+      throwsFormatException,
+    );
+  });
 }
 
 class MemoryCloudProvider implements CloudStorageProvider {

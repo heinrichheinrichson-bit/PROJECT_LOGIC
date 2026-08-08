@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'data_backup.dart';
 
 class CloudSnapshot {
+  static const schemaVersion = 1;
+
   const CloudSnapshot({
     required this.backup,
     required this.fingerprint,
@@ -14,6 +16,38 @@ class CloudSnapshot {
   final String fingerprint;
   final String revision;
   final DateTime uploadedAt;
+
+  Map<String, Object?> toJson() => {
+        'schemaVersion': schemaVersion,
+        'backup': backup,
+        'fingerprint': fingerprint,
+        'revision': revision,
+        'uploadedAt': uploadedAt.toUtc().toIso8601String(),
+      };
+
+  factory CloudSnapshot.fromJson(Map<String, Object?> json) {
+    final version = json['schemaVersion'];
+    final backup = json['backup'];
+    final fingerprint = json['fingerprint'];
+    final revision = json['revision'];
+    final uploadedAt = DateTime.tryParse(json['uploadedAt'] as String? ?? '');
+    if (version != schemaVersion ||
+        backup is! String ||
+        backup.isEmpty ||
+        fingerprint is! String ||
+        fingerprint.isEmpty ||
+        revision is! String ||
+        revision.isEmpty ||
+        uploadedAt == null) {
+      throw const FormatException('Ungültiger Cloud-Speicherstand.');
+    }
+    return CloudSnapshot(
+      backup: backup,
+      fingerprint: fingerprint,
+      revision: revision,
+      uploadedAt: uploadedAt.toUtc(),
+    );
+  }
 }
 
 abstract interface class CloudStorageProvider {

@@ -3065,7 +3065,7 @@ class SettingsScreen extends StatelessWidget {
                             leading: Icon(Icons.cloud_sync_outlined),
                             title: Text('Google-Cloud-Synchronisierung'),
                             subtitle: Text(
-                              'Vorbereitet · folgt mit der endgültigen App-ID und Google-Anmeldung',
+                              'Konfliktsichere Synchronisierung vorbereitet · Google-Anmeldung folgt mit der endgültigen App-ID',
                             ),
                           ),
                         ],
