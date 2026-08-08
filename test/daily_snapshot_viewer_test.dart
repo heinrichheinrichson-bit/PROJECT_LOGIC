@@ -148,4 +148,31 @@ void main() {
     );
     expect(find.textContaining('Fortschritt bleiben erhalten'), findsOneWidget);
   });
+
+  testWidgets('slitherlink archive accepts the persisted clue matrix', (
+    tester,
+  ) async {
+    await pumpSnapshot(
+      tester,
+      gameType: GameType.slitherlink,
+      size: 2,
+      data: {
+        'kind': 'slitherlink',
+        'rows': 2,
+        'columns': 2,
+        'clues': [
+          [1, 2],
+          [2, 1],
+        ],
+        'lines': ['h:0:0', 'h:0:1', 'v:0:0', 'v:0:2'],
+      },
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(
+      find.textContaining('kann in dieser Version nicht dargestellt werden'),
+      findsNothing,
+    );
+    expect(find.text('Archiv'), findsOneWidget);
+  });
 }

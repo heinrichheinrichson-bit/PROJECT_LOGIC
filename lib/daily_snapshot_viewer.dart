@@ -1,9 +1,11 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import 'app_theme.dart';
+import 'features/futoshiki/domain/futoshiki_puzzle.dart';
+import 'futoshiki_foundation.dart';
 import 'game_storage.dart';
+import 'hashi_foundation.dart';
+import 'slitherlink_foundation.dart';
 
 class DailySnapshotViewerScreen extends StatelessWidget {
   const DailySnapshotViewerScreen({
@@ -101,22 +103,10 @@ class _SnapshotBoard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final kind = snapshot.puzzleData['kind'];
-    if (kind == 'hashi' || kind == 'slitherlink') {
-      if (!_validPaintedSnapshot(snapshot)) {
-        return const _UnavailableSnapshotCard();
-      }
-      return AspectRatio(
-        aspectRatio: 1,
-        child: Card(
-          clipBehavior: Clip.antiAlias,
-          child: CustomPaint(
-            painter: kind == 'hashi'
-                ? _HashiSnapshotPainter(snapshot.puzzleData, context)
-                : _SlitherlinkSnapshotPainter(snapshot.puzzleData, context),
-          ),
-        ),
-      );
-    }
+    if (kind == 'hashi') return _hashiBoard();
+    if (kind == 'slitherlink') return _slitherlinkBoard();
+    if (kind == 'futoshiki') return _futoshikiBoard();
+    if (kind == 'tents') return _tentsBoard(context);
     final cells = _cells(context);
     if (cells == null) return const _UnavailableSnapshotCard();
     final size = snapshot.boardSize;
@@ -130,6 +120,246 @@ class _SnapshotBoard extends StatelessWidget {
         ),
         itemCount: cells.length,
         itemBuilder: (context, index) => cells[index],
+      ),
+    );
+  }
+
+  Widget _hashiBoard() {
+    final data = snapshot.puzzleData;
+    final rawIslands = data['islands'];
+    final rawBridges = data['bridges'];
+    if (rawIslands is! List || rawBridges is! List) {
+      return const _UnavailableSnapshotCard();
+    }
+    try {
+      final islands = [
+        for (final raw in rawIslands)
+          HashiIsland(
+            row: (raw as List)[0] as int,
+            column: raw[1] as int,
+            bridges: raw[2] as int,
+          ),
+      ];
+      final bridges = [
+        for (final raw in rawBridges)
+          HashiBridge(
+            from: (raw as List)[0] as int,
+            to: raw[1] as int,
+            count: raw[2] as int,
+          ),
+      ];
+      final puzzle = HashiPuzzle(
+        title: 'Tagesrätsel',
+        size: snapshot.boardSize,
+        islands: islands,
+        solution: bridges,
+        difficulty: snapshot.difficulty.index + 1,
+      );
+      return AspectRatio(
+        aspectRatio: 1,
+        child: Card(
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: HashiBoard(puzzle: puzzle, bridges: bridges),
+          ),
+        ),
+      );
+    } on Object {
+      return const _UnavailableSnapshotCard();
+    }
+  }
+
+  Widget _slitherlinkBoard() {
+    final data = snapshot.puzzleData;
+    final rows = (data['rows'] as num?)?.toInt();
+    final columns = (data['columns'] as num?)?.toInt();
+    final rawClues = data['clues'];
+    final rawLines = data['lines'];
+    if (rows == null ||
+        columns == null ||
+        rawClues is! List ||
+        rawLines is! List) {
+      return const _UnavailableSnapshotCard();
+    }
+    try {
+      final clues = rawClues.length == rows && rawClues.every((e) => e is List)
+          ? [
+              for (final row in rawClues)
+                [for (final value in row as List) (value as num?)?.toInt()],
+            ]
+          : [
+              for (var row = 0; row < rows; row++)
+                [
+                  for (var column = 0; column < columns; column++)
+                    (rawClues[row * columns + column] as num?)?.toInt(),
+                ],
+            ];
+      final solution = rawLines.whereType<String>().toSet();
+      final puzzle = SlitherlinkPuzzle(
+        id: snapshot.puzzleId,
+        title: 'Tagesrätsel',
+        rows: rows,
+        columns: columns,
+        clues: clues,
+        solution: solution,
+        difficulty: snapshot.difficulty,
+      );
+      final state = SlitherlinkState(
+        puzzle: puzzle,
+        marks: {for (final id in solution) id: SlitherEdgeMark.line},
+      );
+      return AspectRatio(
+        aspectRatio: columns / rows,
+        child: Card(
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: SlitherlinkBoard(
+              state: state,
+              enabled: false,
+              onEdgeTap: (_) {},
+            ),
+          ),
+        ),
+      );
+    } on Object {
+      return const _UnavailableSnapshotCard();
+    }
+  }
+
+  Widget _futoshikiBoard() {
+    final data = snapshot.puzzleData;
+    final size = snapshot.boardSize;
+    final solution = _matrix(data['solution'], size);
+    final rawGivens = data['givens'];
+    final rawInequalities = data['inequalities'];
+    if (solution == null || rawGivens is! List || rawInequalities is! List) {
+      return const _UnavailableSnapshotCard();
+    }
+    try {
+      final givens = [
+        for (final row in rawGivens)
+          [for (final value in row as List) (value as num?)?.toInt()],
+      ];
+      final inequalities = [
+        for (final raw in rawInequalities)
+          FutoshikiInequality(
+            firstRow: (raw as List)[0] as int,
+            firstColumn: raw[1] as int,
+            secondRow: raw[2] as int,
+            secondColumn: raw[3] as int,
+            firstIsLess: raw[4] as bool,
+          ),
+      ];
+      final puzzle = FutoshikiPuzzle(
+        id: snapshot.puzzleId,
+        title: 'Tagesrätsel',
+        size: size,
+        givens: givens,
+        inequalities: inequalities,
+        solution: solution,
+        difficulty: snapshot.difficulty,
+      );
+      return AspectRatio(
+        aspectRatio: 1,
+        child: Card(
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: FutoshikiBoard(
+              state: FutoshikiState(
+                puzzle: puzzle,
+                values: [
+                  for (final row in solution) [...row]
+                ],
+              ),
+              selected: null,
+              conflicts: const {},
+              onSelect: (_, __) {},
+            ),
+          ),
+        ),
+      );
+    } on Object {
+      return const _UnavailableSnapshotCard();
+    }
+  }
+
+  Widget _tentsBoard(BuildContext context) {
+    final data = snapshot.puzzleData;
+    final size = snapshot.boardSize;
+    final trees = _pairs(data['trees']).toSet();
+    final tents = _pairs(data['tents']).toSet();
+    final rows = (data['rowCounts'] as List?)
+        ?.whereType<num>()
+        .map((e) => e.toInt())
+        .toList();
+    final columns = (data['columnCounts'] as List?)
+        ?.whereType<num>()
+        .map((e) => e.toInt())
+        .toList();
+    if (rows?.length != size || columns?.length != size) {
+      return const _UnavailableSnapshotCard();
+    }
+    final palette =
+        AppTheme.boardPalette('tents', Theme.of(context).brightness);
+    return AspectRatio(
+      aspectRatio: 1,
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: GridView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: size + 1),
+          itemCount: (size + 1) * (size + 1),
+          itemBuilder: (context, index) {
+            final row = index ~/ (size + 1);
+            final column = index % (size + 1);
+            if (row == 0 && column == 0) {
+              return const SizedBox.shrink();
+            }
+            if (row == 0) {
+              return Center(
+                  child: Text('${columns![column - 1]}',
+                      style: TextStyle(
+                          color: palette.accent, fontWeight: FontWeight.bold)));
+            }
+            if (column == 0) {
+              return Center(
+                  child: Text('${rows![row - 1]}',
+                      style: TextStyle(
+                          color: palette.accent, fontWeight: FontWeight.bold)));
+            }
+            final cell = (row - 1, column - 1);
+            final tree = trees.contains(cell);
+            final tent = tents.contains(cell);
+            return Padding(
+              padding: const EdgeInsets.all(1.5),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: tree ? palette.cellStrong : palette.cell,
+                  border:
+                      Border.all(color: palette.muted.withValues(alpha: .62)),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Center(
+                  child: tree
+                      ? Icon(Icons.park_rounded,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? const Color(0xFF72F0A3)
+                              : const Color(0xFF176A38))
+                      : tent
+                          ? CustomPaint(
+                              size: const Size(30, 30),
+                              painter: _ArchiveTentPainter(
+                                  palette.accent, palette.foreground))
+                          : null,
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -178,26 +408,6 @@ class _SnapshotBoard extends StatelessWidget {
                   shaded.contains('$row:$column') ? colors.black : colors.plum,
               foreground:
                   shaded.contains('$row:$column') ? colors.muted : Colors.white,
-            ),
-      ];
-    }
-    if (kind == 'tents') {
-      final trees = _pairs(data['trees']).map((e) => '${e.$1}:${e.$2}').toSet();
-      final tents = _pairs(data['tents']).map((e) => '${e.$1}:${e.$2}').toSet();
-      return [
-        for (var row = 0; row < size; row++)
-          for (var column = 0; column < size; column++)
-            _Cell(
-              label: trees.contains('$row:$column')
-                  ? '♣'
-                  : tents.contains('$row:$column')
-                      ? '▲'
-                      : '',
-              background: trees.contains('$row:$column')
-                  ? colors.green
-                  : tents.contains('$row:$column')
-                      ? colors.sky
-                      : colors.empty,
             ),
       ];
     }
@@ -292,142 +502,31 @@ class _Cell extends StatelessWidget {
       );
 }
 
-class _HashiSnapshotPainter extends CustomPainter {
-  _HashiSnapshotPainter(this.data, BuildContext context)
-      : color = Theme.of(context).colorScheme.primary;
-  final Map<String, Object?> data;
-  final Color color;
+class _ArchiveTentPainter extends CustomPainter {
+  const _ArchiveTentPainter(this.fabric, this.opening);
+
+  final Color fabric;
+  final Color opening;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final islands = data['islands'] as List? ?? const [];
-    final bridges = data['bridges'] as List? ?? const [];
-    if (islands.isEmpty) return;
-    final parsed = islands
-        .map((item) => (item as List).map((e) => (e as num).toInt()).toList())
-        .toList();
-    final maxRow = parsed.map((e) => e[0]).reduce(math.max).clamp(1, 100);
-    final maxColumn = parsed.map((e) => e[1]).reduce(math.max).clamp(1, 100);
-    Offset point(int index) {
-      final island = parsed[index];
-      return Offset(28 + island[1] / maxColumn * (size.width - 56),
-          28 + island[0] / maxRow * (size.height - 56));
-    }
-
-    final line = Paint()
-      ..color = color
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round;
-    for (final raw in bridges) {
-      final bridge = (raw as List).map((e) => (e as num).toInt()).toList();
-      final a = point(bridge[0]);
-      final b = point(bridge[1]);
-      final count = bridge[2];
-      if (count == 1) canvas.drawLine(a, b, line);
-      if (count == 2) {
-        final direction = b - a;
-        final normal =
-            Offset(-direction.dy, direction.dx) / direction.distance * 4;
-        canvas.drawLine(a + normal, b + normal, line);
-        canvas.drawLine(a - normal, b - normal, line);
-      }
-    }
-    final fill = Paint()..color = color.withValues(alpha: .18);
-    final outline = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
-    for (var index = 0; index < parsed.length; index++) {
-      final p = point(index);
-      canvas.drawCircle(p, 20, fill);
-      canvas.drawCircle(p, 20, outline);
-      final text = TextPainter(
-        text: TextSpan(
-            text: '${parsed[index][2]}',
-            style: TextStyle(
-                color: color, fontSize: 18, fontWeight: FontWeight.w800)),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      text.paint(canvas, p - Offset(text.width / 2, text.height / 2));
-    }
+    final tent = Path()
+      ..moveTo(size.width * .08, size.height * .82)
+      ..lineTo(size.width * .5, size.height * .12)
+      ..lineTo(size.width * .92, size.height * .82)
+      ..close();
+    canvas.drawPath(tent, Paint()..color = fabric);
+    final entrance = Path()
+      ..moveTo(size.width * .38, size.height * .82)
+      ..lineTo(size.width * .5, size.height * .42)
+      ..lineTo(size.width * .64, size.height * .82)
+      ..close();
+    canvas.drawPath(entrance, Paint()..color = opening);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _SlitherlinkSnapshotPainter extends CustomPainter {
-  _SlitherlinkSnapshotPainter(this.data, BuildContext context)
-      : color = Theme.of(context).colorScheme.primary,
-        muted = Theme.of(context).colorScheme.onSurfaceVariant;
-  final Map<String, Object?> data;
-  final Color color;
-  final Color muted;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rows = (data['rows'] as num).toInt();
-    final columns = (data['columns'] as num).toInt();
-    final clues = (data['clues'] as List)
-        .map((e) => e == null ? null : (e as num).toInt())
-        .toList();
-    final lines = (data['lines'] as List).whereType<String>().toSet();
-    const padding = 24.0;
-    final dx = (size.width - padding * 2) / columns;
-    final dy = (size.height - padding * 2) / rows;
-    final linePaint = Paint()
-      ..color = color
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round;
-    for (var row = 0; row <= rows; row++) {
-      for (var column = 0; column < columns; column++) {
-        if (lines.contains('h:$row:$column')) {
-          canvas.drawLine(
-              Offset(padding + column * dx, padding + row * dy),
-              Offset(padding + (column + 1) * dx, padding + row * dy),
-              linePaint);
-        }
-      }
-    }
-    for (var row = 0; row < rows; row++) {
-      for (var column = 0; column <= columns; column++) {
-        if (lines.contains('v:$row:$column')) {
-          canvas.drawLine(
-              Offset(padding + column * dx, padding + row * dy),
-              Offset(padding + column * dx, padding + (row + 1) * dy),
-              linePaint);
-        }
-      }
-    }
-    for (var row = 0; row <= rows; row++) {
-      for (var column = 0; column <= columns; column++) {
-        canvas.drawCircle(Offset(padding + column * dx, padding + row * dy), 3,
-            Paint()..color = muted);
-      }
-    }
-    for (var row = 0; row < rows; row++) {
-      for (var column = 0; column < columns; column++) {
-        final clue = clues[row * columns + column];
-        if (clue == null) continue;
-        final painter = TextPainter(
-            text: TextSpan(
-                text: '$clue',
-                style: TextStyle(
-                    color: muted,
-                    fontSize: math.min(dx, dy) * .42,
-                    fontWeight: FontWeight.w700)),
-            textDirection: TextDirection.ltr)
-          ..layout();
-        painter.paint(
-            canvas,
-            Offset(padding + (column + .5) * dx - painter.width / 2,
-                padding + (row + .5) * dy - painter.height / 2));
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _ArchiveTentPainter oldDelegate) =>
+      fabric != oldDelegate.fabric || opening != oldDelegate.opening;
 }
 
 List<List<int>>? _matrix(Object? raw, int size) {
@@ -457,41 +556,11 @@ List<(int, int)> _pairs(Object? raw) => [
           ),
     ];
 
-bool _validPaintedSnapshot(DailyPuzzleSnapshot snapshot) {
-  final data = snapshot.puzzleData;
-  if (data['kind'] == 'hashi') {
-    final islands = data['islands'];
-    final bridges = data['bridges'];
-    return islands is List &&
-        bridges is List &&
-        islands.every((item) =>
-            item is List && item.length >= 3 && item.every((v) => v is num)) &&
-        bridges.every((item) =>
-            item is List && item.length >= 3 && item.every((v) => v is num));
-  }
-  final rows = data['rows'];
-  final columns = data['columns'];
-  final clues = data['clues'];
-  final lines = data['lines'];
-  return rows is num &&
-      rows > 0 &&
-      columns is num &&
-      columns > 0 &&
-      clues is List &&
-      clues.length == rows.toInt() * columns.toInt() &&
-      clues.every((value) => value == null || value is num) &&
-      lines is List &&
-      lines.every((value) => value is String);
-}
-
 class _SnapshotColors {
   final teal = const Color(0xff00796b);
   final indigo = const Color(0xff4f46a5);
   final plum = const Color(0xff594353);
   final black = const Color(0xff111116);
   final muted = const Color(0xff9b9ba3);
-  final green = const Color(0xff167044);
-  final sky = const Color(0xff1689b5);
-  final empty = const Color(0xff29332f);
   final amber = const Color(0xff8a5a24);
 }
