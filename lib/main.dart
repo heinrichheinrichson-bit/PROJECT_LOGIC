@@ -3319,10 +3319,12 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
   PlayerRank? _persistedRank;
   List<ExperienceEvent> _experienceEvents = const [];
   List<PuzzleAttempt> _attempts = const [];
+  late Map<String, PuzzleResult> _results;
+  late PlayerProgress _progress;
 
   ProgressSnapshot get _snapshot => ProgressSnapshot(
-        results: widget.results,
-        progress: widget.progress,
+        results: _results,
+        progress: _progress,
         catalogPuzzleIds: {
           ...binaryPuzzleCatalog.map((puzzle) => puzzle.id),
           ...hashiPuzzleCatalog.map((puzzle) => 'hashi:${puzzle.id}'),
@@ -3337,20 +3339,32 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _results = widget.results;
+    _progress = widget.progress;
     _loadPersistedRank();
   }
 
   Future<void> _loadPersistedRank() async {
     const service = PlayerProgressService();
     final storage = GameStorage();
+    final results = await storage.loadResults();
+    final progress = await storage.loadPlayerProgress();
+    final freshSnapshot = ProgressSnapshot(
+      results: results,
+      progress: progress,
+      catalogPuzzleIds: _snapshot.catalogPuzzleIds,
+    );
     final existing = await storage.loadExperienceEvents();
     final synchronized =
-        service.synchronizeAchievementXp(_snapshot, existing.values);
+        service.synchronizeAchievementXp(freshSnapshot, existing.values);
     await storage.saveExperienceEvents(synchronized);
     final attempts = await storage.loadAttempts();
     if (!mounted) return;
     setState(() {
-      _persistedRank = service.rank(_snapshot, experienceEvents: synchronized);
+      _results = results;
+      _progress = progress;
+      _persistedRank =
+          service.rank(freshSnapshot, experienceEvents: synchronized);
       _experienceEvents = synchronized;
       _attempts = attempts;
     });
