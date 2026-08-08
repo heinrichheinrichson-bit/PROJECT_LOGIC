@@ -3364,16 +3364,59 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     final synchronized =
         service.synchronizeMissionXp(freshSnapshot, withAchievements);
     await storage.saveExperienceEvents(synchronized);
+    final freshRank = service.rank(
+      freshSnapshot,
+      experienceEvents: synchronized,
+    );
+    final celebratedLevel = await storage.loadCelebratedLevel();
+    final reachedNewLevel = freshRank.level > celebratedLevel;
+    if (reachedNewLevel) {
+      await storage.saveCelebratedLevel(freshRank.level);
+    }
     if (!mounted) return;
     setState(() {
       _results = results;
       _progress = progress;
-      _persistedRank =
-          service.rank(freshSnapshot, experienceEvents: synchronized);
+      _persistedRank = freshRank;
       _experienceEvents = synchronized;
       _attempts = attempts;
     });
+    if (reachedNewLevel) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showLevelUpDialog(freshRank);
+      });
+    }
   }
+
+  Future<void> _showLevelUpDialog(PlayerRank rank) => showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          icon: const Icon(Icons.workspace_premium_rounded, size: 52),
+          title: Text('Level ${rank.level} erreicht!'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                rank.title,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Deine gelösten Rätsel, Ziele und Erfolge haben dich auf das nächste Level gebracht.',
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Weiterknobeln'),
+            ),
+          ],
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -3583,27 +3626,26 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  for (final achievement in upcomingAchievements.take(5))
+                  for (final achievement in upcomingAchievements.take(3))
                     _ProgressGoalCard(goal: achievement),
-                  if (upcomingAchievements.length > 5 ||
-                      completedAchievements.isNotEmpty)
-                    Card(
-                      child: ExpansionTile(
-                        leading: const Icon(Icons.inventory_2_outlined),
-                        title: const Text('Alle Erfolge'),
-                        subtitle: Text(
-                          '${completedAchievements.length} freigeschaltet · ${achievements.length} insgesamt',
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.emoji_events_outlined),
+                      title: const Text('Alle Erfolge ansehen'),
+                      subtitle: Text(
+                        '${completedAchievements.length} freigeschaltet · ${achievements.length} insgesamt',
+                      ),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => _AchievementsScreen(
+                            achievements: achievements,
+                          ),
                         ),
-                        childrenPadding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                        children: [
-                          for (final achievement
-                              in upcomingAchievements.skip(5))
-                            _ProgressGoalCard(goal: achievement),
-                          for (final achievement in completedAchievements)
-                            _ProgressGoalCard(goal: achievement),
-                        ],
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
@@ -3738,6 +3780,122 @@ String _missionEventTitle(String id) {
   return 'Mission geschafft';
 }
 
+enum _AchievementFilter { all, open, unlocked }
+
+class _AchievementsScreen extends StatefulWidget {
+  const _AchievementsScreen({required this.achievements});
+
+  final List<ProgressGoal> achievements;
+
+  @override
+  State<_AchievementsScreen> createState() => _AchievementsScreenState();
+}
+
+class _AchievementsScreenState extends State<_AchievementsScreen> {
+  _AchievementFilter _filter = _AchievementFilter.all;
+
+  @override
+  Widget build(BuildContext context) {
+    final unlocked =
+        widget.achievements.where((goal) => goal.isCompleted).length;
+    final visible = widget.achievements.where((goal) {
+      return switch (_filter) {
+        _AchievementFilter.all => true,
+        _AchievementFilter.open => !goal.isCompleted,
+        _AchievementFilter.unlocked => goal.isCompleted,
+      };
+    }).toList()
+      ..sort((a, b) {
+        if (a.isCompleted != b.isCompleted) return a.isCompleted ? 1 : -1;
+        return b.progress.compareTo(a.progress);
+      });
+    final colors = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Erfolge')),
+      body: Center(
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Card(
+                    color: colors.primaryContainer,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.emoji_events_rounded,
+                            size: 48,
+                            color: colors.onPrimaryContainer,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            '$unlocked von ${widget.achievements.length} freigeschaltet',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                          const SizedBox(height: 12),
+                          LinearProgressIndicator(
+                            value: widget.achievements.isEmpty
+                                ? 0
+                                : unlocked / widget.achievements.length,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SegmentedButton<_AchievementFilter>(
+                    segments: const [
+                      ButtonSegment(
+                        value: _AchievementFilter.all,
+                        label: Text('Alle'),
+                      ),
+                      ButtonSegment(
+                        value: _AchievementFilter.open,
+                        label: Text('Offen'),
+                      ),
+                      ButtonSegment(
+                        value: _AchievementFilter.unlocked,
+                        label: Text('Erreicht'),
+                      ),
+                    ],
+                    selected: {_filter},
+                    onSelectionChanged: (selection) => setState(
+                      () => _filter = selection.single,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (visible.isEmpty)
+                    const Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'In diesem Bereich gibt es derzeit keine Erfolge.',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    )
+                  else
+                    for (final achievement in visible)
+                      _ProgressGoalCard(goal: achievement),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ProgressGoalCard extends StatelessWidget {
   const _ProgressGoalCard({required this.goal});
 
@@ -3749,7 +3907,7 @@ class _ProgressGoalCard extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final reward = goal.kind == ProgressGoalKind.mission
         ? ExperiencePointsPolicy.mission(goal.id)
-        : 0;
+        : ExperiencePointsPolicy.achievement(goal.id);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),

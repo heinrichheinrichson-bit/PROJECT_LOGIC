@@ -517,6 +517,7 @@ class GameStorage {
   static const _attemptsKey = 'puzzle_attempts_v1';
   static const _dailySnapshotsKey = 'daily_puzzle_snapshots_v1';
   static const _experienceEventsKey = 'experience_events_v1';
+  static const _celebratedLevelKey = 'celebrated_player_level_v1';
 
   Future<SavedGame?> loadActiveGame() async {
     final preferences = await SharedPreferences.getInstance();
@@ -802,6 +803,17 @@ class GameStorage {
     );
   }
 
+  Future<int> loadCelebratedLevel() async {
+    final preferences = await SharedPreferences.getInstance();
+    return preferences.getInt(_celebratedLevelKey) ?? 1;
+  }
+
+  Future<void> saveCelebratedLevel(int level) async {
+    if (level < 1) throw ArgumentError.value(level, 'level');
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setInt(_celebratedLevelKey, level);
+  }
+
   Future<void> clearAllProgress() async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove(_activeGameKey);
@@ -810,5 +822,6 @@ class GameStorage {
     await preferences.remove(_attemptsKey);
     await preferences.remove(_dailySnapshotsKey);
     await preferences.remove(_experienceEventsKey);
+    await preferences.remove(_celebratedLevelKey);
   }
 }

@@ -4,6 +4,27 @@ import 'package:project_logic_prototype/game_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  test('celebrated level defaults to one and survives storage', () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = GameStorage();
+
+    expect(await storage.loadCelebratedLevel(), 1);
+
+    await storage.saveCelebratedLevel(4);
+
+    expect(await storage.loadCelebratedLevel(), 4);
+  });
+
+  test('clearing progress resets the celebrated level', () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = GameStorage();
+    await storage.saveCelebratedLevel(3);
+
+    await storage.clearAllProgress();
+
+    expect(await storage.loadCelebratedLevel(), 1);
+  });
+
   test('SavedGame survives JSON conversion', () {
     final original = SavedGame(
       puzzleId: 'easy-01',
