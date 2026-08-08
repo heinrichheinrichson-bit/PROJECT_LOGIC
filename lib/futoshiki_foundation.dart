@@ -953,6 +953,23 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
         moves: _moves,
         hintsUsed: _hintsUsed,
         rewardedHints: _rewardedHints,
+        dailyPuzzleData: widget.mode == GameMode.daily
+            ? {
+                'kind': 'futoshiki',
+                'givens': widget.puzzle.givens,
+                'solution': widget.puzzle.solution,
+                'inequalities': [
+                  for (final inequality in widget.puzzle.inequalities)
+                    [
+                      inequality.firstRow,
+                      inequality.firstColumn,
+                      inequality.secondRow,
+                      inequality.secondColumn,
+                      inequality.firstIsLess,
+                    ],
+                ],
+              }
+            : null,
       );
     }
     await _saveStore.clear();

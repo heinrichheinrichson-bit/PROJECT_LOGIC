@@ -773,6 +773,15 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
         moves: _moves,
         hintsUsed: _hintsUsed,
         rewardedHints: _rewardedHints,
+        dailyPuzzleData: widget.mode == GameMode.daily
+            ? {
+                'kind': 'hitori',
+                'grid': widget.puzzle.grid,
+                'shaded': [
+                  for (final cell in widget.puzzle.solution) [cell.$1, cell.$2],
+                ],
+              }
+            : null,
       );
     }
     await _store.clear();

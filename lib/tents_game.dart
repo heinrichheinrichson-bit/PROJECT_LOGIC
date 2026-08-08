@@ -742,7 +742,21 @@ class _TentsGameScreenState extends State<TentsGameScreen>
           gameType: GameType.tents,
           moves: _moves,
           hintsUsed: _hintsUsed,
-          rewardedHints: _rewardedHints);
+          rewardedHints: _rewardedHints,
+          dailyPuzzleData: widget.mode == GameMode.daily
+              ? {
+                  'kind': 'tents',
+                  'trees': [
+                    for (final cell in widget.puzzle.trees) [cell.$1, cell.$2],
+                  ],
+                  'rowCounts': widget.puzzle.rowCounts,
+                  'columnCounts': widget.puzzle.columnCounts,
+                  'tents': [
+                    for (final cell in widget.puzzle.solution)
+                      [cell.$1, cell.$2],
+                  ],
+                }
+              : null);
     }
     if (!mounted) return;
     await showDialog<void>(

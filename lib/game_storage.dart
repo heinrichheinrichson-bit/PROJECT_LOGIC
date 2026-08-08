@@ -231,9 +231,8 @@ class PuzzleResult {
 
   /// Binairo keeps its historic unprefixed keys for UI and save compatibility.
   /// Other games use a namespaced key to avoid collisions between catalogs.
-  String get storageKey => gameType == GameType.binairo
-      ? puzzleId
-      : '${gameType.name}:$puzzleId';
+  String get storageKey =>
+      gameType == GameType.binairo ? puzzleId : '${gameType.name}:$puzzleId';
 
   PuzzleSource get effectiveSource {
     if (source != PuzzleSource.catalog) return source;
@@ -332,6 +331,79 @@ class PuzzleResult {
       completionCount: completionCount + 1,
       totalElapsedSeconds: totalElapsedSeconds + elapsedSeconds,
     );
+  }
+}
+
+/// Immutable, versioned copy of a completed daily puzzle.
+///
+/// Daily generators may evolve over the lifetime of the app. Keeping the
+/// concrete puzzle data here means a solved calendar entry never silently
+/// turns into a different board after an update.
+class DailyPuzzleSnapshot {
+  static const int currentSchemaVersion = 1;
+
+  const DailyPuzzleSnapshot({
+    required this.puzzleId,
+    required this.gameType,
+    required this.difficulty,
+    required this.boardSize,
+    required this.completedAt,
+    required this.elapsedSeconds,
+    required this.puzzleData,
+  });
+
+  final String puzzleId;
+  final GameType gameType;
+  final PuzzleDifficulty difficulty;
+  final int boardSize;
+  final DateTime completedAt;
+  final int elapsedSeconds;
+  final Map<String, Object?> puzzleData;
+
+  String get storageKey => '${gameType.name}:$puzzleId';
+
+  Map<String, Object?> toJson() => {
+        'schemaVersion': currentSchemaVersion,
+        'puzzleId': puzzleId,
+        'gameType': gameType.name,
+        'difficulty': difficulty.name,
+        'boardSize': boardSize,
+        'completedAt': completedAt.toIso8601String(),
+        'elapsedSeconds': elapsedSeconds,
+        'puzzleData': puzzleData,
+      };
+
+  factory DailyPuzzleSnapshot.fromJson(Map<String, Object?> json) {
+    final version = (json['schemaVersion'] as num?)?.toInt() ?? 1;
+    final puzzleData = json['puzzleData'];
+    if (version < 1 || version > currentSchemaVersion || puzzleData is! Map) {
+      throw const FormatException('Unsupported daily snapshot.');
+    }
+    return DailyPuzzleSnapshot(
+      puzzleId: _requiredSnapshotString(json, 'puzzleId'),
+      gameType: GameType.values.firstWhere(
+        (value) => value.name == json['gameType'],
+        orElse: () => GameType.binairo,
+      ),
+      difficulty: PuzzleDifficulty.values.firstWhere(
+        (value) => value.name == json['difficulty'],
+        orElse: () => PuzzleDifficulty.easy,
+      ),
+      boardSize: (json['boardSize'] as num?)?.toInt() ?? 0,
+      completedAt: DateTime.tryParse(json['completedAt'] as String? ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      elapsedSeconds: (json['elapsedSeconds'] as num?)?.toInt() ?? 0,
+      puzzleData: Map<String, Object?>.from(puzzleData),
+    );
+  }
+
+  static String _requiredSnapshotString(
+    Map<String, Object?> json,
+    String key,
+  ) {
+    final value = json[key];
+    if (value is String && value.isNotEmpty) return value;
+    throw FormatException('Missing $key in daily snapshot.');
   }
 }
 
@@ -441,6 +513,7 @@ class GameStorage {
   static const _resultsKey = 'binary_results_v1';
   static const _playerProgressKey = 'player_progress_v1';
   static const _attemptsKey = 'puzzle_attempts_v1';
+  static const _dailySnapshotsKey = 'daily_puzzle_snapshots_v1';
 
   Future<SavedGame?> loadActiveGame() async {
     final preferences = await SharedPreferences.getInstance();
@@ -533,12 +606,12 @@ class GameStorage {
     int hintsUsed = 0,
     int rewardedHints = 0,
     DateTime? completedAt,
+    Map<String, Object?>? dailyPuzzleData,
   }) async {
     final results = await loadResults();
     final progress = await loadPlayerProgress();
-    final resultKey = gameType == GameType.binairo
-        ? puzzleId
-        : '${gameType.name}:$puzzleId';
+    final resultKey =
+        gameType == GameType.binairo ? puzzleId : '${gameType.name}:$puzzleId';
     final existing = results[resultKey];
     final completionTime = completedAt ?? DateTime.now();
 
@@ -594,6 +667,43 @@ class GameStorage {
       _attemptsKey,
       jsonEncode(attempts.map((attempt) => attempt.toJson()).toList()),
     );
+
+    if (source == PuzzleSource.daily && dailyPuzzleData != null) {
+      final snapshots = await loadDailySnapshots();
+      final snapshot = DailyPuzzleSnapshot(
+        puzzleId: puzzleId,
+        gameType: gameType,
+        difficulty: difficulty,
+        boardSize: boardSize,
+        completedAt: completionTime,
+        elapsedSeconds: elapsedSeconds,
+        puzzleData: dailyPuzzleData,
+      );
+      snapshots[snapshot.storageKey] = snapshot;
+      await preferences.setString(
+        _dailySnapshotsKey,
+        jsonEncode(snapshots.values.map((value) => value.toJson()).toList()),
+      );
+    }
+  }
+
+  Future<Map<String, DailyPuzzleSnapshot>> loadDailySnapshots() async {
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(_dailySnapshotsKey);
+    if (raw == null) return {};
+    try {
+      final decoded = jsonDecode(raw) as List<dynamic>;
+      final snapshots = decoded.map(
+        (item) => DailyPuzzleSnapshot.fromJson(
+          Map<String, Object?>.from(item as Map),
+        ),
+      );
+      return {for (final snapshot in snapshots) snapshot.storageKey: snapshot};
+    } on Object {
+      // Do not delete the raw value. A future app version may be able to
+      // recover an entry this version does not understand.
+      return {};
+    }
   }
 
   Future<List<PuzzleAttempt>> loadAttempts() async {
@@ -618,5 +728,6 @@ class GameStorage {
     await preferences.remove(_resultsKey);
     await preferences.remove(_playerProgressKey);
     await preferences.remove(_attemptsKey);
+    await preferences.remove(_dailySnapshotsKey);
   }
 }

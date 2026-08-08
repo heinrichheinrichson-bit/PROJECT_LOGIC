@@ -408,4 +408,53 @@ void main() {
 
     expect(result.effectiveSource, PuzzleSource.daily);
   });
+
+  test('daily completion keeps an immutable versioned board snapshot',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = GameStorage();
+    final completedAt = DateTime(2026, 8, 2, 12, 30);
+
+    await storage.recordCompletion(
+      puzzleId: 'daily-hitori-2026-08-02',
+      elapsedSeconds: 95,
+      gameType: GameType.hitori,
+      source: PuzzleSource.daily,
+      difficulty: PuzzleDifficulty.hard,
+      boardSize: 7,
+      completedAt: completedAt,
+      dailyPuzzleData: const {
+        'kind': 'hitori',
+        'grid': [
+          [1, 2],
+          [2, 1],
+        ],
+        'shaded': [
+          [0, 0],
+        ],
+      },
+    );
+
+    final snapshots = await storage.loadDailySnapshots();
+    final snapshot = snapshots['hitori:daily-hitori-2026-08-02'];
+    expect(snapshot, isNotNull);
+    expect(snapshot!.completedAt, completedAt);
+    expect(snapshot.elapsedSeconds, 95);
+    expect(snapshot.puzzleData['kind'], 'hitori');
+    expect(snapshot.puzzleData['grid'], isNotEmpty);
+  });
+
+  test('ordinary completions do not create daily snapshots', () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = GameStorage();
+    await storage.recordCompletion(
+      puzzleId: 'catalog-1',
+      elapsedSeconds: 30,
+      source: PuzzleSource.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 4,
+      dailyPuzzleData: const {'should': 'be ignored'},
+    );
+    expect(await storage.loadDailySnapshots(), isEmpty);
+  });
 }

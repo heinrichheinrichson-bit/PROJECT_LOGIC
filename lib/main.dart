@@ -2400,6 +2400,21 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
           boardSize: widget.definition.size,
           hintsUsed: _hintsUsed,
           rewardedHints: _hintBudget.rewardedHints,
+          dailyPuzzleData: widget.source == PuzzleSource.daily
+              ? {
+                  'kind': 'binairo',
+                  'solution': [
+                    for (final row in widget.definition.solution)
+                      [
+                        for (final value in row) value == CellValue.zero ? 0 : 1
+                      ],
+                  ],
+                  'clues': [
+                    for (final clue in widget.definition.clues)
+                      [clue.row, clue.column],
+                  ],
+                }
+              : null,
         );
         await _storage.clearActiveGame();
         if (widget.source == PuzzleSource.catalog) {

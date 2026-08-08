@@ -1498,6 +1498,19 @@ class _HashiGameScreenState extends State<HashiGameScreen>
         moves: _moves,
         hintsUsed: _hintsUsed,
         rewardedHints: _hintBudget.rewardedHints,
+        dailyPuzzleData: widget.mode == GameMode.daily
+            ? {
+                'kind': 'hashi',
+                'islands': [
+                  for (final island in widget.puzzle.islands)
+                    [island.row, island.column, island.bridges],
+                ],
+                'bridges': [
+                  for (final bridge in widget.puzzle.solution)
+                    [bridge.from, bridge.to, bridge.count],
+                ],
+              }
+            : null,
       );
       await _saveStore.clear();
     }

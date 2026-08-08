@@ -1234,6 +1234,15 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
         moves: _moves,
         hintsUsed: _hintsUsed,
         rewardedHints: _hintBudget.rewardedHints,
+        dailyPuzzleData: _gameMode == GameMode.daily
+            ? {
+                'kind': 'slitherlink',
+                'rows': widget.puzzle.rows,
+                'columns': widget.puzzle.columns,
+                'clues': widget.puzzle.clues,
+                'lines': widget.puzzle.solution.toList()..sort(),
+              }
+            : null,
       );
       await _saveStore.clear();
     }
