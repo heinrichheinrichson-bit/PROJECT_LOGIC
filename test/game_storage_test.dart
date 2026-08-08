@@ -518,6 +518,60 @@ void main() {
     expect(snapshot.puzzleData['solution'], [0, 1, 1, 0]);
   });
 
+  test('daily archive salvages valid snapshots beside a damaged entry',
+      () async {
+    final validSnapshot = DailyPuzzleSnapshot(
+      puzzleId: 'daily-valid',
+      gameType: GameType.binairo,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 4,
+      completedAt: DateTime(2026, 8, 8, 10),
+      elapsedSeconds: 35,
+      puzzleData: const {
+        'kind': 'binairo',
+        'solution': [0, 1, 1, 0],
+      },
+    );
+    final damagedRaw = jsonEncode([
+      validSnapshot.toJson(),
+      'damaged-entry',
+    ]);
+    SharedPreferences.setMockInitialValues({
+      'daily_puzzle_snapshots_v1': damagedRaw,
+    });
+    final storage = GameStorage();
+
+    final snapshots = await storage.loadDailySnapshots();
+    final preferences = await SharedPreferences.getInstance();
+
+    expect(snapshots.keys, ['binairo:daily-valid']);
+    expect(
+      preferences.getString('daily_puzzle_snapshots_recovery_v1'),
+      damagedRaw,
+    );
+    expect(
+      jsonDecode(preferences.getString('daily_puzzle_snapshots_v1')! as String),
+      hasLength(1),
+    );
+  });
+
+  test('unreadable daily archive remains available for future recovery',
+      () async {
+    const damagedRaw = '{not-json';
+    SharedPreferences.setMockInitialValues({
+      'daily_puzzle_snapshots_v1': damagedRaw,
+    });
+    final storage = GameStorage();
+
+    expect(await storage.loadDailySnapshots(), isEmpty);
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.getString('daily_puzzle_snapshots_v1'), damagedRaw);
+    expect(
+      preferences.getString('daily_puzzle_snapshots_recovery_v1'),
+      damagedRaw,
+    );
+  });
+
   test('completion XP is stored as an append-only event', () async {
     SharedPreferences.setMockInitialValues({});
     final storage = GameStorage();

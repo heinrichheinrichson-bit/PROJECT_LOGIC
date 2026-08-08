@@ -516,6 +516,8 @@ class GameStorage {
   static const _playerProgressKey = 'player_progress_v1';
   static const _attemptsKey = 'puzzle_attempts_v1';
   static const _dailySnapshotsKey = 'daily_puzzle_snapshots_v1';
+  static const _dailySnapshotsRecoveryKey =
+      'daily_puzzle_snapshots_recovery_v1';
   static const _experienceEventsKey = 'experience_events_v1';
   static const _experienceEventsRecoveryKey = 'experience_events_recovery_v1';
   static const _celebratedLevelKey = 'celebrated_player_level_v1';
@@ -730,15 +732,32 @@ class GameStorage {
     if (raw == null) return {};
     try {
       final decoded = jsonDecode(raw) as List<dynamic>;
-      final snapshots = decoded.map(
-        (item) => DailyPuzzleSnapshot.fromJson(
-          Map<String, Object?>.from(item as Map),
-        ),
-      );
-      return {for (final snapshot in snapshots) snapshot.storageKey: snapshot};
+      final recovered = <String, DailyPuzzleSnapshot>{};
+      var containsDamagedEntry = false;
+      for (final item in decoded) {
+        try {
+          final snapshot = DailyPuzzleSnapshot.fromJson(
+            Map<String, Object?>.from(item as Map),
+          );
+          recovered[snapshot.storageKey] = snapshot;
+        } on Object {
+          containsDamagedEntry = true;
+        }
+      }
+      if (containsDamagedEntry) {
+        await preferences.setString(_dailySnapshotsRecoveryKey, raw);
+        await preferences.setString(
+          _dailySnapshotsKey,
+          jsonEncode(
+            recovered.values.map((snapshot) => snapshot.toJson()).toList(),
+          ),
+        );
+      }
+      return recovered;
     } on Object {
       // Do not delete the raw value. A future app version may be able to
       // recover an entry this version does not understand.
+      await preferences.setString(_dailySnapshotsRecoveryKey, raw);
       return {};
     }
   }
@@ -874,6 +893,7 @@ class GameStorage {
     await preferences.remove(_playerProgressKey);
     await preferences.remove(_attemptsKey);
     await preferences.remove(_dailySnapshotsKey);
+    await preferences.remove(_dailySnapshotsRecoveryKey);
     await preferences.remove(_experienceEventsKey);
     await preferences.remove(_experienceEventsRecoveryKey);
     await preferences.remove(_celebratedLevelKey);

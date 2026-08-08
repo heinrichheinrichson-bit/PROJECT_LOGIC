@@ -59,4 +59,38 @@ void main() {
     expect(summary.entryCount, 1);
     expect(summary.createdAt.toUtc(), DateTime.utc(2026, 7, 31, 20));
   });
+
+  test('a successful import can be undone without losing local data', () async {
+    SharedPreferences.setMockInitialValues({'progress': 'imported'});
+    const service = DataBackupService();
+    final importedBackup = await service.createBackup();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.clear();
+    await preferences.setString('progress', 'local-before-import');
+    await preferences.setInt('local-score', 17);
+
+    await service.restoreBackup(importedBackup);
+    expect(preferences.getString('progress'), 'imported');
+    expect(preferences.containsKey('local-score'), isFalse);
+    expect(await service.hasRecoveryBackup(), isTrue);
+
+    await service.restoreRecoveryBackup();
+    expect(preferences.getString('progress'), 'local-before-import');
+    expect(preferences.getInt('local-score'), 17);
+  });
+
+  test('portable backups never contain the local rollback backup', () async {
+    SharedPreferences.setMockInitialValues({'progress': 'first'});
+    const service = DataBackupService();
+    final firstBackup = await service.createBackup();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString('progress', 'second');
+    await service.restoreBackup(firstBackup);
+
+    final portableBackup = await service.createBackup();
+    final summary = service.inspect(portableBackup);
+
+    expect(summary.entryCount, 1);
+    expect(portableBackup, isNot(contains('_backup_recovery_v1')));
+  });
 }
