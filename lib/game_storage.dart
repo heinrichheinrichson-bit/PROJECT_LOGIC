@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/domain/game_identity.dart';
 import 'core/statistics/puzzle_attempt.dart';
+import 'core/progress/experience_event.dart';
 import 'game_logic.dart';
 
 export 'core/domain/game_identity.dart' show GameMode, GameType, PuzzleSource;
@@ -514,6 +515,7 @@ class GameStorage {
   static const _playerProgressKey = 'player_progress_v1';
   static const _attemptsKey = 'puzzle_attempts_v1';
   static const _dailySnapshotsKey = 'daily_puzzle_snapshots_v1';
+  static const _experienceEventsKey = 'experience_events_v1';
 
   Future<SavedGame?> loadActiveGame() async {
     final preferences = await SharedPreferences.getInstance();
@@ -649,8 +651,10 @@ class GameStorage {
     );
 
     final attempts = await loadAttempts();
+    final attemptId =
+        '${completionTime.microsecondsSinceEpoch}-${gameType.name}-$puzzleId';
     attempts.add(PuzzleAttempt(
-      id: '${completionTime.microsecondsSinceEpoch}-${gameType.name}-$puzzleId',
+      id: attemptId,
       gameType: gameType,
       puzzleId: puzzleId,
       mode: source,
@@ -667,6 +671,19 @@ class GameStorage {
       _attemptsKey,
       jsonEncode(attempts.map((attempt) => attempt.toJson()).toList()),
     );
+
+    final experienceEvents = await loadExperienceEvents();
+    experienceEvents.putIfAbsent(
+      'completion:$attemptId',
+      () => ExperienceEvent(
+        id: 'completion:$attemptId',
+        kind: ExperienceEventKind.puzzleCompleted,
+        points: 10,
+        occurredAt: completionTime,
+        referenceId: attemptId,
+      ),
+    );
+    await saveExperienceEvents(experienceEvents.values);
 
     if (source == PuzzleSource.daily && dailyPuzzleData != null) {
       final snapshots = await loadDailySnapshots();
@@ -722,6 +739,47 @@ class GameStorage {
     }
   }
 
+  Future<Map<String, ExperienceEvent>> loadExperienceEvents() async {
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(_experienceEventsKey);
+    if (raw != null) {
+      try {
+        final decoded = jsonDecode(raw) as List<dynamic>;
+        final events = decoded.map(
+          (item) => ExperienceEvent.fromJson(
+            Map<String, Object?>.from(item as Map),
+          ),
+        );
+        return {for (final event in events) event.id: event};
+      } on Object {
+        return {};
+      }
+    }
+
+    // One-time migration for installations that predate the XP ledger.
+    final attempts = await loadAttempts();
+    final migrated = {
+      for (final attempt in attempts)
+        'completion:${attempt.id}': ExperienceEvent(
+          id: 'completion:${attempt.id}',
+          kind: ExperienceEventKind.puzzleCompleted,
+          points: 10,
+          occurredAt: attempt.completedAt,
+          referenceId: attempt.id,
+        ),
+    };
+    if (migrated.isNotEmpty) await saveExperienceEvents(migrated.values);
+    return migrated;
+  }
+
+  Future<void> saveExperienceEvents(Iterable<ExperienceEvent> events) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(
+      _experienceEventsKey,
+      jsonEncode(events.map((event) => event.toJson()).toList()),
+    );
+  }
+
   Future<void> clearAllProgress() async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove(_activeGameKey);
@@ -729,5 +787,6 @@ class GameStorage {
     await preferences.remove(_playerProgressKey);
     await preferences.remove(_attemptsKey);
     await preferences.remove(_dailySnapshotsKey);
+    await preferences.remove(_experienceEventsKey);
   }
 }

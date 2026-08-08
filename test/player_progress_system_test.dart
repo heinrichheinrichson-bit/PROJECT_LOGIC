@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/game_logic.dart';
 import 'package:project_logic_prototype/game_storage.dart';
 import 'package:project_logic_prototype/player_progress_system.dart';
+import 'package:project_logic_prototype/core/progress/experience_event.dart';
 
 void main() {
   const service = PlayerProgressService();
@@ -68,6 +69,28 @@ void main() {
 
     expect(rank.level, greaterThanOrEqualTo(2));
     expect(rank.nextLevelXp, 200);
+  });
+
+  test('achievement XP is awarded once and keeps its stored value', () {
+    const snapshot = ProgressSnapshot(
+      results: {},
+      progress: PlayerProgress(
+        totalCompleted: 1,
+        totalPlaySeconds: 30,
+        completedDays: ['2026-08-02'],
+      ),
+      catalogPuzzleIds: {},
+    );
+    final first = service.synchronizeAchievementXp(snapshot, const [],
+        now: DateTime(2026, 8, 2));
+    final second = service.synchronizeAchievementXp(snapshot, first,
+        now: DateTime(2026, 8, 3));
+    expect(
+        first.where(
+            (event) => event.kind == ExperienceEventKind.achievementUnlocked),
+        hasLength(1));
+    expect(second, hasLength(first.length));
+    expect(service.rank(snapshot, experienceEvents: second).currentXp, 50);
   });
   test('daily missions reset through date-specific ids', () {
     final result = PuzzleResult(

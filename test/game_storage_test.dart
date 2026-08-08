@@ -457,4 +457,20 @@ void main() {
     );
     expect(await storage.loadDailySnapshots(), isEmpty);
   });
+
+  test('completion XP is stored as an append-only event', () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = GameStorage();
+    await storage.recordCompletion(
+      puzzleId: 'one',
+      elapsedSeconds: 30,
+      source: PuzzleSource.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 4,
+      completedAt: DateTime(2026, 8, 2),
+    );
+    final events = await storage.loadExperienceEvents();
+    expect(events, hasLength(1));
+    expect(events.values.single.points, 10);
+  });
 }

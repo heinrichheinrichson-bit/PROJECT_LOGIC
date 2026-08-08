@@ -3139,7 +3139,7 @@ int _dailyStreak(List<PuzzleResult> results, {DateTime? now}) {
   return streak;
 }
 
-class PlayerProfileScreen extends StatelessWidget {
+class PlayerProfileScreen extends StatefulWidget {
   const PlayerProfileScreen({
     required this.results,
     required this.progress,
@@ -3150,21 +3150,50 @@ class PlayerProfileScreen extends StatelessWidget {
   final PlayerProgress progress;
 
   @override
-  Widget build(BuildContext context) {
-    final snapshot = ProgressSnapshot(
-      results: results,
-      progress: progress,
-      catalogPuzzleIds: {
-        ...binaryPuzzleCatalog.map((puzzle) => puzzle.id),
-        ...hashiPuzzleCatalog.map((puzzle) => 'hashi:${puzzle.id}'),
-        ...slitherlinkPuzzleCatalog.map((puzzle) => 'slitherlink:${puzzle.id}'),
-        ...futoshikiPuzzleCatalog.map((puzzle) => puzzle.id),
-        ...hitoriPuzzleCatalog.map((puzzle) => puzzle.id),
-        ...tentsPuzzleCatalog.map((puzzle) => puzzle.id),
-      },
-    );
+  State<PlayerProfileScreen> createState() => _PlayerProfileScreenState();
+}
+
+class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
+  PlayerRank? _persistedRank;
+
+  ProgressSnapshot get _snapshot => ProgressSnapshot(
+        results: widget.results,
+        progress: widget.progress,
+        catalogPuzzleIds: {
+          ...binaryPuzzleCatalog.map((puzzle) => puzzle.id),
+          ...hashiPuzzleCatalog.map((puzzle) => 'hashi:${puzzle.id}'),
+          ...slitherlinkPuzzleCatalog
+              .map((puzzle) => 'slitherlink:${puzzle.id}'),
+          ...futoshikiPuzzleCatalog.map((puzzle) => puzzle.id),
+          ...hitoriPuzzleCatalog.map((puzzle) => puzzle.id),
+          ...tentsPuzzleCatalog.map((puzzle) => puzzle.id),
+        },
+      );
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPersistedRank();
+  }
+
+  Future<void> _loadPersistedRank() async {
     const service = PlayerProgressService();
-    final rank = service.rank(snapshot);
+    final storage = GameStorage();
+    final existing = await storage.loadExperienceEvents();
+    final synchronized =
+        service.synchronizeAchievementXp(_snapshot, existing.values);
+    await storage.saveExperienceEvents(synchronized);
+    if (!mounted) return;
+    setState(() {
+      _persistedRank = service.rank(_snapshot, experienceEvents: synchronized);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final snapshot = _snapshot;
+    const service = PlayerProgressService();
+    final rank = _persistedRank ?? service.rank(snapshot);
     final dailyMissions = service.dailyMissions(snapshot);
     final longTermMissions = service.longTermMissions(snapshot);
     final achievements = service.achievements(snapshot);

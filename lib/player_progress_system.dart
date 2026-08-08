@@ -1,6 +1,7 @@
 import 'daily_challenge.dart';
 import 'game_logic.dart';
 import 'game_storage.dart';
+import 'core/progress/experience_event.dart';
 
 enum ProgressGoalKind { achievement, mission }
 
@@ -268,7 +269,11 @@ class PlayerProgressService {
           description: 'Löse jedes Rätsel der Sammlung.',
           iconName: 'collections_bookmark',
           current: snapshot.catalogCompleted,
-          target: snapshot.catalogPuzzleIds.length,
+          // An empty catalog is an incomplete configuration, not an
+          // achievement the player unlocked for free.
+          target: snapshot.catalogPuzzleIds.isEmpty
+              ? 1
+              : snapshot.catalogPuzzleIds.length,
         ),
         _achievement(
           id: 'hard-five',
@@ -377,9 +382,38 @@ class PlayerProgressService {
       '${value.month.toString().padLeft(2, '0')}-'
       '${value.day.toString().padLeft(2, '0')}';
 
-  PlayerRank rank(ProgressSnapshot snapshot) {
-    final unlocked = achievements(snapshot).where((goal) => goal.isCompleted);
-    final xp = snapshot.totalCompleted * 10 + unlocked.length * 50;
+  List<ExperienceEvent> synchronizeAchievementXp(
+    ProgressSnapshot snapshot,
+    Iterable<ExperienceEvent> existing, {
+    DateTime? now,
+  }) {
+    final events = {for (final event in existing) event.id: event};
+    for (final goal
+        in achievements(snapshot).where((goal) => goal.isCompleted)) {
+      final id = 'achievement:${goal.id}';
+      events.putIfAbsent(
+        id,
+        () => ExperienceEvent(
+          id: id,
+          kind: ExperienceEventKind.achievementUnlocked,
+          points: 50,
+          occurredAt: now ?? DateTime.now(),
+          referenceId: goal.id,
+        ),
+      );
+    }
+    return events.values.toList(growable: false)
+      ..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
+  }
+
+  PlayerRank rank(
+    ProgressSnapshot snapshot, {
+    Iterable<ExperienceEvent>? experienceEvents,
+  }) {
+    final xp = experienceEvents == null
+        ? snapshot.totalCompleted * 10 +
+            achievements(snapshot).where((goal) => goal.isCompleted).length * 50
+        : experienceEvents.fold<int>(0, (sum, event) => sum + event.points);
     final level = xp ~/ 200 + 1;
     final currentXp = xp % 200;
     return PlayerRank(
