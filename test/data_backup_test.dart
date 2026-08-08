@@ -93,4 +93,17 @@ void main() {
     expect(summary.entryCount, 1);
     expect(portableBackup, isNot(contains('_backup_recovery_v1')));
   });
+
+  test('content fingerprint changes only with durable user data', () async {
+    SharedPreferences.setMockInitialValues({'progress': 'first'});
+    const service = DataBackupService();
+    final first = await service.contentFingerprint();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString('_cloud_last_sync_at_v1', 'internal');
+    await preferences.setString('_backup_recovery_v1', 'internal');
+
+    expect(await service.contentFingerprint(), first);
+    await preferences.setString('progress', 'second');
+    expect(await service.contentFingerprint(), isNot(first));
+  });
 }

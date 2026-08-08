@@ -36,15 +36,7 @@ class DataBackupService {
 
   Future<String> createBackup({DateTime? createdAt}) async {
     final preferences = await SharedPreferences.getInstance();
-    final entries = <String, Object?>{};
-    final keys = preferences
-        .getKeys()
-        .where((key) => !key.startsWith('_backup_'))
-        .toList()
-      ..sort();
-    for (final key in keys) {
-      entries[key] = _encodeValue(preferences.get(key));
-    }
+    final entries = _readPortableEntries(preferences);
     final payload = <String, Object?>{
       'format': format,
       'schemaVersion': schemaVersion,
@@ -56,6 +48,30 @@ class DataBackupService {
       ...payload,
       'checksum': _checksum(canonicalPayload),
     });
+  }
+
+  /// Identifies the durable user data without depending on backup time.
+  /// Internal rollback and cloud bookkeeping values are intentionally ignored.
+  Future<String> contentFingerprint() async {
+    final preferences = await SharedPreferences.getInstance();
+    return _checksum(jsonEncode(_readPortableEntries(preferences)));
+  }
+
+  static Map<String, Object?> _readPortableEntries(
+    SharedPreferences preferences,
+  ) {
+    final entries = <String, Object?>{};
+    final keys = preferences
+        .getKeys()
+        .where(
+          (key) => !key.startsWith('_backup_') && !key.startsWith('_cloud_'),
+        )
+        .toList()
+      ..sort();
+    for (final key in keys) {
+      entries[key] = _encodeValue(preferences.get(key));
+    }
+    return entries;
   }
 
   BackupSummary inspect(String rawBackup) {
