@@ -151,6 +151,10 @@ class SlitherlinkState {
       }
     }
     final lines = lineIds.toSet();
+    return _formsSingleLoop(lines);
+  }
+
+  bool _formsSingleLoop(Set<String> lines) {
     if (lines.isEmpty) return false;
     final adjacency = <String, Set<String>>{};
     for (final id in lines) {
@@ -169,6 +173,8 @@ class SlitherlinkState {
       pending
           .addAll(adjacency[point]!.where((next) => !visited.contains(next)));
     }
+    // Degree two makes every component a closed loop. Requiring every vertex
+    // to be reachable from one start vertex rejects multiple separate loops.
     return visited.length == adjacency.length;
   }
 

@@ -125,6 +125,55 @@ void main() {
     expect(state.isSolved, isFalse);
   });
 
+  test('two separate closed loops are not a solution', () {
+    const puzzle = SlitherlinkPuzzle(
+      id: 'two-loops-regression',
+      title: 'Two loops regression',
+      rows: 1,
+      columns: 3,
+      clues: [
+        <int?>[null, null, null]
+      ],
+      solution: <String>{},
+      difficulty: PuzzleDifficulty.easy,
+    );
+    const leftLoop = <String>{'h:0:0', 'h:1:0', 'v:0:0', 'v:0:1'};
+    const rightLoop = <String>{'h:0:2', 'h:1:2', 'v:0:2', 'v:0:3'};
+    final state = SlitherlinkState(
+      puzzle: puzzle,
+      marks: {
+        for (final id in {...leftLoop, ...rightLoop}) id: SlitherEdgeMark.line,
+      },
+    );
+
+    expect(state.isSolved, isFalse);
+  });
+
+  test('one closed loop remains a valid solution', () {
+    const puzzle = SlitherlinkPuzzle(
+      id: 'one-loop-regression',
+      title: 'One loop regression',
+      rows: 1,
+      columns: 1,
+      clues: [
+        <int?>[4]
+      ],
+      solution: <String>{},
+      difficulty: PuzzleDifficulty.easy,
+    );
+    const state = SlitherlinkState(
+      puzzle: puzzle,
+      marks: {
+        'h:0:0': SlitherEdgeMark.line,
+        'h:1:0': SlitherEdgeMark.line,
+        'v:0:0': SlitherEdgeMark.line,
+        'v:0:1': SlitherEdgeMark.line,
+      },
+    );
+
+    expect(state.isSolved, isTrue);
+  });
+
   test('edge input cycles through line, blocked and empty', () {
     const edge = SlitherEdge.horizontal(0, 0);
     const empty = SlitherlinkState(puzzle: slitherlinkTutorialPuzzle);
