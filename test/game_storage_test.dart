@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/game_logic.dart';
 import 'package:project_logic_prototype/game_storage.dart';
@@ -544,5 +546,79 @@ void main() {
     final events = (await storage.loadExperienceEvents()).values.toList()
       ..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
     expect(events.map((event) => event.points), [30, 5, 70, 0]);
+  });
+
+  test('XP ledger salvages valid entries and rebuilds damaged completions',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = GameStorage();
+    await storage.recordCompletion(
+      puzzleId: 'first',
+      elapsedSeconds: 30,
+      source: PuzzleSource.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 4,
+      completedAt: DateTime(2026, 8, 8, 10),
+    );
+    await storage.recordCompletion(
+      puzzleId: 'second',
+      elapsedSeconds: 40,
+      source: PuzzleSource.catalog,
+      difficulty: PuzzleDifficulty.medium,
+      boardSize: 6,
+      completedAt: DateTime(2026, 8, 8, 10, 5),
+    );
+    final preferences = await SharedPreferences.getInstance();
+    final original = jsonDecode(
+      preferences.getString('experience_events_v1')!,
+    ) as List<dynamic>;
+    final damaged = jsonEncode([
+      original.first,
+      {'broken': true}
+    ]);
+    await preferences.setString('experience_events_v1', damaged);
+
+    final recovered = await storage.loadExperienceEvents();
+
+    expect(recovered, hasLength(2));
+    expect(recovered.values.map((event) => event.points).toSet(), {30, 40});
+    expect(
+        recovered.values.every((event) => event.referenceId != null), isTrue);
+    expect(
+      preferences.getString('experience_events_recovery_v1'),
+      damaged,
+    );
+  });
+
+  test('malformed XP ledger is rebuilt with correct repeat rewards', () async {
+    SharedPreferences.setMockInitialValues({});
+    final storage = GameStorage();
+    await storage.recordCompletion(
+      puzzleId: 'repeat-me',
+      elapsedSeconds: 30,
+      source: PuzzleSource.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 4,
+      completedAt: DateTime(2026, 8, 8, 11),
+    );
+    await storage.recordCompletion(
+      puzzleId: 'repeat-me',
+      elapsedSeconds: 25,
+      source: PuzzleSource.catalog,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 4,
+      completedAt: DateTime(2026, 8, 8, 11, 5),
+    );
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString('experience_events_v1', '{not-json');
+
+    final recovered = (await storage.loadExperienceEvents()).values.toList()
+      ..sort((a, b) => a.occurredAt.compareTo(b.occurredAt));
+
+    expect(recovered.map((event) => event.points), [30, 5]);
+    expect(
+      preferences.getString('experience_events_recovery_v1'),
+      '{not-json',
+    );
   });
 }

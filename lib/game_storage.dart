@@ -517,6 +517,7 @@ class GameStorage {
   static const _attemptsKey = 'puzzle_attempts_v1';
   static const _dailySnapshotsKey = 'daily_puzzle_snapshots_v1';
   static const _experienceEventsKey = 'experience_events_v1';
+  static const _experienceEventsRecoveryKey = 'experience_events_recovery_v1';
   static const _celebratedLevelKey = 'celebrated_player_level_v1';
 
   Future<SavedGame?> loadActiveGame() async {
@@ -763,36 +764,78 @@ class GameStorage {
     final raw = preferences.getString(_experienceEventsKey);
     if (raw != null) {
       try {
-        final decoded = jsonDecode(raw) as List<dynamic>;
-        final events = decoded.map(
-          (item) => ExperienceEvent.fromJson(
-            Map<String, Object?>.from(item as Map),
-          ),
-        );
-        return {for (final event in events) event.id: event};
+        final decoded = jsonDecode(raw);
+        if (decoded is! List) throw const FormatException('Invalid XP ledger.');
+        final events = <String, ExperienceEvent>{};
+        var damagedEntries = 0;
+        for (final item in decoded) {
+          try {
+            final event = ExperienceEvent.fromJson(
+              Map<String, Object?>.from(item as Map),
+            );
+            events[event.id] = event;
+          } on Object {
+            damagedEntries += 1;
+          }
+        }
+        if (damagedEntries == 0) return events;
+
+        await _preserveDamagedExperienceLedger(preferences, raw);
+        events.addAll(await _experienceEventsFromAttempts(events));
+        await saveExperienceEvents(events.values);
+        return events;
       } on Object {
-        return {};
+        await _preserveDamagedExperienceLedger(preferences, raw);
+        final recovered = await _experienceEventsFromAttempts(const {});
+        if (recovered.isNotEmpty) {
+          await saveExperienceEvents(recovered.values);
+        }
+        return recovered;
       }
     }
 
     // One-time migration for installations that predate the XP ledger.
-    final attempts = await loadAttempts();
-    final migrated = {
-      for (final attempt in attempts)
-        'completion:${attempt.id}': ExperienceEvent(
-          id: 'completion:${attempt.id}',
-          kind: ExperienceEventKind.puzzleCompleted,
-          points: ExperiencePointsPolicy.puzzleCompletion(
-            source: attempt.mode,
-            difficulty: attempt.difficulty,
-            hintsUsed: attempt.hintsUsed,
-          ),
-          occurredAt: attempt.completedAt,
-          referenceId: attempt.id,
-        ),
-    };
+    final migrated = await _experienceEventsFromAttempts(const {});
     if (migrated.isNotEmpty) await saveExperienceEvents(migrated.values);
     return migrated;
+  }
+
+  Future<void> _preserveDamagedExperienceLedger(
+    SharedPreferences preferences,
+    String raw,
+  ) async {
+    if (!preferences.containsKey(_experienceEventsRecoveryKey)) {
+      await preferences.setString(_experienceEventsRecoveryKey, raw);
+    }
+  }
+
+  Future<Map<String, ExperienceEvent>> _experienceEventsFromAttempts(
+    Map<String, ExperienceEvent> existing,
+  ) async {
+    final attempts = await loadAttempts()
+      ..sort((a, b) => a.completedAt.compareTo(b.completedAt));
+    final seenPuzzles = <String>{};
+    final recovered = <String, ExperienceEvent>{};
+    for (final attempt in attempts) {
+      final eventId = 'completion:${attempt.id}';
+      final puzzleKey = '${attempt.gameType.name}:${attempt.mode.name}:'
+          '${attempt.puzzleId}';
+      final repeated = !seenPuzzles.add(puzzleKey);
+      if (existing.containsKey(eventId)) continue;
+      recovered[eventId] = ExperienceEvent(
+        id: eventId,
+        kind: ExperienceEventKind.puzzleCompleted,
+        points: ExperiencePointsPolicy.puzzleCompletion(
+          source: attempt.mode,
+          difficulty: attempt.difficulty,
+          hintsUsed: attempt.hintsUsed,
+          repeated: repeated,
+        ),
+        occurredAt: attempt.completedAt,
+        referenceId: attempt.id,
+      );
+    }
+    return recovered;
   }
 
   Future<void> saveExperienceEvents(Iterable<ExperienceEvent> events) async {
@@ -822,6 +865,7 @@ class GameStorage {
     await preferences.remove(_attemptsKey);
     await preferences.remove(_dailySnapshotsKey);
     await preferences.remove(_experienceEventsKey);
+    await preferences.remove(_experienceEventsRecoveryKey);
     await preferences.remove(_celebratedLevelKey);
   }
 }
