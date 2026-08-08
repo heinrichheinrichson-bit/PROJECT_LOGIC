@@ -60,6 +60,12 @@ class ProjectLogicApp extends StatelessWidget {
           themeMode: preferences.themePreference.themeMode,
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
+          builder: (context, child) => SafeArea(
+            top: false,
+            left: false,
+            right: false,
+            child: child ?? const SizedBox.shrink(),
+          ),
           home: const HomeScreen(),
         ),
       ),
