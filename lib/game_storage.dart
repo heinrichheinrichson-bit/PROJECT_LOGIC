@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/domain/game_identity.dart';
 import 'core/statistics/puzzle_attempt.dart';
 import 'core/progress/experience_event.dart';
+import 'core/progress/experience_points_policy.dart';
 import 'game_logic.dart';
 
 export 'core/domain/game_identity.dart' show GameMode, GameType, PuzzleSource;
@@ -678,7 +679,12 @@ class GameStorage {
       () => ExperienceEvent(
         id: 'completion:$attemptId',
         kind: ExperienceEventKind.puzzleCompleted,
-        points: 10,
+        points: ExperiencePointsPolicy.puzzleCompletion(
+          source: source,
+          difficulty: difficulty,
+          hintsUsed: hintsUsed,
+          repeated: existing != null,
+        ),
         occurredAt: completionTime,
         referenceId: attemptId,
       ),
@@ -723,6 +729,16 @@ class GameStorage {
     }
   }
 
+  Future<void> saveDailySnapshot(DailyPuzzleSnapshot snapshot) async {
+    final snapshots = await loadDailySnapshots();
+    snapshots[snapshot.storageKey] = snapshot;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(
+      _dailySnapshotsKey,
+      jsonEncode(snapshots.values.map((value) => value.toJson()).toList()),
+    );
+  }
+
   Future<List<PuzzleAttempt>> loadAttempts() async {
     final preferences = await SharedPreferences.getInstance();
     final raw = preferences.getString(_attemptsKey);
@@ -763,7 +779,11 @@ class GameStorage {
         'completion:${attempt.id}': ExperienceEvent(
           id: 'completion:${attempt.id}',
           kind: ExperienceEventKind.puzzleCompleted,
-          points: 10,
+          points: ExperiencePointsPolicy.puzzleCompletion(
+            source: attempt.mode,
+            difficulty: attempt.difficulty,
+            hintsUsed: attempt.hintsUsed,
+          ),
           occurredAt: attempt.completedAt,
           referenceId: attempt.id,
         ),

@@ -81,8 +81,7 @@ class BinaryPuzzleGenerator {
     final random = Random(boardResult.seed);
     final positions = <CellPosition>[
       for (var row = 0; row < size; row++)
-        for (var column = 0; column < size; column++)
-          CellPosition(row, column),
+        for (var column = 0; column < size; column++) CellPosition(row, column),
     ]..shuffle(random);
 
     final randomRank = <CellPosition, int>{
@@ -99,10 +98,10 @@ class BinaryPuzzleGenerator {
 
     while (positions.isNotEmpty && clueCount > targetClueCount) {
       positions.sort((first, second) {
-        final firstScore = rowClueCounts[first.row] +
-            columnClueCounts[first.column];
-        final secondScore = rowClueCounts[second.row] +
-            columnClueCounts[second.column];
+        final firstScore =
+            rowClueCounts[first.row] + columnClueCounts[first.column];
+        final secondScore =
+            rowClueCounts[second.row] + columnClueCounts[second.column];
         final scoreComparison = secondScore.compareTo(firstScore);
         if (scoreComparison != 0) return scoreComparison;
         return randomRank[first]!.compareTo(randomRank[second]!);

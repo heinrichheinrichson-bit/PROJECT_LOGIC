@@ -471,6 +471,6 @@ void main() {
     );
     final events = await storage.loadExperienceEvents();
     expect(events, hasLength(1));
-    expect(events.values.single.points, 10);
+    expect(events.values.single.points, 30);
   });
 }

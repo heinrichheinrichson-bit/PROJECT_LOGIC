@@ -80,8 +80,7 @@ class BinaryBoardGenerator {
 
     return BinaryBoardGenerationResult(
       board: [
-        for (final row in board)
-          [for (final value in row) value!],
+        for (final row in board) [for (final value in row) value!],
       ],
       seed: effectiveSeed,
       exploredStates: exploredStates,
@@ -96,21 +95,17 @@ class BinaryBoardGenerator {
 
     void build(int zeroCount, int oneCount) {
       if (current.length == size) {
-        if (zeroCount == maximumPerValue &&
-            oneCount == maximumPerValue) {
+        if (zeroCount == maximumPerValue && oneCount == maximumPerValue) {
           lines.add([...current]);
         }
         return;
       }
 
       for (final value in CellValue.values) {
-        final nextZeroCount =
-            zeroCount + (value == CellValue.zero ? 1 : 0);
-        final nextOneCount =
-            oneCount + (value == CellValue.one ? 1 : 0);
+        final nextZeroCount = zeroCount + (value == CellValue.zero ? 1 : 0);
+        final nextOneCount = oneCount + (value == CellValue.one ? 1 : 0);
 
-        if (nextZeroCount > maximumPerValue ||
-            nextOneCount > maximumPerValue) {
+        if (nextZeroCount > maximumPerValue || nextOneCount > maximumPerValue) {
           continue;
         }
 

@@ -90,7 +90,7 @@ void main() {
             (event) => event.kind == ExperienceEventKind.achievementUnlocked),
         hasLength(1));
     expect(second, hasLength(first.length));
-    expect(service.rank(snapshot, experienceEvents: second).currentXp, 50);
+    expect(service.rank(snapshot, experienceEvents: second).currentXp, 25);
   });
   test('daily missions reset through date-specific ids', () {
     final result = PuzzleResult(

@@ -47,10 +47,8 @@ class BinaryBoardValidator {
     List<CellValue?> values,
     int maximumPerValue,
   ) {
-    final zeroCount =
-        values.where((value) => value == CellValue.zero).length;
-    final oneCount =
-        values.where((value) => value == CellValue.one).length;
+    final zeroCount = values.where((value) => value == CellValue.zero).length;
+    final oneCount = values.where((value) => value == CellValue.one).length;
 
     if (zeroCount > maximumPerValue || oneCount > maximumPerValue) {
       return false;
@@ -71,9 +69,8 @@ class BinaryBoardValidator {
   bool _containsDuplicateCompleteRows(
     List<List<CellValue?>> board,
   ) {
-    final completeRows = board
-        .where((row) => row.every((value) => value != null))
-        .map(_lineKey);
+    final completeRows =
+        board.where((row) => row.every((value) => value != null)).map(_lineKey);
 
     return _containsDuplicateKeys(completeRows);
   }

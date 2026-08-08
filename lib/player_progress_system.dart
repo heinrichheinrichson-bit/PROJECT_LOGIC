@@ -2,6 +2,7 @@ import 'daily_challenge.dart';
 import 'game_logic.dart';
 import 'game_storage.dart';
 import 'core/progress/experience_event.dart';
+import 'core/progress/experience_points_policy.dart';
 
 enum ProgressGoalKind { achievement, mission }
 
@@ -491,7 +492,7 @@ class PlayerProgressService {
         () => ExperienceEvent(
           id: id,
           kind: ExperienceEventKind.achievementUnlocked,
-          points: 50,
+          points: ExperiencePointsPolicy.achievement(goal.id),
           occurredAt: now ?? DateTime.now(),
           referenceId: goal.id,
         ),

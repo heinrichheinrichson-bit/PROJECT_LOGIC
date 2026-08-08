@@ -13,6 +13,7 @@ import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/statistics/game_statistics.dart';
 import 'core/statistics/puzzle_attempt.dart';
 import 'daily_challenge.dart';
+import 'daily_snapshot_viewer.dart';
 import 'data_backup.dart';
 import 'game_logic.dart';
 import 'game_storage.dart';
@@ -681,16 +682,168 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
   final GameStorage _storage = GameStorage();
   final DailyChallengeService _service = const DailyChallengeService();
   Map<String, PuzzleResult> _results = const {};
+  Map<String, DailyPuzzleSnapshot> _snapshots = const {};
   bool _loading = true;
   bool _openingChallenge = false;
 
   Future<void> _refresh() async {
-    final results = await _storage.loadResults();
+    final values = await Future.wait([
+      _storage.loadResults(),
+      _storage.loadDailySnapshots(),
+    ]);
     if (!mounted) return;
     setState(() {
-      _results = results;
+      _results = values[0] as Map<String, PuzzleResult>;
+      _snapshots = values[1] as Map<String, DailyPuzzleSnapshot>;
       _loading = false;
     });
+  }
+
+  Future<void> _openCalendarEntry(DailyChallengeSummary summary) async {
+    final result = _results[_resultKey(summary)];
+    if (result == null) {
+      await _openChallenge(summary);
+      return;
+    }
+    var snapshot = _snapshots['${widget.gameType.name}:${summary.puzzleId}'];
+    snapshot ??= _snapshotForLegacyResult(summary, result);
+    if (snapshot == null) {
+      await _openChallenge(summary);
+      return;
+    }
+    if (!_snapshots.containsKey(snapshot.storageKey)) {
+      await _storage.saveDailySnapshot(snapshot);
+      _snapshots = {..._snapshots, snapshot.storageKey: snapshot};
+    }
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (viewerContext) => DailySnapshotViewerScreen(
+          snapshot: snapshot!,
+          onReplay: () {
+            Navigator.of(viewerContext).pop();
+            _openChallenge(summary);
+          },
+        ),
+      ),
+    );
+  }
+
+  DailyPuzzleSnapshot? _snapshotForLegacyResult(
+    DailyChallengeSummary summary,
+    PuzzleResult result,
+  ) {
+    Map<String, Object?> data;
+    switch (widget.gameType) {
+      case GameType.binairo:
+        final puzzle = _service.challengeFor(summary.day).definition;
+        data = {
+          'kind': 'binairo',
+          'solution': [
+            for (final row in puzzle.solution)
+              [for (final value in row) value == CellValue.zero ? 0 : 1],
+          ],
+          'clues': [
+            for (final clue in puzzle.clues) [clue.row, clue.column],
+          ],
+        };
+      case GameType.hashi:
+        final puzzle = const HashiGenerator()
+            .generate(
+              seed: summary.seed,
+              number: 1,
+              difficulty: summary.difficulty.index + 1,
+            )
+            .puzzle;
+        data = {
+          'kind': 'hashi',
+          'islands': [
+            for (final island in puzzle.islands)
+              [island.row, island.column, island.bridges],
+          ],
+          'bridges': [
+            for (final bridge in puzzle.solution)
+              [bridge.from, bridge.to, bridge.count],
+          ],
+        };
+      case GameType.slitherlink:
+        final puzzle = const SlitherlinkGenerator().generate(
+          seed: summary.seed,
+          difficulty: summary.difficulty,
+        );
+        data = {
+          'kind': 'slitherlink',
+          'rows': puzzle.rows,
+          'columns': puzzle.columns,
+          'clues': puzzle.clues,
+          'lines': puzzle.solution.toList()..sort(),
+        };
+      case GameType.futoshiki:
+        final puzzle = const FutoshikiGenerator().generate(
+          seed: summary.seed,
+          difficulty: summary.difficulty,
+        );
+        data = {
+          'kind': 'futoshiki',
+          'givens': puzzle.givens,
+          'solution': puzzle.solution,
+          'inequalities': [
+            for (final inequality in puzzle.inequalities)
+              [
+                inequality.firstRow,
+                inequality.firstColumn,
+                inequality.secondRow,
+                inequality.secondColumn,
+                inequality.firstIsLess,
+              ],
+          ],
+        };
+      case GameType.hitori:
+        final puzzle = const HitoriGenerator().generate(
+          seed: summary.seed,
+          difficulty: summary.difficulty,
+          id: summary.puzzleId,
+          title: 'Tagesrätsel',
+        );
+        data = {
+          'kind': 'hitori',
+          'grid': puzzle.grid,
+          'shaded': [
+            for (final cell in puzzle.solution) [cell.$1, cell.$2],
+          ],
+        };
+      case GameType.tents:
+        final puzzle = const TentsGenerator().generate(
+          seed: summary.seed,
+          difficulty: summary.difficulty,
+          size: summary.size,
+          id: summary.puzzleId,
+          title: 'Tagesrätsel',
+        );
+        data = {
+          'kind': 'tents',
+          'trees': [
+            for (final cell in puzzle.trees) [cell.$1, cell.$2]
+          ],
+          'rowCounts': puzzle.rowCounts,
+          'columnCounts': puzzle.columnCounts,
+          'tents': [
+            for (final cell in puzzle.solution) [cell.$1, cell.$2]
+          ],
+        };
+      case GameType.kakuro:
+      case GameType.nurikabe:
+        return null;
+    }
+    return DailyPuzzleSnapshot(
+      puzzleId: summary.puzzleId,
+      gameType: widget.gameType,
+      difficulty: summary.difficulty,
+      boardSize: summary.size,
+      completedAt: result.completedAt,
+      elapsedSeconds: result.bestSeconds,
+      puzzleData: data,
+    );
   }
 
   @override
@@ -928,15 +1081,17 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 FilledButton.icon(
-                                  onPressed: () => _openChallenge(today),
+                                  onPressed: () => todayCompleted
+                                      ? _openCalendarEntry(today)
+                                      : _openChallenge(today),
                                   icon: Icon(
                                     todayCompleted
-                                        ? Icons.replay_rounded
+                                        ? Icons.visibility_rounded
                                         : Icons.play_arrow_rounded,
                                   ),
                                   label: Text(
                                     todayCompleted
-                                        ? 'Heute erneut spielen'
+                                        ? 'Gelöstes Brett ansehen'
                                         : 'Tagesrätsel starten',
                                   ),
                                 ),
@@ -984,7 +1139,7 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
                                   challenge: challenge,
                                   completed: completed,
                                   isToday: index == 0,
-                                  onTap: () => _openChallenge(challenge),
+                                  onTap: () => _openCalendarEntry(challenge),
                                 );
                               },
                             );

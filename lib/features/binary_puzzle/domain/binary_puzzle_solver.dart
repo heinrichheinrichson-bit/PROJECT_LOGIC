@@ -67,8 +67,7 @@ class BinaryPuzzleSolver {
       final empty = _chooseNextEmptyCell(board);
       if (empty == null) {
         solutions.add([
-          for (final row in board)
-            [for (final value in row) value!],
+          for (final row in board) [for (final value in row) value!],
         ]);
         return;
       }
@@ -104,8 +103,7 @@ class BinaryPuzzleSolver {
       for (var column = 0; column < board.length; column++) {
         if (board[row][column] != null) continue;
 
-        final rowScore =
-            board[row].where((value) => value != null).length;
+        final rowScore = board[row].where((value) => value != null).length;
         final columnScore = board
             .map((line) => line[column])
             .where((value) => value != null)
