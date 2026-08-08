@@ -70,7 +70,43 @@ void main() {
     final rank = service.rank(snapshot);
 
     expect(rank.level, greaterThanOrEqualTo(2));
-    expect(rank.nextLevelXp, 200);
+    expect(rank.level, 2);
+    expect(rank.nextLevelXp, 250);
+  });
+
+  test('level requirements rise gently and are capped long-term', () {
+    expect(PlayerProgressService.xpRequiredForLevel(1), 200);
+    expect(PlayerProgressService.xpRequiredForLevel(2), 250);
+    expect(PlayerProgressService.xpRequiredForLevel(5), 400);
+    expect(PlayerProgressService.xpRequiredForLevel(9), 600);
+    expect(PlayerProgressService.xpRequiredForLevel(10), 650);
+    expect(PlayerProgressService.xpRequiredForLevel(20), 950);
+    expect(PlayerProgressService.xpRequiredForLevel(30), 1200);
+    expect(PlayerProgressService.xpRequiredForLevel(100), 1500);
+  });
+
+  test('rank keeps all earned xp across variable level boundaries', () {
+    const snapshot = ProgressSnapshot(
+      results: {},
+      progress: PlayerProgress.empty(),
+      catalogPuzzleIds: {},
+    );
+    final events = [
+      ExperienceEvent(
+        id: 'level-test',
+        kind: ExperienceEventKind.puzzleCompleted,
+        points: 475,
+        occurredAt: DateTime(2026, 8, 8),
+        referenceId: 'test',
+      ),
+    ];
+
+    final rank = service.rank(snapshot, experienceEvents: events);
+
+    expect(rank.level, 3);
+    expect(rank.currentXp, 25);
+    expect(rank.nextLevelXp, 300);
+    expect(PlayerProgressService.totalXpRequiredForLevel(rank.level), 450);
   });
 
   test('achievement XP is awarded once and keeps its stored value', () {

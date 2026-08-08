@@ -178,6 +178,25 @@ class PlayerRank {
 class PlayerProgressService {
   const PlayerProgressService();
 
+  /// XP required to advance from [level] to the following level.
+  /// Early levels rise clearly; later growth is gentler and capped.
+  static int xpRequiredForLevel(int level) {
+    if (level < 1) throw ArgumentError.value(level, 'level');
+    if (level <= 9) return 150 + level * 50;
+    if (level <= 19) return 650 + (level - 10) * 25;
+    if (level <= 29) return 950 + (level - 20) * 25;
+    return (1200 + (level - 30) * 25).clamp(1200, 1500);
+  }
+
+  static int totalXpRequiredForLevel(int level) {
+    if (level < 1) throw ArgumentError.value(level, 'level');
+    var total = 0;
+    for (var currentLevel = 1; currentLevel < level; currentLevel++) {
+      total += xpRequiredForLevel(currentLevel);
+    }
+    return total;
+  }
+
   List<ProgressGoal> achievements(ProgressSnapshot snapshot) => [
         _achievement(
           id: 'first-solve',
@@ -697,13 +716,19 @@ class PlayerProgressService {
         ? snapshot.totalCompleted * 10 +
             achievements(snapshot).where((goal) => goal.isCompleted).length * 50
         : experienceEvents.fold<int>(0, (sum, event) => sum + event.points);
-    final level = xp ~/ 200 + 1;
-    final currentXp = xp % 200;
+    var level = 1;
+    var currentXp = xp;
+    var requiredXp = xpRequiredForLevel(level);
+    while (currentXp >= requiredXp) {
+      currentXp -= requiredXp;
+      level++;
+      requiredXp = xpRequiredForLevel(level);
+    }
     return PlayerRank(
       level: level,
       title: _rankTitle(level),
       currentXp: currentXp,
-      nextLevelXp: 200,
+      nextLevelXp: requiredXp,
     );
   }
 
@@ -744,9 +769,11 @@ class PlayerProgressService {
       );
 
   String _rankTitle(int level) {
-    if (level >= 10) return 'Logikmeister';
-    if (level >= 7) return 'Rätselprofi';
-    if (level >= 4) return 'Fortgeschrittener Denker';
+    if (level >= 50) return 'Logiklegende';
+    if (level >= 30) return 'Meisterdenker';
+    if (level >= 20) return 'Rätselstratege';
+    if (level >= 10) return 'Logiktalent';
+    if (level >= 5) return 'Musterfinder';
     if (level >= 2) return 'Logikfreund';
     return 'Neugieriger Denker';
   }

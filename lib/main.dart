@@ -3370,7 +3370,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     );
     final celebratedLevel = await storage.loadCelebratedLevel();
     final reachedNewLevel = freshRank.level > celebratedLevel;
-    if (reachedNewLevel) {
+    if (freshRank.level != celebratedLevel) {
       await storage.saveCelebratedLevel(freshRank.level);
     }
     if (!mounted) return;
