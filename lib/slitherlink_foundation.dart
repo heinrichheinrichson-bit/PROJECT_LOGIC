@@ -13,6 +13,7 @@ import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
+import 'core/presentation/xp_award_badge.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'game_storage.dart';
 
@@ -1223,8 +1224,9 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
     PuzzleInteractionFeedback.success(context);
     final countsForTesting =
         _developerCompletion && _gameMode == GameMode.daily;
+    int? earnedXp;
     if (!_developerCompletion || countsForTesting) {
-      await GameStorage().recordCompletion(
+      earnedXp = await GameStorage().recordCompletion(
         puzzleId: widget.puzzle.id,
         elapsedSeconds: _elapsedSeconds,
         source: _gameMode,
@@ -1276,6 +1278,10 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                 '${_formatTime(_elapsedSeconds)} · $_moves Züge · $_hintsUsed Hinweise',
                 textAlign: TextAlign.center,
               ),
+            ],
+            if (earnedXp != null) ...[
+              const SizedBox(height: 12),
+              XpAwardBadge(points: earnedXp),
             ],
           ],
         ),

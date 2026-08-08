@@ -11,6 +11,7 @@ import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
+import 'core/presentation/xp_award_badge.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/tents/domain/tents_generator.dart';
 import 'features/tents/domain/tents_catalog.dart';
@@ -732,8 +733,9 @@ class _TentsGameScreenState extends State<TentsGameScreen>
     PuzzleInteractionFeedback.success(context);
     await TentsGameStore().clear();
     final countsForTesting = test && widget.mode == GameMode.daily;
+    int? earnedXp;
     if (!test || countsForTesting) {
-      await GameStorage().recordCompletion(
+      earnedXp = await GameStorage().recordCompletion(
           puzzleId: widget.puzzle.id,
           elapsedSeconds: _elapsed,
           source: widget.mode,
@@ -765,8 +767,14 @@ class _TentsGameScreenState extends State<TentsGameScreen>
         builder: (dialog) => AlertDialog(
                 icon: const Icon(Icons.emoji_events_outlined),
                 title: const Text('Lager vollst\u00e4ndig!'),
-                content: Text(
-                    '${_time(_elapsed)} \u00b7 $_moves Z\u00fcge${test ? countsForTesting ? '\nTestabschluss \u00b7 im Kalender gewertet' : '\nTestabschluss \u00b7 keine Statistik' : ''}'),
+                content: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Text(
+                      '${_time(_elapsed)} \u00b7 $_moves Z\u00fcge${test ? countsForTesting ? '\nTestabschluss \u00b7 im Kalender gewertet' : '\nTestabschluss \u00b7 keine Statistik' : ''}'),
+                  if (earnedXp != null) ...[
+                    const SizedBox(height: 12),
+                    XpAwardBadge(points: earnedXp),
+                  ],
+                ]),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(dialog),

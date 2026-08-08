@@ -598,7 +598,7 @@ class GameStorage {
     return migrated;
   }
 
-  Future<void> recordCompletion({
+  Future<int> recordCompletion({
     required String puzzleId,
     required int elapsedSeconds,
     required PuzzleSource source,
@@ -674,17 +674,18 @@ class GameStorage {
     );
 
     final experienceEvents = await loadExperienceEvents();
+    final completionXp = ExperiencePointsPolicy.puzzleCompletion(
+      source: source,
+      difficulty: difficulty,
+      hintsUsed: hintsUsed,
+      repeated: existing != null,
+    );
     experienceEvents.putIfAbsent(
       'completion:$attemptId',
       () => ExperienceEvent(
         id: 'completion:$attemptId',
         kind: ExperienceEventKind.puzzleCompleted,
-        points: ExperiencePointsPolicy.puzzleCompletion(
-          source: source,
-          difficulty: difficulty,
-          hintsUsed: hintsUsed,
-          repeated: existing != null,
-        ),
+        points: completionXp,
         occurredAt: completionTime,
         referenceId: attemptId,
       ),
@@ -708,6 +709,7 @@ class GameStorage {
         jsonEncode(snapshots.values.map((value) => value.toJson()).toList()),
       );
     }
+    return completionXp;
   }
 
   Future<Map<String, DailyPuzzleSnapshot>> loadDailySnapshots() async {

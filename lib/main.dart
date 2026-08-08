@@ -7,9 +7,11 @@ import 'package:flutter/services.dart';
 import 'app_preferences.dart';
 import 'app_theme.dart';
 import 'core/monetization/hint_economy.dart';
+import 'core/progress/experience_event.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
+import 'core/presentation/xp_award_badge.dart';
 import 'core/statistics/game_statistics.dart';
 import 'core/statistics/puzzle_attempt.dart';
 import 'daily_challenge.dart';
@@ -2526,6 +2528,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
 
   Future<void> _showSolvedDialog() async {
     int? previousBestSeconds;
+    int? earnedXp;
     String? collectionProgress;
     if (!_completionRecorded) {
       _completionRecorded = true;
@@ -2547,7 +2550,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
               )
               .bestSeconds;
         }
-        await _storage.recordCompletion(
+        earnedXp = await _storage.recordCompletion(
           puzzleId: widget.definition.id,
           elapsedSeconds: elapsedSeconds,
           source: widget.source,
@@ -2633,6 +2636,10 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                           : 'Testabschluss · keine Statistik',
                     ),
                   ),
+                if (earnedXp != null) ...[
+                  const SizedBox(height: 10),
+                  XpAwardBadge(points: earnedXp),
+                ],
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -3310,6 +3317,8 @@ class PlayerProfileScreen extends StatefulWidget {
 
 class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
   PlayerRank? _persistedRank;
+  List<ExperienceEvent> _experienceEvents = const [];
+  List<PuzzleAttempt> _attempts = const [];
 
   ProgressSnapshot get _snapshot => ProgressSnapshot(
         results: widget.results,
@@ -3338,9 +3347,12 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     final synchronized =
         service.synchronizeAchievementXp(_snapshot, existing.values);
     await storage.saveExperienceEvents(synchronized);
+    final attempts = await storage.loadAttempts();
     if (!mounted) return;
     setState(() {
       _persistedRank = service.rank(_snapshot, experienceEvents: synchronized);
+      _experienceEvents = synchronized;
+      _attempts = attempts;
     });
   }
 
@@ -3360,6 +3372,14 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
       ..sort((a, b) => b.progress.compareTo(a.progress));
     final completedAchievements =
         achievements.where((goal) => goal.isCompleted).toList();
+    final achievementTitles = {
+      for (final goal in achievements) goal.id: goal.title,
+    };
+    final attemptsById = {for (final attempt in _attempts) attempt.id: attempt};
+    final recentXp = _experienceEvents.toList()
+      ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
+    final totalXp =
+        _experienceEvents.fold<int>(0, (sum, event) => sum + event.points);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dein Fortschritt')),
@@ -3408,13 +3428,53 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '${rank.currentXp} von ${rank.nextLevelXp} XP bis zum nächsten Level',
+                            '${rank.currentXp} von ${rank.nextLevelXp} XP in diesem Level',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Insgesamt $totalXp XP · noch ${rank.nextLevelXp - rank.currentXp} XP bis Level ${rank.level + 1}',
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
                       ),
                     ),
                   ),
+                  if (recentXp.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Card(
+                      child: ExpansionTile(
+                        leading: const Icon(Icons.auto_awesome_rounded),
+                        title: const Text('Deine letzten XP'),
+                        subtitle: const Text('Jede Gutschrift nachvollziehen'),
+                        children: [
+                          for (final event in recentXp.take(6))
+                            ListTile(
+                              dense: true,
+                              leading: Icon(event.kind ==
+                                      ExperienceEventKind.achievementUnlocked
+                                  ? Icons.emoji_events_outlined
+                                  : Icons.extension_outlined),
+                              title: Text(_xpEventTitle(
+                                event,
+                                attemptsById,
+                                achievementTitles,
+                              )),
+                              subtitle: Text(_xpEventDetail(
+                                event,
+                                attemptsById,
+                              )),
+                              trailing: Text(
+                                '+${event.points} XP',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   Text(
                     'Heute',
@@ -3502,6 +3562,44 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
       ),
     );
   }
+}
+
+String _xpEventTitle(
+  ExperienceEvent event,
+  Map<String, PuzzleAttempt> attempts,
+  Map<String, String> achievementTitles,
+) {
+  if (event.kind == ExperienceEventKind.achievementUnlocked) {
+    return achievementTitles[event.referenceId] ?? 'Erfolg freigeschaltet';
+  }
+  final attempt = attempts[event.referenceId];
+  if (attempt == null) return 'Rätsel abgeschlossen';
+  final mode = switch (attempt.mode) {
+    GameMode.catalog => 'Rätselsammlung',
+    GameMode.generated => 'Zufallsrätsel',
+    GameMode.daily => 'Tagesrätsel',
+    GameMode.event => 'Ereignisrätsel',
+    GameMode.tutorial => 'Einführung',
+  };
+  return '${attempt.gameType.label} · $mode';
+}
+
+String _xpEventDetail(
+  ExperienceEvent event,
+  Map<String, PuzzleAttempt> attempts,
+) {
+  if (event.kind == ExperienceEventKind.achievementUnlocked) {
+    return 'Einmaliger Erfolgsbonus';
+  }
+  final attempt = attempts[event.referenceId];
+  if (attempt == null) return 'Abschlussbonus';
+  if (event.points == 0) return 'Bereits gewertetes Tagesrätsel';
+  if (event.points == 5) return 'Wiederholungsbonus';
+  final noHintBonus = attempt.hintsUsed == 0 ? 10 : 0;
+  final base = event.points - noHintBonus;
+  return noHintBonus == 0
+      ? '${attempt.difficulty.label} · $base XP Grundwert'
+      : '${attempt.difficulty.label} · $base Grundwert + 10 ohne Hinweis';
 }
 
 class _ProgressGoalCard extends StatelessWidget {

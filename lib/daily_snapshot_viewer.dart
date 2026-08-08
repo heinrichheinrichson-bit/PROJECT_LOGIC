@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'app_theme.dart';
 import 'game_storage.dart';
 
 class DailySnapshotViewerScreen extends StatelessWidget {
@@ -113,7 +114,7 @@ class _SnapshotBoard extends StatelessWidget {
         ),
       );
     }
-    final cells = _cells();
+    final cells = _cells(context);
     final size = snapshot.boardSize;
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -129,12 +130,14 @@ class _SnapshotBoard extends StatelessWidget {
     );
   }
 
-  List<Widget> _cells() {
+  List<Widget> _cells(BuildContext context) {
     final data = snapshot.puzzleData;
     final size = snapshot.boardSize;
     final kind = data['kind'];
     final colors = _SnapshotColors();
     if (kind == 'binairo') {
+      final palette =
+          AppTheme.boardPalette('binairo', Theme.of(context).brightness);
       final solution = _matrix(data['solution']);
       final clues = _pairs(data['clues']).map((e) => '${e.$1}:${e.$2}').toSet();
       return [
@@ -142,8 +145,16 @@ class _SnapshotBoard extends StatelessWidget {
           for (var column = 0; column < size; column++)
             _Cell(
               label: '${solution[row][column]}',
-              background:
-                  solution[row][column] == 0 ? colors.teal : colors.indigo,
+              background: clues.contains('$row:$column')
+                  ? palette.cellStrong
+                  : Color.alphaBlend(
+                      (solution[row][column] == 0
+                              ? palette.accent
+                              : palette.accentAlt)
+                          .withValues(alpha: .48),
+                      palette.board,
+                    ),
+              foreground: palette.foreground,
               emphasized: clues.contains('$row:$column'),
             ),
       ];
@@ -216,10 +227,8 @@ class _Cell extends StatelessWidget {
         decoration: BoxDecoration(
           color: background,
           border: Border.all(
-            color: emphasized
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).dividerColor.withValues(alpha: .45),
-            width: emphasized ? 2 : .5,
+            color: Theme.of(context).dividerColor.withValues(alpha: .45),
+            width: .6,
           ),
         ),
         alignment: Alignment.center,
@@ -230,7 +239,7 @@ class _Cell extends StatelessWidget {
               label,
               style: TextStyle(
                 color: foreground,
-                fontWeight: FontWeight.w800,
+                fontWeight: emphasized ? FontWeight.w900 : FontWeight.w700,
                 fontSize: 22,
               ),
             ),

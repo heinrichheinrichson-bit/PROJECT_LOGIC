@@ -11,6 +11,7 @@ import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
+import 'core/presentation/xp_award_badge.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'features/futoshiki/domain/futoshiki_generator.dart';
 import 'features/futoshiki/domain/futoshiki_puzzle.dart';
@@ -942,8 +943,9 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
     setState(() => _completionShown = true);
     PuzzleInteractionFeedback.success(context);
     final countsForTesting = testCompletion && widget.mode == GameMode.daily;
+    int? earnedXp;
     if (!testCompletion || countsForTesting) {
-      await GameStorage().recordCompletion(
+      earnedXp = await GameStorage().recordCompletion(
         puzzleId: widget.puzzle.id,
         elapsedSeconds: _elapsedSeconds,
         source: widget.mode,
@@ -986,6 +988,10 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
             const Text('Alle Zahlen und Ungleichheiten stimmen.'),
             const SizedBox(height: 16),
             Text('${_formatTime(_elapsedSeconds)} · $_moves Züge'),
+            if (earnedXp != null) ...[
+              const SizedBox(height: 12),
+              XpAwardBadge(points: earnedXp),
+            ],
             if (testCompletion) ...[
               const SizedBox(height: 12),
               Text(

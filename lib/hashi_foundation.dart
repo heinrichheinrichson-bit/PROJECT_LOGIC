@@ -12,6 +12,7 @@ import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
+import 'core/presentation/xp_award_badge.dart';
 import 'core/statistics/game_statistics.dart';
 import 'app_preferences.dart';
 import 'game_storage.dart';
@@ -1487,8 +1488,9 @@ class _HashiGameScreenState extends State<HashiGameScreen>
     }
     final countsForTesting =
         _developerCompletion && widget.mode == GameMode.daily;
+    int? earnedXp;
     if (!_developerCompletion || countsForTesting) {
-      await _gameStorage.recordCompletion(
+      earnedXp = await _gameStorage.recordCompletion(
         puzzleId: widget.puzzle.id,
         elapsedSeconds: _elapsedSeconds,
         gameType: GameType.hashi,
@@ -1547,6 +1549,10 @@ class _HashiGameScreenState extends State<HashiGameScreen>
                       : 'Testabschluss · keine Statistik',
                 ),
               ),
+              const SizedBox(height: 10),
+            ],
+            if (earnedXp != null) ...[
+              XpAwardBadge(points: earnedXp),
               const SizedBox(height: 10),
             ],
             Row(
