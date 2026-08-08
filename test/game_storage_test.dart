@@ -550,7 +550,7 @@ void main() {
       damagedRaw,
     );
     expect(
-      jsonDecode(preferences.getString('daily_puzzle_snapshots_v1')! as String),
+      jsonDecode(preferences.getString('daily_puzzle_snapshots_v1')!),
       hasLength(1),
     );
   });
