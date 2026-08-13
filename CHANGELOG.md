@@ -592,3 +592,10 @@
 - Je vier neue Rätsel für Leicht, Mittel und Schwer ergänzt.
 - Alle neuen Lösungen auf Zahlenregeln, eine einzige geschlossene Schleife und Eindeutigkeit geprüft.
 - Paketversion auf 0.8.25+54 erhöht.
+## v0.8.26 – Größere Rätselsammlungen
+
+- Futoshiki-Sammlung von 60 auf 96 Rätsel erweitert: je 24 in allen vier Kapiteln.
+- Hitori- und Zelte-Sammlungen von jeweils 60 auf jeweils 72 Rätsel erweitert.
+- Bestehende Rätsel-IDs und gespeicherte Fortschritte bleiben unverändert.
+- Alle neuen Katalogrätsel werden mit den jeweiligen Solvern auf eindeutige Lösbarkeit geprüft.
+- Paketversion auf 0.8.26+55 erhöht.

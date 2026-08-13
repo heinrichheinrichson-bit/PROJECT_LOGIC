@@ -214,7 +214,7 @@ void main() {
       280,
     );
     expect(find.text('R\u00e4tselsammlung'), findsOneWidget);
-    expect(find.textContaining('60 feste Expeditionen'), findsOneWidget);
+    expect(find.textContaining('72 feste Expeditionen'), findsOneWidget);
 
     await tester.scrollUntilVisible(
       find.text('Zelte-&-B\u00e4ume-Statistik'),

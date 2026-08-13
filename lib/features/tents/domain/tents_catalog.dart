@@ -10,7 +10,7 @@ const tentsChapterTitles = {
 
 final List<TentsPuzzle> tentsPuzzleCatalog = [
   for (final difficulty in PuzzleDifficulty.values)
-    for (var index = 0; index < 20; index++)
+    for (var index = 0; index < 24; index++)
       const TentsGenerator().generate(
         seed: 23000 + difficulty.index * 100 + index,
         difficulty: difficulty,
@@ -40,4 +40,8 @@ const _tentsPuzzleTitles = <String>[
   'Abgelegener Platz',
   'Letzte Wegmarken',
   'Expedition vollendet',
+  'Hinter dem Hügel',
+  'Verborgener Lagerplatz',
+  'Unter dichtem Blätterdach',
+  'Letztes Nachtlager',
 ];

@@ -128,7 +128,7 @@ class SavedFutoshikiGame {
 
 final List<FutoshikiPuzzle> futoshikiPuzzleCatalog = [
   for (final difficulty in PuzzleDifficulty.values)
-    for (var index = 0; index < 15; index++)
+    for (var index = 0; index < 24; index++)
       const FutoshikiGenerator().generate(
         seed: 8100 + difficulty.index * 100 + index,
         difficulty: difficulty,
@@ -148,10 +148,19 @@ final List<FutoshikiPuzzle> futoshikiPuzzleCatalog = [
           11 => 'Letzte Einordnung',
           12 => 'Neue Zahlenkette',
           13 => 'Verborgener Vergleich',
-          _ => 'Sicherer Abschluss',
+          14 => 'Sicherer Abschluss',
+          15 => 'Geordnete Schritte',
+          16 => 'Feine Unterschiede',
+          17 => 'Klare Richtung',
+          18 => 'Versetzte Ordnung',
+          19 => 'Logische Folge',
+          20 => 'Verknüpfte Zahlen',
+          21 => 'Ruhige Entscheidung',
+          22 => 'Dichter Vergleich',
+          _ => 'Letzte Beziehung',
         },
       ),
-  for (var index = 0; index < 15; index++)
+  for (var index = 0; index < 24; index++)
     const FutoshikiGenerator().generate(
       seed: 8500 + index,
       difficulty: PuzzleDifficulty.hard,
@@ -172,7 +181,16 @@ final List<FutoshikiPuzzle> futoshikiPuzzleCatalog = [
         11 => 'Weite Ordnung',
         12 => 'Großer Zusammenhang',
         13 => 'Knappe Vergleiche',
-        _ => 'Letzte Meisterschaft',
+        14 => 'Letzte Meisterschaft',
+        15 => 'Sieben Verbindungen',
+        16 => 'Große Zahlenwege',
+        17 => 'Verflochtene Ordnung',
+        18 => 'Meisterhafte Kette',
+        19 => 'Enges Gefälle',
+        20 => 'Weite Beziehungen',
+        21 => 'Verdeckte Richtung',
+        22 => 'Dichte Meisterlogik',
+        _ => 'Finaler Vergleich',
       },
     ),
 ];

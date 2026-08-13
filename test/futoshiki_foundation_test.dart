@@ -46,10 +46,10 @@ void main() {
   });
 
   test('collection contains expanded distinct puzzle chapters', () {
-    expect(futoshikiPuzzleCatalog, hasLength(60));
+    expect(futoshikiPuzzleCatalog, hasLength(96));
     expect(
       futoshikiPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
-      hasLength(60),
+      hasLength(96),
     );
     for (final chapter in const [
       (difficulty: PuzzleDifficulty.easy, size: 4),
@@ -61,7 +61,7 @@ void main() {
         futoshikiPuzzleCatalog.where((puzzle) =>
             puzzle.difficulty == chapter.difficulty &&
             puzzle.size == chapter.size),
-        hasLength(15),
+        hasLength(24),
       );
     }
     const solver = FutoshikiSolver();
