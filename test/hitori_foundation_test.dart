@@ -432,4 +432,25 @@ void main() {
     expect(restored.rewardedHints, 1);
     expect(restored.mode, GameMode.daily);
   });
+
+  test('completed Hitori save is not offered as an open game', () async {
+    final puzzle = const HitoriGenerator().generate(
+      seed: 9111,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    final store = HitoriGameStore();
+    await store.save(SavedHitoriGame(
+      puzzle: puzzle,
+      marks: {
+        for (final cell in puzzle.solution) cell: HitoriCellMark.shaded,
+      },
+      elapsedSeconds: 45,
+      moves: puzzle.solution.length,
+      hintsRemaining: 3,
+    ));
+
+    expect(await store.load(), isNull);
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.containsKey('active_hitori_game_v1'), isFalse);
+  });
 }

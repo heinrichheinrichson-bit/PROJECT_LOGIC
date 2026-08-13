@@ -5,6 +5,12 @@ import 'core/progress/experience_event.dart';
 import 'core/progress/experience_points_policy.dart';
 import 'core/statistics/puzzle_attempt.dart';
 
+DateTime _weekStart(DateTime value) => DateTime(
+      value.year,
+      value.month,
+      value.day - value.weekday + 1,
+    );
+
 enum ProgressGoalKind { achievement, mission }
 
 class ProgressSnapshot {
@@ -86,9 +92,8 @@ class ProgressSnapshot {
       .toList(growable: false);
 
   List<PuzzleAttempt> attemptsInWeek(DateTime date) {
-    final day = DateTime(date.year, date.month, date.day);
-    final monday = day.subtract(Duration(days: day.weekday - 1));
-    final sunday = monday.add(const Duration(days: 7));
+    final monday = _weekStart(date);
+    final sunday = DateTime(monday.year, monday.month, monday.day + 7);
     return attempts.where((attempt) {
       final completed = DateTime(
         attempt.completedAt.year,
@@ -114,9 +119,8 @@ class ProgressSnapshot {
   }
 
   int activeDaysInWeek(DateTime date) {
-    final day = DateTime(date.year, date.month, date.day);
-    final monday = day.subtract(Duration(days: day.weekday - 1));
-    final sunday = monday.add(const Duration(days: 6));
+    final monday = _weekStart(date);
+    final sunday = DateTime(monday.year, monday.month, monday.day + 6);
     return progress.completedDays
         .map(DateTime.tryParse)
         .whereType<DateTime>()
@@ -503,7 +507,7 @@ class PlayerProgressService {
     DateTime? date,
   }) {
     final today = date ?? DateTime.now();
-    final weekStart = today.subtract(Duration(days: today.weekday - 1));
+    final weekStart = _weekStart(today);
     final weekId = _dateKey(weekStart);
     final attempts = snapshot.attemptsInWeek(today);
     final activeDays = attempts.isEmpty
@@ -657,7 +661,7 @@ class PlayerProgressService {
 
     final weeks = <String, DateTime>{};
     for (final day in dates.values) {
-      final start = day.subtract(Duration(days: day.weekday - 1));
+      final start = _weekStart(day);
       weeks[_dateKey(start)] = start;
     }
     for (final week in weeks.values) {

@@ -172,6 +172,27 @@ void main() {
     expect(restored.autoGrass, isFalse);
   });
 
+  test('completed Tents save is not offered as an open game', () async {
+    final puzzle = const TentsGenerator().generate(
+      seed: 19192,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    final store = TentsGameStore();
+    await store.save(SavedTentsGame(
+      puzzle: puzzle,
+      marks: {
+        for (final cell in puzzle.solution) cell: TentsCellMark.tent,
+      },
+      elapsedSeconds: 50,
+      moves: puzzle.solution.length,
+      hintsRemaining: 3,
+    ));
+
+    expect(await store.load(), isNull);
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.containsKey('active_tents_game_v1'), isFalse);
+  });
+
   testWidgets('game fits a narrow phone and supports test completion',
       (tester) async {
     tester.view.physicalSize = const Size(360, 800);

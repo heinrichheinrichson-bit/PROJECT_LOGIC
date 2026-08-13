@@ -1,3 +1,14 @@
+## v0.8.11 – Klare Ziele und stabile Wochen
+
+- XP-Verlauf unterscheidet Tagesziele, Wochenziele und ihre jeweiligen Komplettboni eindeutig.
+- Zielnamen im XP-Verlauf entsprechen nun exakt den sichtbaren Karten, darunter „Ganz ohne Hilfe“ und „Aus eigener Kraft“.
+- Wochenanfang und Wochenfilter verwenden reine Kalenderdaten und bleiben auch beim Wechsel zwischen Sommer- und Winterzeit stabil.
+- Jahresweite Regressionstests für Tages- und Wochenrotation ergänzt.
+- Schutztests ergänzt, damit abgeschlossene Futoshiki-, Hitori- und Zelte-Spielstände nicht erneut als offene Spiele angeboten werden.
+- Hashi-Brücken lassen sich zusätzlich durch Ziehen von einer Insel zur nächsten setzen und weiterschalten; die bisherige Tippbedienung bleibt erhalten.
+- Bestehende XP, Ziele und Spielstände werden nicht verändert.
+- Paketversion auf 0.8.11+40 erhöht.
+
 ## v0.8.10 – Korrekte Tagesziel-Boni
 
 - Tages- und Wochenzielrotation verwendet reine Kalendertage und ist damit unabhängig von Uhrzeit und Sommerzeit.

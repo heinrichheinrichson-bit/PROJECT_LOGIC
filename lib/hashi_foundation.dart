@@ -1422,9 +1422,19 @@ class _HashiGameScreenState extends State<HashiGameScreen>
     }
 
     final first = _selectedIsland!;
+    await _connectIslands(first, index);
+  }
+
+  Future<void> _handleIslandDrag(int first, int second) async {
+    if (_completionShown || first == second) return;
+    PuzzleInteractionFeedback.selection(context);
+    await _connectIslands(first, second);
+  }
+
+  Future<void> _connectIslands(int first, int second) async {
     final previous = _game;
-    final previousCount = previous.bridgeCountBetween(first, index);
-    final next = previous.cycleConnection(first, index);
+    final previousCount = previous.bridgeCountBetween(first, second);
+    final next = previous.cycleConnection(first, second);
     setState(() {
       if (!identical(previous, next)) {
         _history.add(previous);
@@ -1436,7 +1446,7 @@ class _HashiGameScreenState extends State<HashiGameScreen>
       _selectedIsland = null;
     });
     if (!identical(previous, next)) {
-      final nextCount = next.bridgeCountBetween(first, index);
+      final nextCount = next.bridgeCountBetween(first, second);
       _showActionMessage(
         nextCount == 0
             ? 'Brücke entfernt'
@@ -2172,6 +2182,7 @@ class _HashiGameScreenState extends State<HashiGameScreen>
                                   ? _game.incorrectIslandIndices
                                   : const <int>{},
                               onIslandTap: _handleIslandTap,
+                              onIslandDrag: _handleIslandDrag,
                               onBridgeTap: _handleBridgeTap,
                             ),
                           ),
@@ -2294,6 +2305,7 @@ class HashiBoard extends StatelessWidget {
     this.incorrectBridges = const [],
     this.incorrectIslands = const <int>{},
     this.onIslandTap,
+    this.onIslandDrag,
     this.onBridgeTap,
     super.key,
   });
@@ -2306,7 +2318,24 @@ class HashiBoard extends StatelessWidget {
   final List<HashiBridge> incorrectBridges;
   final Set<int> incorrectIslands;
   final ValueChanged<int>? onIslandTap;
+  final void Function(int first, int second)? onIslandDrag;
   final ValueChanged<HashiBridge>? onBridgeTap;
+
+  int? _islandAtPosition(Offset position, Size size) {
+    final cell = size.shortestSide / puzzle.size;
+    final offsetX = (size.width - cell * puzzle.size) / 2;
+    final offsetY = (size.height - cell * puzzle.size) / 2;
+    final radius = cell * 0.42;
+    for (var index = 0; index < puzzle.islands.length; index++) {
+      final island = puzzle.islands[index];
+      final center = Offset(
+        offsetX + (island.column + 0.5) * cell,
+        offsetY + (island.row + 0.5) * cell,
+      );
+      if ((position - center).distance <= radius) return index;
+    }
+    return null;
+  }
 
   HashiBridge? _bridgeAtPosition(Offset position, Size size) {
     if (bridges.isEmpty) return null;
@@ -2361,61 +2390,90 @@ class HashiBoard extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final side = math.min(constraints.maxWidth, constraints.maxHeight);
+        int? dragStart;
         return SizedBox.square(
           dimension: side,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTapUp: onBridgeTap == null
-                      ? null
-                      : (details) {
-                          final bridge = _bridgeAtPosition(
-                            details.localPosition,
-                            Size.square(side),
-                          );
-                          if (bridge != null) onBridgeTap!(bridge);
-                        },
-                  child: CustomPaint(
-                    painter: _HashiBoardPainter(
-                      puzzle: puzzle,
-                      bridges: bridges,
-                      selectedIsland: selectedIsland,
-                      possibleTargets: possibleTargets,
-                      bridgeCounts: bridgeCounts,
-                      incorrectBridges: incorrectBridges,
-                      incorrectIslands: incorrectIslands,
-                      colorScheme: Theme.of(context).colorScheme,
-                      palette: palette,
-                    ),
-                  ),
-                ),
-              ),
-              if (onIslandTap != null)
-                ...List.generate(puzzle.islands.length, (index) {
-                  final island = puzzle.islands[index];
-                  final cell = side / puzzle.size;
-                  final diameter = cell * 0.72;
-                  return Positioned(
-                    left: (island.column + 0.5) * cell - diameter / 2,
-                    top: (island.row + 0.5) * cell - diameter / 2,
-                    width: diameter,
-                    height: diameter,
-                    child: Semantics(
-                      button: true,
-                      label: 'Insel ${island.bridges}',
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          customBorder: const CircleBorder(),
-                          onTap: () => onIslandTap!(index),
-                        ),
+          child: Listener(
+            onPointerDown: onIslandDrag == null
+                ? null
+                : (event) {
+                    dragStart = _islandAtPosition(
+                      event.localPosition,
+                      Size.square(side),
+                    );
+                  },
+            onPointerUp: onIslandDrag == null
+                ? null
+                : (event) {
+                    final first = dragStart;
+                    final second = _islandAtPosition(
+                      event.localPosition,
+                      Size.square(side),
+                    );
+                    dragStart = null;
+                    if (first != null && second != null && first != second) {
+                      onIslandDrag!(first, second);
+                    }
+                  },
+            onPointerCancel: onIslandDrag == null
+                ? null
+                : (_) {
+                    dragStart = null;
+                  },
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapUp: onBridgeTap == null
+                  ? null
+                  : (details) {
+                      final bridge = _bridgeAtPosition(
+                        details.localPosition,
+                        Size.square(side),
+                      );
+                      if (bridge != null) onBridgeTap!(bridge);
+                    },
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _HashiBoardPainter(
+                        puzzle: puzzle,
+                        bridges: bridges,
+                        selectedIsland: selectedIsland,
+                        possibleTargets: possibleTargets,
+                        bridgeCounts: bridgeCounts,
+                        incorrectBridges: incorrectBridges,
+                        incorrectIslands: incorrectIslands,
+                        colorScheme: Theme.of(context).colorScheme,
+                        palette: palette,
                       ),
                     ),
-                  );
-                }),
-            ],
+                  ),
+                  if (onIslandTap != null)
+                    ...List.generate(puzzle.islands.length, (index) {
+                      final island = puzzle.islands[index];
+                      final cell = side / puzzle.size;
+                      final diameter = cell * 0.72;
+                      return Positioned(
+                        left: (island.column + 0.5) * cell - diameter / 2,
+                        top: (island.row + 0.5) * cell - diameter / 2,
+                        width: diameter,
+                        height: diameter,
+                        child: Semantics(
+                          button: true,
+                          label: 'Insel ${island.bridges}',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              customBorder: const CircleBorder(),
+                              onTap: () => onIslandTap!(index),
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                ],
+              ),
+            ),
           ),
         );
       },

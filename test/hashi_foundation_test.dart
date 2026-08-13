@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/hashi_foundation.dart';
 
@@ -144,6 +145,48 @@ void main() {
       final game = HashiGameState(puzzle: puzzle, bridges: puzzle.solution);
       expect(game.isSolved, isTrue, reason: puzzle.title);
     }
+  });
+
+  testWidgets('dragging from one island to another requests a bridge',
+      (tester) async {
+    (int, int)? draggedConnection;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox.square(
+              dimension: 300,
+              child: HashiBoard(
+                puzzle: hashiTutorialPuzzle,
+                bridges: const [],
+                onIslandTap: (_) {},
+                onIslandDrag: (first, second) {
+                  draggedConnection = (first, second);
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final board = tester.getRect(find.byType(HashiBoard));
+    final cell = board.width / hashiTutorialPuzzle.size;
+    Offset islandCenter(int index) {
+      final island = hashiTutorialPuzzle.islands[index];
+      return Offset(
+        board.left + (island.column + 0.5) * cell,
+        board.top + (island.row + 0.5) * cell,
+      );
+    }
+
+    await tester.dragFrom(
+      islandCenter(0),
+      islandCenter(1) - islandCenter(0),
+    );
+    await tester.pump();
+
+    expect(draggedConnection, (0, 1));
   });
 
   test('Hashi chapters preserve every puzzle and difficulty filter', () {

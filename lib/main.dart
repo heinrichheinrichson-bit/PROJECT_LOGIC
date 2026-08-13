@@ -11,6 +11,7 @@ import 'core/monetization/hint_economy.dart';
 import 'core/progress/experience_event.dart';
 import 'core/progress/experience_points_policy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
+import 'core/presentation/mission_event_presentation.dart';
 import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/xp_award_badge.dart';
@@ -3673,7 +3674,7 @@ String _xpEventTitle(
     return achievementTitles[event.referenceId] ?? 'Erfolg freigeschaltet';
   }
   if (event.kind == ExperienceEventKind.missionCompleted) {
-    return _missionEventTitle(event.referenceId ?? '');
+    return missionEventTitle(event.referenceId ?? '');
   }
   final attempt = attempts[event.referenceId];
   if (attempt == null) return 'Rätsel abgeschlossen';
@@ -3695,9 +3696,7 @@ String _xpEventDetail(
     return 'Einmaliger Erfolgsbonus';
   }
   if (event.kind == ExperienceEventKind.missionCompleted) {
-    return (event.referenceId ?? '').endsWith('-complete')
-        ? 'Komplettbonus'
-        : 'Missionsbelohnung';
+    return missionEventDetail(event.referenceId ?? '');
   }
   final attempt = attempts[event.referenceId];
   if (attempt == null) return 'Abschlussbonus';
@@ -3773,20 +3772,6 @@ IconData _xpEventIcon(ExperienceEvent event) => switch (event.kind) {
       ExperienceEventKind.missionCompleted => Icons.task_alt_rounded,
       ExperienceEventKind.puzzleCompleted => Icons.extension_outlined,
     };
-
-String _missionEventTitle(String id) {
-  if (id.endsWith('-daily-complete')) return 'Alle Tagesziele geschafft';
-  if (id.endsWith('-weekly-complete')) return 'Alle Wochenziele geschafft';
-  if (id.endsWith('-challenge')) return 'Heute dran';
-  if (id.endsWith('-generator')) return 'Neue Herausforderung';
-  if (id.endsWith('-catalog')) return 'Aus der Sammlung';
-  if (id.endsWith('-active-days')) return 'Dreimal Zeit zum Denken';
-  if (id.endsWith('-five-puzzles')) return 'Fünf klare Momente';
-  if (id.endsWith('-hard')) return 'Schwere Kost';
-  if (id.endsWith('-no-hint')) return 'Aus eigener Kraft';
-  if (id.endsWith('-variety')) return 'Abwechslungsreich';
-  return 'Mission geschafft';
-}
 
 enum _AchievementFilter { all, open, unlocked }
 

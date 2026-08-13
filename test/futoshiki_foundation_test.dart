@@ -180,6 +180,27 @@ void main() {
     expect(restored.candidates['1:2'], {1, 3, 5});
   });
 
+  test('completed Futoshiki save is not offered as an open game', () async {
+    final puzzle = const FutoshikiGenerator().generate(
+      seed: 118,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    final store = FutoshikiGameStore();
+    await store.save(SavedFutoshikiGame(
+      puzzle: puzzle,
+      values: [
+        for (final row in puzzle.solution) [for (final value in row) value],
+      ],
+      elapsedSeconds: 40,
+      moves: 8,
+      hintsRemaining: 3,
+    ));
+
+    expect(await store.load(), isNull);
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.containsKey('active_futoshiki_game_v1'), isFalse);
+  });
+
   testWidgets('test solve counts for a daily Futoshiki puzzle', (tester) async {
     final generated = const FutoshikiGenerator().generate(
       seed: 20260801,

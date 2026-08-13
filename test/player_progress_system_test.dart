@@ -180,6 +180,38 @@ void main() {
     expect(evening.map((goal) => goal.id), midnight.map((goal) => goal.id));
   });
 
+  test('daily and weekly rotation stays calendar-stable throughout 2026', () {
+    const snapshot = ProgressSnapshot(
+      results: {},
+      progress: PlayerProgress.empty(),
+      catalogPuzzleIds: {},
+    );
+
+    for (var offset = 0; offset < 365; offset++) {
+      final day = DateTime(2026, 1, 1).add(Duration(days: offset));
+      final late = DateTime(day.year, day.month, day.day, 23, 59, 59);
+      final dailyAtMidnight = service.dailyMissions(snapshot, date: day);
+      final dailyLate = service.dailyMissions(snapshot, date: late);
+      final weeklyAtMidnight = service.weeklyMissions(snapshot, date: day);
+      final weeklyLate = service.weeklyMissions(snapshot, date: late);
+
+      expect(dailyAtMidnight, hasLength(3));
+      expect(dailyAtMidnight.map((goal) => goal.id).toSet(), hasLength(3));
+      expect(
+        dailyLate.map((goal) => goal.id),
+        dailyAtMidnight.map((goal) => goal.id),
+        reason: 'daily rotation on $day',
+      );
+      expect(weeklyAtMidnight, hasLength(2));
+      expect(weeklyAtMidnight.map((goal) => goal.id).toSet(), hasLength(2));
+      expect(
+        weeklyLate.map((goal) => goal.id),
+        weeklyAtMidnight.map((goal) => goal.id),
+        reason: 'weekly rotation on $day',
+      );
+    }
+  });
+
   test('daily completion bonus waits for all goals on August 12 and 13', () {
     const dailyService = DailyChallengeService();
 
