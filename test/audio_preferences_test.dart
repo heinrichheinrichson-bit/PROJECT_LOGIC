@@ -22,6 +22,27 @@ void main() {
     expect(reloaded.hapticsEnabled, isTrue);
   });
 
+  test('reminders default off with useful independent times', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await AppPreferences.load();
+
+    expect(preferences.dailyReminderEnabled, isFalse);
+    expect(preferences.dailyReminderMinutes, 18 * 60);
+    expect(preferences.streakWarningEnabled, isFalse);
+    expect(preferences.streakWarningMinutes, 21 * 60);
+
+    await preferences.setDailyReminderEnabled(true);
+    await preferences.setDailyReminderMinutes(17 * 60 + 30);
+    await preferences.setStreakWarningEnabled(true);
+    await preferences.setStreakWarningMinutes(22 * 60);
+    final restored = await AppPreferences.load();
+
+    expect(restored.dailyReminderEnabled, isTrue);
+    expect(restored.dailyReminderMinutes, 17 * 60 + 30);
+    expect(restored.streakWarningEnabled, isTrue);
+    expect(restored.streakWarningMinutes, 22 * 60);
+  });
+
   test('all bundled sounds are valid wave assets', () async {
     const assets = [
       'assets/sounds/move.wav',

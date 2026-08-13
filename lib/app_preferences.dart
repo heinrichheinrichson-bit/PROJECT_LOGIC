@@ -27,6 +27,10 @@ class AppPreferences extends ChangeNotifier {
     required this.hapticsEnabled,
     required this.showRuleIssues,
     required this.premiumSimulationEnabled,
+    required this.dailyReminderEnabled,
+    required this.dailyReminderMinutes,
+    required this.streakWarningEnabled,
+    required this.streakWarningMinutes,
   });
 
   static const _themeKey = 'setting_theme_v1';
@@ -35,6 +39,10 @@ class AppPreferences extends ChangeNotifier {
   static const _hapticsKey = 'setting_haptics_v1';
   static const _showRuleIssuesKey = 'setting_rule_issues_v1';
   static const _premiumSimulationKey = 'debug_premium_simulation_v1';
+  static const _dailyReminderEnabledKey = 'setting_daily_reminder_v1';
+  static const _dailyReminderMinutesKey = 'setting_daily_reminder_minutes_v1';
+  static const _streakWarningEnabledKey = 'setting_streak_warning_v1';
+  static const _streakWarningMinutesKey = 'setting_streak_warning_minutes_v1';
 
   AppThemePreference themePreference;
   bool animationsEnabled;
@@ -42,6 +50,10 @@ class AppPreferences extends ChangeNotifier {
   bool hapticsEnabled;
   bool showRuleIssues;
   bool premiumSimulationEnabled;
+  bool dailyReminderEnabled;
+  int dailyReminderMinutes;
+  bool streakWarningEnabled;
+  int streakWarningMinutes;
 
   static Future<AppPreferences> load() async {
     final preferences = await SharedPreferences.getInstance();
@@ -60,6 +72,14 @@ class AppPreferences extends ChangeNotifier {
       showRuleIssues: preferences.getBool(_showRuleIssuesKey) ?? true,
       premiumSimulationEnabled:
           preferences.getBool(_premiumSimulationKey) ?? false,
+      dailyReminderEnabled:
+          preferences.getBool(_dailyReminderEnabledKey) ?? false,
+      dailyReminderMinutes:
+          preferences.getInt(_dailyReminderMinutesKey) ?? 18 * 60,
+      streakWarningEnabled:
+          preferences.getBool(_streakWarningEnabledKey) ?? false,
+      streakWarningMinutes:
+          preferences.getInt(_streakWarningMinutesKey) ?? 21 * 60,
     );
   }
 
@@ -109,6 +129,34 @@ class AppPreferences extends ChangeNotifier {
     notifyListeners();
     final preferences = await SharedPreferences.getInstance();
     await preferences.setBool(_premiumSimulationKey, value);
+  }
+
+  Future<void> setDailyReminderEnabled(bool value) async {
+    dailyReminderEnabled = value;
+    notifyListeners();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(_dailyReminderEnabledKey, value);
+  }
+
+  Future<void> setDailyReminderMinutes(int value) async {
+    dailyReminderMinutes = value.clamp(0, 1439);
+    notifyListeners();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setInt(_dailyReminderMinutesKey, dailyReminderMinutes);
+  }
+
+  Future<void> setStreakWarningEnabled(bool value) async {
+    streakWarningEnabled = value;
+    notifyListeners();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(_streakWarningEnabledKey, value);
+  }
+
+  Future<void> setStreakWarningMinutes(int value) async {
+    streakWarningMinutes = value.clamp(0, 1439);
+    notifyListeners();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setInt(_streakWarningMinutesKey, streakWarningMinutes);
   }
 }
 

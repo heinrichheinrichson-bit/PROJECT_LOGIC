@@ -15,6 +15,7 @@ import 'core/presentation/mission_event_presentation.dart';
 import 'core/presentation/personal_records_section.dart';
 import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
+import 'core/presentation/reminder_notifications.dart';
 import 'core/presentation/streak_calendar.dart';
 import 'core/presentation/xp_award_badge.dart';
 import 'core/statistics/game_statistics.dart';
@@ -47,6 +48,12 @@ Future<void> main() async {
   await const AppDataMigrationService().migrate();
   final preferences = await AppPreferences.load();
   runApp(ProjectLogicApp(preferences: preferences));
+  unawaited(ReminderNotifications.configure(
+    dailyEnabled: preferences.dailyReminderEnabled,
+    dailyMinutes: preferences.dailyReminderMinutes,
+    streakEnabled: preferences.streakWarningEnabled,
+    streakMinutes: preferences.streakWarningMinutes,
+  ));
   if (preferences.soundsEnabled) PuzzleInteractionFeedback.warmUpSounds();
 }
 
@@ -3167,6 +3174,13 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     Text(
+                      'Erinnerungen',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    _ReminderSettingsCard(preferences: preferences),
+                    const SizedBox(height: 24),
+                    Text(
                       'Monetarisierung testen',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
@@ -3443,6 +3457,135 @@ class SettingsScreen extends StatelessWidget {
   static String _backupDate(DateTime value) =>
       '${value.day.toString().padLeft(2, '0')}.${value.month.toString().padLeft(2, '0')}.${value.year} um ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}';
 }
+
+class _ReminderSettingsCard extends StatelessWidget {
+  const _ReminderSettingsCard({required this.preferences});
+  final AppPreferences preferences;
+
+  Future<void> _configure({required bool requestPermission}) async {
+    await ReminderNotifications.configure(
+      dailyEnabled: preferences.dailyReminderEnabled,
+      dailyMinutes: preferences.dailyReminderMinutes,
+      streakEnabled: preferences.streakWarningEnabled,
+      streakMinutes: preferences.streakWarningMinutes,
+      requestPermission: requestPermission,
+    );
+  }
+
+  Future<void> _toggleDaily(BuildContext context, bool enabled) async {
+    await preferences.setDailyReminderEnabled(enabled);
+    final granted = await ReminderNotifications.configure(
+      dailyEnabled: enabled,
+      dailyMinutes: preferences.dailyReminderMinutes,
+      streakEnabled: preferences.streakWarningEnabled,
+      streakMinutes: preferences.streakWarningMinutes,
+      requestPermission: enabled,
+    );
+    if (enabled && !granted) {
+      await preferences.setDailyReminderEnabled(false);
+      await _configure(requestPermission: false);
+      if (context.mounted) _showPermissionMessage(context);
+    }
+  }
+
+  Future<void> _toggleStreak(BuildContext context, bool enabled) async {
+    await preferences.setStreakWarningEnabled(enabled);
+    final granted = await ReminderNotifications.configure(
+      dailyEnabled: preferences.dailyReminderEnabled,
+      dailyMinutes: preferences.dailyReminderMinutes,
+      streakEnabled: enabled,
+      streakMinutes: preferences.streakWarningMinutes,
+      requestPermission: enabled,
+    );
+    if (enabled && !granted) {
+      await preferences.setStreakWarningEnabled(false);
+      await _configure(requestPermission: false);
+      if (context.mounted) _showPermissionMessage(context);
+    }
+  }
+
+  Future<void> _pickTime(
+    BuildContext context, {
+    required bool streak,
+  }) async {
+    final minutes = streak
+        ? preferences.streakWarningMinutes
+        : preferences.dailyReminderMinutes;
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60),
+      helpText: streak ? 'Zeit der Streak-Warnung' : 'Zeit der Spielerinnerung',
+    );
+    if (selected == null) return;
+    final value = selected.hour * 60 + selected.minute;
+    if (streak) {
+      await preferences.setStreakWarningMinutes(value);
+    } else {
+      await preferences.setDailyReminderMinutes(value);
+    }
+    await _configure(requestPermission: false);
+  }
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Column(
+          children: [
+            SwitchListTile(
+              secondary: const Icon(Icons.notifications_active_outlined),
+              title: const Text('Tägliche Spielerinnerung'),
+              subtitle: Text(
+                'Um ${_formatReminderTime(preferences.dailyReminderMinutes)} · nur wenn heute noch nicht gespielt wurde',
+              ),
+              value: preferences.dailyReminderEnabled,
+              onChanged: (value) => _toggleDaily(context, value),
+            ),
+            if (preferences.dailyReminderEnabled)
+              ListTile(
+                leading: const SizedBox(width: 24),
+                title: const Text('Uhrzeit ändern'),
+                trailing:
+                    Text(_formatReminderTime(preferences.dailyReminderMinutes)),
+                onTap: () => _pickTime(context, streak: false),
+              ),
+            const Divider(height: 1),
+            SwitchListTile(
+              secondary: const Icon(Icons.local_fire_department_outlined),
+              title: const Text('Streak-Warnung'),
+              subtitle: Text(
+                'Um ${_formatReminderTime(preferences.streakWarningMinutes)} · nur bei laufender, noch offener Serie',
+              ),
+              value: preferences.streakWarningEnabled,
+              onChanged: (value) => _toggleStreak(context, value),
+            ),
+            if (preferences.streakWarningEnabled)
+              ListTile(
+                leading: const SizedBox(width: 24),
+                title: const Text('Uhrzeit ändern'),
+                trailing:
+                    Text(_formatReminderTime(preferences.streakWarningMinutes)),
+                onTap: () => _pickTime(context, streak: true),
+              ),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: Text(
+                'Liegen beide Zeiten höchstens 60 Minuten auseinander, erscheint bei einer laufenden Serie nur die Streak-Warnung.',
+              ),
+            ),
+          ],
+        ),
+      );
+}
+
+void _showPermissionMessage(BuildContext context) {
+  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+    content: Text(
+      'Benachrichtigungen sind im System nicht erlaubt. Du kannst sie in den Android-App-Einstellungen freigeben.',
+    ),
+  ));
+}
+
+String _formatReminderTime(int minutes) =>
+    '${(minutes ~/ 60).toString().padLeft(2, '0')}:${(minutes % 60).toString().padLeft(2, '0')} Uhr';
 
 int _dailyStreak(List<PuzzleResult> results, {DateTime? now}) {
   if (results.isEmpty) return 0;

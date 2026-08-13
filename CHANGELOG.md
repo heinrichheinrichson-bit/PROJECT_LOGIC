@@ -615,3 +615,12 @@
 - Eingesetzte Eiszapfen erscheinen ebenfalls in der persönlichen Bilanz.
 - Gleichstände werden einheitlich zugunsten des jüngsten Rekordtages aufgelöst.
 - Paketversion auf 0.8.28+57 erhöht.
+## v0.8.29 – Intelligente Android-Erinnerungen
+
+- Frei wählbare tägliche Spielerinnerung und separate Streak-Warnung ergänzt.
+- Streak-Warnung startet mit 21:00 Uhr, beide Zeiten bleiben individuell veränderbar und standardmäßig ausgeschaltet.
+- Benachrichtigungen erscheinen nur, wenn am jeweiligen Tag noch kein Rätsel gelöst wurde; die Warnung zusätzlich nur bei laufender Serie.
+- Liegen beide Uhrzeiten höchstens 60 Minuten auseinander, verhindert die App eine doppelte Meldung.
+- Warntext berücksichtigt, ob noch ein schützender Eiszapfen vorhanden ist.
+- Android-Benachrichtigungsberechtigung wird erst beim Einschalten angefragt; Alarme werden nach Neustart sowie Zeit- oder Zeitzonenwechsel wiederhergestellt.
+- Paketversion auf 0.8.29+58 erhöht.
