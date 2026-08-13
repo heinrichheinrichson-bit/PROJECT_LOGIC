@@ -1,3 +1,11 @@
+## v0.8.22 – Kurze Klicks und echtes Hashi-Knistern
+
+- Tonales Quietschen bei normalen Spielzügen durch einen sehr kurzen, neutralen Klick ersetzt.
+- Hashi-Verbindung vollständig neu gestaltet: statisches Zischen, unregelmäßige Funken-Pops und eine kurze elektrische Entladung statt eines Tonbogens.
+- Entfernen einer Hashi-Brücke erhält eine kürzere, abfallende Entladungsvariante.
+- Lautstärken für häufige Spielzüge und Hashi separat neu abgestimmt.
+- Paketversion auf 0.8.22+51 erhöht.
+
 ## v0.8.21 – Töne und haptisches Feedback getrennt steuerbar
 
 - Eigenes, separat abschaltbares Tonsystem für Spielzüge, Hinweise und Erfolge ergänzt.

@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 enum PuzzleSound {
-  move('sounds/move.wav', 0.18),
-  remove('sounds/remove.wav', 0.16),
+  move('sounds/move.wav', 0.13),
+  remove('sounds/remove.wav', 0.14),
   hint('sounds/hint.wav', 0.28),
   success('sounds/success.wav', 0.38),
   levelUp('sounds/level_up.wav', 0.42),
-  hashiConnect('sounds/hashi_connect.wav', 0.27),
-  hashiRemove('sounds/hashi_remove.wav', 0.22);
+  hashiConnect('sounds/hashi_connect.wav', 0.34),
+  hashiRemove('sounds/hashi_remove.wav', 0.27);
 
   const PuzzleSound(this.asset, this.volume);
 

@@ -33,18 +33,49 @@ List<double> _sequence(List<(double, double)> notes,
   return output;
 }
 
-List<double> _crackle({required bool descending}) {
-  final random = Random(descending ? 731 : 417);
-  final length = (sampleRate * 0.14).round();
-  var phase = 0.0;
+List<double> _click({required bool lower}) {
+  final random = Random(lower ? 193 : 151);
+  final length = (sampleRate * (lower ? 0.045 : 0.026)).round();
+  var previousNoise = 0.0;
   return List.generate(length, (index) {
     final position = index / max(1, length - 1);
-    final hz = descending ? 980 - 570 * position : 1160 + 720 * position;
-    phase += 2 * pi * hz / sampleRate;
-    final sparse =
-        random.nextDouble() > 0.82 ? (random.nextDouble() * 2 - 1) * 0.6 : 0.0;
-    final electric = sin(phase) * 0.22 + sin(phase * 2.73) * 0.1;
-    return (electric + sparse) * _envelope(index, length, attack: 0.025);
+    final noise = random.nextDouble() * 2 - 1;
+    final transient = noise - previousNoise * 0.72;
+    previousNoise = noise;
+    final decay = exp(-position * (lower ? 7.5 : 12.0));
+    final body = lower ? sin(2 * pi * 165 * index / sampleRate) * 0.16 : 0.0;
+    return (transient * 0.5 + body) * decay;
+  });
+}
+
+List<double> _crackle({required bool descending}) {
+  final random = Random(descending ? 731 : 417);
+  final seconds = descending ? 0.16 : 0.23;
+  final length = (sampleRate * seconds).round();
+  final burstCenters = descending
+      ? [0.015, 0.041, 0.078, 0.125]
+      : [0.008, 0.027, 0.052, 0.089, 0.137, 0.194];
+  var previousNoise = 0.0;
+  return List.generate(length, (index) {
+    final time = index / sampleRate;
+    final position = index / max(1, length - 1);
+    final noise = random.nextDouble() * 2 - 1;
+    final sharpNoise = noise - previousNoise * 0.9;
+    previousNoise = noise;
+
+    var pops = 0.0;
+    for (final center in burstCenters) {
+      final distance = (time - center).abs();
+      if (distance < 0.006) {
+        pops += sharpNoise * exp(-distance * 520) * 0.85;
+      }
+    }
+
+    final staticGate = random.nextDouble() > 0.58 ? 1.0 : 0.12;
+    final hiss = sharpNoise * staticGate * 0.16;
+    final buzz = sin(2 * pi * (descending ? 92 : 118) * time) * 0.035;
+    final tail = pow(1 - position, descending ? 2.4 : 1.35).toDouble();
+    return (pops + hiss + buzz) * tail;
   });
 }
 
@@ -86,8 +117,8 @@ void _writeWav(String path, List<double> samples) {
 
 void main() {
   const directory = 'assets/sounds';
-  _writeWav('$directory/move.wav', _tone(0.055, 760, 1020, strength: 0.34));
-  _writeWav('$directory/remove.wav', _tone(0.07, 520, 280, strength: 0.32));
+  _writeWav('$directory/move.wav', _click(lower: false));
+  _writeWav('$directory/remove.wav', _click(lower: true));
   _writeWav(
     '$directory/hint.wav',
     _sequence([(1046.5, 0.075), (1318.5, 0.105)], strength: 0.36),
