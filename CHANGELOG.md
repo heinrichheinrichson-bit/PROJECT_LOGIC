@@ -607,3 +607,11 @@
 - Bestehende Serien werden beim Update nicht rückwirkend verändert oder künstlich eingefroren.
 - Eisbestand und Auffüllfortschritt werden lokal, in Backups und bei Wiederherstellungen mitgeführt.
 - Paketversion auf 0.8.27+56 erhöht.
+## v0.8.28 – Persönliche Rekorde
+
+- Neue Rekordübersicht im Fortschrittsbereich mit Werten und zugehörigen Daten ergänzt.
+- Längste Serie, stärkster XP-Tag, meiste Rätsel, längste Spielzeit, größte Spielartenvielfalt und stärkster Monat werden rückwirkend berechnet.
+- Schnellstes Rätsel wird für jede bereits gespielte Spielart separat ausgewiesen.
+- Eingesetzte Eiszapfen erscheinen ebenfalls in der persönlichen Bilanz.
+- Gleichstände werden einheitlich zugunsten des jüngsten Rekordtages aufgelöst.
+- Paketversion auf 0.8.28+57 erhöht.

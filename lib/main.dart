@@ -12,11 +12,13 @@ import 'core/progress/experience_event.dart';
 import 'core/progress/experience_points_policy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/mission_event_presentation.dart';
+import 'core/presentation/personal_records_section.dart';
 import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/streak_calendar.dart';
 import 'core/presentation/xp_award_badge.dart';
 import 'core/statistics/game_statistics.dart';
+import 'core/statistics/personal_records.dart';
 import 'core/statistics/puzzle_attempt.dart';
 import 'daily_challenge.dart';
 import 'daily_snapshot_viewer.dart';
@@ -3612,6 +3614,12 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
       ..sort((a, b) => b.occurredAt.compareTo(a.occurredAt));
     final totalXp =
         _experienceEvents.fold<int>(0, (sum, event) => sum + event.points);
+    final records = PersonalRecordsCalculator.calculate(
+      attempts: _attempts,
+      experienceEvents: _experienceEvents,
+      completedDays: snapshot.progress.completedDays,
+      frozenDays: snapshot.progress.frozenDays,
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Dein Fortschritt')),
@@ -3728,6 +3736,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                   ],
                   const SizedBox(height: 20),
                   StreakCalendarCard(progress: snapshot.progress),
+                  const SizedBox(height: 20),
+                  PersonalRecordsSection(records: records),
                   const SizedBox(height: 20),
                   Text(
                     'Heute',
