@@ -2623,8 +2623,8 @@ class _HashiBoardPainter extends CustomPainter {
           ? previewPosition!
           : point(puzzle.islands[previewTarget!]);
       final previewPaint = Paint()
-        ..color = palette.accentAlt.withValues(alpha: 0.72)
-        ..strokeWidth = (bridgeWidth * 0.72).clamp(2.0, 4.0)
+        ..color = palette.accentAlt.withValues(alpha: 0.42)
+        ..strokeWidth = (bridgeWidth * 0.62).clamp(1.8, 3.4)
         ..strokeCap = StrokeCap.round;
       canvas.drawLine(start, end, previewPaint);
     }

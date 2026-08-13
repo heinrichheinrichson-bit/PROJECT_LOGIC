@@ -88,4 +88,18 @@ void main() {
       );
     });
   });
+
+  test('rewards the newly extended long-term tiers progressively', () {
+    expect(
+      ExperiencePointsPolicy.achievement('game-hashi-500'),
+      greaterThan(ExperiencePointsPolicy.achievement('game-hashi-250')),
+    );
+    expect(ExperiencePointsPolicy.achievement('daily-1000'), 1250);
+    expect(
+      ExperiencePointsPolicy.mission('longterm-generated-1000'),
+      greaterThan(
+        ExperiencePointsPolicy.mission('longterm-generated-500'),
+      ),
+    );
+  });
 }

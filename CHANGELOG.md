@@ -1,3 +1,13 @@
+## v0.8.15 – Ziele für viele Monate
+
+- Hashi-Vorschaulinie beim Ziehen dezenter und transparenter gestaltet.
+- Erfolgsketten pro Spielart auf 250 und 500 gelöste Rätsel erweitert.
+- Weitere Stufen für schwere Rätsel, Lösungen ohne Hinweise, Tagesrätsel und Gesamtspielzeit ergänzt.
+- Langzeitziele für Sammlung, Zufallsrätsel und aktive Tage bis hin zu mehrjährigem Fortschritt ausgebaut.
+- XP-Belohnungen für die neuen hohen Zielstufen ergänzt.
+- Regressionstests für tiefe Erfolgs- und Langzeitzielketten hinzugefügt.
+- Paketversion auf 0.8.15+44 erhöht.
+
 ## v0.8.14 – Einheitliche Hashi-Touchsteuerung
 
 - Hashi-Brettinteraktion grundlegend neu aufgebaut: Eine einzige zentrale Gestenfläche verarbeitet Tippen und Ziehen.

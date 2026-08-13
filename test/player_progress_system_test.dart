@@ -265,6 +265,71 @@ void main() {
     }
   });
 
+  test('August 13 daily bonus appears once after the third actual goal', () {
+    final day = DateTime(2026, 8, 13, 6, 2);
+    const dailyService = DailyChallengeService();
+    final firstTwo = <PuzzleAttempt>[
+      _attempt(
+        id: 'daily-13',
+        puzzleId: dailyService.summaryForGame(day, GameType.binairo).puzzleId,
+        gameType: GameType.binairo,
+        mode: GameMode.daily,
+        date: day,
+      ),
+      _attempt(
+        id: 'generated-13',
+        puzzleId: 'generated-13',
+        gameType: GameType.hashi,
+        mode: GameMode.generated,
+        date: day,
+      ),
+    ];
+    final incomplete = ProgressSnapshot(
+      results: const {},
+      progress: const PlayerProgress.empty(),
+      catalogPuzzleIds: const {},
+      attempts: firstTwo,
+    );
+
+    final before = service.synchronizeMissionXp(incomplete, const [], now: day);
+    expect(
+      before.where(
+        (event) => event.referenceId?.endsWith('daily-complete') ?? false,
+      ),
+      isEmpty,
+    );
+
+    final complete = ProgressSnapshot(
+      results: const {},
+      progress: const PlayerProgress.empty(),
+      catalogPuzzleIds: const {},
+      attempts: [
+        ...firstTwo,
+        _attempt(
+          id: 'catalog-13',
+          puzzleId: 'catalog-13',
+          gameType: GameType.slitherlink,
+          mode: GameMode.catalog,
+          date: day.add(const Duration(minutes: 1)),
+        ),
+      ],
+    );
+    final awarded = service.synchronizeMissionXp(complete, before, now: day);
+    final repeated = service.synchronizeMissionXp(
+      complete,
+      awarded,
+      now: day.add(const Duration(minutes: 2)),
+    );
+
+    expect(
+      awarded.where(
+        (event) => event.referenceId?.endsWith('daily-complete') ?? false,
+      ),
+      hasLength(1),
+    );
+    expect(repeated, hasLength(awarded.length));
+  });
+
   test('game-specific achievements count Binairo and Hashi separately', () {
     final hashi = PuzzleResult(
       puzzleId: 'easy-01',
@@ -296,6 +361,34 @@ void main() {
       isFalse,
     );
     expect(snapshot.catalogCompleted, 1);
+  });
+
+  test('achievement chains keep meaningful goals far beyond the first days',
+      () {
+    const snapshot = ProgressSnapshot(
+      results: {},
+      progress: PlayerProgress(
+        totalCompleted: 120,
+        totalPlaySeconds: 120 * 3600,
+        completedDays: [],
+      ),
+      catalogPuzzleIds: {},
+    );
+
+    final achievements = service.achievements(snapshot);
+
+    expect(
+      achievements.map((goal) => goal.id),
+      containsAll(<String>[
+        'game-binairo-500',
+        'game-hashi-500',
+        'hard-1000',
+        'no-hint-500',
+        'daily-1000',
+        'play-hours-${1000 * 3600}',
+      ]),
+    );
+    expect(achievements.length, greaterThanOrEqualTo(75));
   });
 
   test('weekly active-day mission counts unique days in the current week', () {
@@ -403,6 +496,26 @@ void main() {
     expect(goals.last.id, 'longterm-active-days-7');
     expect(goals.last.title, 'Regelmäßig dabei · Stufe 2');
     expect(goals.last.current, 4);
+  });
+
+  test('long-term chains continue through multi-year play', () {
+    const snapshot = ProgressSnapshot(
+      results: {},
+      progress: PlayerProgress.empty(),
+      catalogPuzzleIds: {},
+    );
+
+    final milestones = service.longTermMilestones(snapshot);
+
+    expect(
+      milestones.map((goal) => goal.id),
+      containsAll(<String>[
+        'longterm-catalog-750',
+        'longterm-generated-1000',
+        'longterm-active-days-730',
+      ]),
+    );
+    expect(milestones, hasLength(25));
   });
 
   test('completed long-term tiers award XP once', () {

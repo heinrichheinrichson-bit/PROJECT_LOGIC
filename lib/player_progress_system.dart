@@ -436,11 +436,13 @@ class PlayerProgressService {
             'Harte Kost',
             'Schwere Denkarbeit',
             'Meister der Schwierigkeit',
+            'Unerschrockener Denker',
+            'Keine Nuss zu hart',
           ],
           description: (target) => 'Löse $target schwere Rätsel.',
           iconName: 'diamond',
           current: snapshot.hardCompleted,
-          targets: const [25, 100, 250],
+          targets: const [25, 100, 250, 500, 1000],
         ),
         ..._achievementChain(
           key: 'no-hint',
@@ -448,11 +450,13 @@ class PlayerProgressService {
             'Ohne Stützräder',
             'Sicherer Blick',
             'Ganz aus eigener Kraft',
+            'Unabhängiger Kopf',
+            'Sicher aus Erfahrung',
           ],
           description: (target) => 'Löse $target Rätsel ohne Hinweis.',
           iconName: 'psychology',
           current: snapshot.noHintCompleted,
-          targets: const [10, 50, 100],
+          targets: const [10, 50, 100, 250, 500],
         ),
         ..._achievementChain(
           key: 'daily',
@@ -460,11 +464,13 @@ class PlayerProgressService {
             'Hundert Tage Logik',
             'Halbes Kalenderjahr',
             'Ein Jahr Tagesrätsel',
+            'Zwei Jahre Tagesrätsel',
+            'Tausend Tage Logik',
           ],
           description: (target) => 'Löse $target Tagesrätsel.',
           iconName: 'calendar_month',
           current: snapshot.dailyCompleted,
-          targets: const [100, 180, 365],
+          targets: const [100, 180, 365, 730, 1000],
         ),
         ..._achievementChain(
           key: 'play-hours',
@@ -472,12 +478,20 @@ class PlayerProgressService {
             'Fünfzig Stunden Logik',
             'Hundert Stunden Fokus',
             'Logik als Leidenschaft',
+            'Fünfhundert Stunden Fokus',
+            'Tausend Stunden Logik',
           ],
           description: (target) =>
               'Verbringe insgesamt $target Stunden beim Rätseln.',
           iconName: 'timer',
           current: snapshot.progress.totalPlaySeconds,
-          targets: const [50 * 3600, 100 * 3600, 250 * 3600],
+          targets: const [
+            50 * 3600,
+            100 * 3600,
+            250 * 3600,
+            500 * 3600,
+            1000 * 3600,
+          ],
         ),
       ];
 
@@ -492,6 +506,8 @@ class PlayerProgressService {
         '$label · Vertraut',
         '$label · Erfahren',
         '$label · Meisterlich',
+        '$label · Spezialist',
+        '$label · Legende',
       ],
       description: (target) => 'Löse $target $label-Rätsel.',
       iconName: switch (gameType) {
@@ -501,7 +517,7 @@ class PlayerProgressService {
         _ => 'grid_on',
       },
       current: snapshot.completedForGame(gameType),
-      targets: const [10, 50, 100],
+      targets: const [10, 50, 100, 250, 500],
     );
   }
 
@@ -700,7 +716,7 @@ class PlayerProgressService {
               'Löse $target verschiedene Rätsel aus der Sammlung.',
           iconName: 'menu_book',
           current: snapshot.catalogCompleted,
-          targets: const [5, 15, 30, 75, 150, 300],
+          targets: const [5, 15, 30, 75, 150, 300, 500, 750],
         ),
         _longTermChain(
           key: 'generated',
@@ -708,7 +724,7 @@ class PlayerProgressService {
           description: (target) => 'Löse $target frei erzeugte Rätsel.',
           iconName: 'auto_awesome',
           current: snapshot.generatedCompleted,
-          targets: const [3, 10, 25, 50, 100, 250],
+          targets: const [3, 10, 25, 50, 100, 250, 500, 1000],
         ),
         _longTermChain(
           key: 'active-days',
@@ -717,7 +733,7 @@ class PlayerProgressService {
               'Spiele an $target verschiedenen Tagen – ohne Seriendruck.',
           iconName: 'event_available',
           current: snapshot.activeDaysTotal,
-          targets: const [3, 7, 14, 30, 60, 100],
+          targets: const [3, 7, 14, 30, 60, 100, 180, 365, 730],
         ),
       ];
 

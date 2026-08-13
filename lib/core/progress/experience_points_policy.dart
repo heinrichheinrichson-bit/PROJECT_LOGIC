@@ -63,10 +63,15 @@ class ExperiencePointsPolicy {
   static int _tieredAchievement(String id) {
     final target = int.tryParse(id.split('-').last) ?? 0;
     if (id.startsWith('play-hours-')) {
+      if (target >= 1000 * 3600) return 1500;
+      if (target >= 500 * 3600) return 1000;
       if (target >= 250 * 3600) return 750;
       if (target >= 100 * 3600) return 400;
       return 250;
     }
+    if (target >= 1000) return 1250;
+    if (target >= 730) return 1000;
+    if (target >= 500) return 850;
     if (target >= 365) return 750;
     if (target >= 250) return 500;
     if (target >= 100) return 250;
@@ -82,6 +87,10 @@ class ExperiencePointsPolicy {
     if (id.startsWith('week-')) return 40;
     if (id.startsWith('longterm-')) {
       final target = int.tryParse(id.split('-').last) ?? 0;
+      if (target >= 1000) return 750;
+      if (target >= 750) return 600;
+      if (target >= 500) return 450;
+      if (target >= 365) return 400;
       if (target >= 250) return 300;
       if (target >= 150) return 225;
       if (target >= 100) return 175;
