@@ -128,7 +128,7 @@ class SavedFutoshikiGame {
 
 final List<FutoshikiPuzzle> futoshikiPuzzleCatalog = [
   for (final difficulty in PuzzleDifficulty.values)
-    for (var index = 0; index < 12; index++)
+    for (var index = 0; index < 15; index++)
       const FutoshikiGenerator().generate(
         seed: 8100 + difficulty.index * 100 + index,
         difficulty: difficulty,
@@ -145,10 +145,13 @@ final List<FutoshikiPuzzle> futoshikiPuzzleCatalog = [
           8 => 'Neue Beziehungen',
           9 => 'Verdeckte Reihenfolge',
           10 => 'Enges Zahlenfeld',
-          _ => 'Letzte Einordnung',
+          11 => 'Letzte Einordnung',
+          12 => 'Neue Zahlenkette',
+          13 => 'Verborgener Vergleich',
+          _ => 'Sicherer Abschluss',
         },
       ),
-  for (var index = 0; index < 8; index++)
+  for (var index = 0; index < 15; index++)
     const FutoshikiGenerator().generate(
       seed: 8500 + index,
       difficulty: PuzzleDifficulty.hard,
@@ -162,7 +165,14 @@ final List<FutoshikiPuzzle> futoshikiPuzzleCatalog = [
         4 => 'Weite Schlüsse',
         5 => 'Zahlengeflecht',
         6 => 'Expertenlogik',
-        _ => 'Meisterprüfung',
+        7 => 'Meisterprüfung',
+        8 => 'Sieben Entscheidungen',
+        9 => 'Dichte Zahlenketten',
+        10 => 'Verdecktes Gefälle',
+        11 => 'Weite Ordnung',
+        12 => 'Großer Zusammenhang',
+        13 => 'Knappe Vergleiche',
+        _ => 'Letzte Meisterschaft',
       },
     ),
 ];

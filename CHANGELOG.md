@@ -1,3 +1,12 @@
+## v0.8.16 – Größere Futoshiki- und Hitori-Sammlungen
+
+- Futoshiki-Katalog von 44 auf 60 Rätsel erweitert.
+- Jede Futoshiki-Gruppe enthält nun 15 Rätsel, einschließlich 15 großer 7×7-Expertenrätsel.
+- Hitori-Katalog von 45 auf 60 Rätsel erweitert.
+- Jede Hitori-Schwierigkeitsstufe enthält nun 20 Rätsel.
+- Neue Katalogrätsel werden automatisiert auf eindeutige IDs, gültige Lösungen und eindeutige Lösbarkeit geprüft.
+- Paketversion auf 0.8.16+45 erhöht.
+
 ## v0.8.15 – Ziele für viele Monate
 
 - Hashi-Vorschaulinie beim Ziehen dezenter und transparenter gestaltet.

@@ -46,10 +46,10 @@ void main() {
   });
 
   test('collection contains expanded distinct puzzle chapters', () {
-    expect(futoshikiPuzzleCatalog, hasLength(44));
+    expect(futoshikiPuzzleCatalog, hasLength(60));
     expect(
       futoshikiPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
-      hasLength(44),
+      hasLength(60),
     );
     for (final chapter in const [
       (difficulty: PuzzleDifficulty.easy, size: 4),
@@ -61,8 +61,13 @@ void main() {
         futoshikiPuzzleCatalog.where((puzzle) =>
             puzzle.difficulty == chapter.difficulty &&
             puzzle.size == chapter.size),
-        hasLength(chapter.size == 7 ? 8 : 12),
+        hasLength(15),
       );
+    }
+    const solver = FutoshikiSolver();
+    for (final puzzle in futoshikiPuzzleCatalog) {
+      expect(solver.hasUniqueSolution(puzzle), isTrue, reason: puzzle.id);
+      expect(solver.solve(puzzle), puzzle.solution, reason: puzzle.id);
     }
   });
 
