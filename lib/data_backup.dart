@@ -64,7 +64,10 @@ class DataBackupService {
     final keys = preferences
         .getKeys()
         .where(
-          (key) => !key.startsWith('_backup_') && !key.startsWith('_cloud_'),
+          (key) =>
+              !key.startsWith('_backup_') &&
+              !key.startsWith('_cloud_') &&
+              !key.startsWith('_app_data_'),
         )
         .toList()
       ..sort();

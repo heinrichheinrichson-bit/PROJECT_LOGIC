@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'app_preferences.dart';
+import 'app_data_migration.dart';
 import 'app_theme.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/progress/experience_event.dart';
@@ -39,6 +40,7 @@ import 'features/tents/domain/tents_catalog.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await const AppDataMigrationService().migrate();
   final preferences = await AppPreferences.load();
   runApp(ProjectLogicApp(preferences: preferences));
 }

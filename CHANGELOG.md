@@ -1,3 +1,14 @@
+## v0.8.9 – Datensicherheit und mobile Stabilität
+
+- App-weite sichere Systemabstände für Android, iOS und Tablets ergänzt.
+- Slitherlink akzeptiert nur noch genau eine geschlossene, zusammenhängende Schleife.
+- Tagesarchive, Sicherungsimport und Cloud-Snapshot-Grundlage weiter gehärtet.
+- Zentrale, transaktionale Migration für bestehende App-Daten ergänzt.
+- Lesbare ältere Binairo-Spielstände werden auf das aktuelle Format aktualisiert.
+- Beschädigte Altdaten bleiben für bestehende Wiederherstellungswege erhalten und blockieren den App-Start nicht.
+- Interne Migrationssicherungen werden nicht exportiert oder synchronisiert.
+- Paketversion auf 0.8.9+38 erhöht.
+
 ## v0.8.8 – Hashi-Komfort
 
 - Redo ergänzt
