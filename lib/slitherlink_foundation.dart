@@ -1612,6 +1612,20 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                       if (context.mounted) Navigator.pop(context);
                     },
                   ),
+                  const Divider(height: 20),
+                  const ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.palette_outlined),
+                    title: Text('Farben bei aktiver Hilfe'),
+                    subtitle: Text(
+                      'Türkis = gesetzte Linie\n'
+                      'Lila = Zahl momentan genau erfüllt\n'
+                      'Rot = sicherer Regelkonflikt',
+                    ),
+                  ),
+                  const Text(
+                    'Offene Enden und getrennte Schleifen werden nicht sofort rot markiert.',
+                  ),
                 ]);
               },
               icon: const Icon(Icons.tune_rounded),
@@ -1661,7 +1675,14 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                         'Eine Zahl gibt an, wie viele ihrer vier Feldseiten '
                         'zur Schleife gehören. Felder ohne Zahl liefern keine '
                         'direkte Vorgabe.\n\n'
-                        'Tippe eine Kante: leer → Linie → ausgeschlossen.',
+                        'Tippe eine Kante: leer → Linie → ausgeschlossen.\n\n'
+                        'Nur wenn die Spielhilfe „Regelfehler markieren“ '
+                        'eingeschaltet ist, zeigen zusätzliche Farben den '
+                        'Stand: Lila bedeutet, dass eine Zahl momentan genau '
+                        'erfüllt ist. Rot zeigt einen sicheren Regelkonflikt '
+                        'wie zu viele Linien oder eine Abzweigung. Türkis '
+                        'bleibt deine normal gesetzte Linie. Offene Enden und '
+                        'getrennte Schleifen werden nicht sofort rot markiert.',
                       ),
                       actions: [
                         FilledButton(
@@ -1843,7 +1864,7 @@ class _SlitherlinkPainter extends CustomPainter {
             style: TextStyle(
               color: hasIssue
                   ? colors.error
-                  : satisfied && state.lineIds.isNotEmpty
+                  : showRuleIssues && satisfied && state.lineIds.isNotEmpty
                       ? palette.accentAlt
                       : palette.foreground,
               fontSize: (dx < dy ? dx : dy) * 0.38,

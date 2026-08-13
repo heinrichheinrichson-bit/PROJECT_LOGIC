@@ -1,3 +1,13 @@
+## v0.8.20 – Verständliche Slitherlink-Farbhilfen
+
+- Farblegende direkt in den Slitherlink-Spielhilfen ergänzt.
+- Spielregeln erklären nun ausdrücklich, dass Lila und Rot nur bei eingeschalteter Fehlerhilfe erscheinen.
+- Bedeutung der Farben Türkis, Lila und Rot verständlich beschrieben.
+- Hinweis ergänzt, dass offene Enden und getrennte Schleifen nicht sofort rot markiert werden.
+- Bei ausgeschalteter Spielhilfe bleiben nun auch erfüllte Zahlen neutral statt lila.
+- Regressionstests für beide Erklärungstexte ergänzt.
+- Paketversion auf 0.8.20+49 erhöht.
+
 ## v0.8.19 – Slitherlink-Spielhilfen wieder schaltbar
 
 - Fehlenden Ein-/Aus-Schalter „Regelfehler markieren“ in den Slitherlink-Spielhilfen wiederhergestellt.

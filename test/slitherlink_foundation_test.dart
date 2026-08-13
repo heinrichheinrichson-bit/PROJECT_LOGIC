@@ -249,6 +249,14 @@ void main() {
     await tester.tap(find.byTooltip('Spielhilfen'));
     await tester.pumpAndSettle();
     expect(find.text('Regelfehler markieren'), findsOneWidget);
+    expect(find.text('Farben bei aktiver Hilfe'), findsOneWidget);
+    expect(find.textContaining('Lila = Zahl momentan genau erfüllt'),
+        findsOneWidget);
+    expect(
+      find.textContaining(
+          'Offene Enden und getrennte Schleifen werden nicht sofort'),
+      findsOneWidget,
+    );
     expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
         isTrue);
 
@@ -259,6 +267,31 @@ void main() {
     final reloaded = await AppPreferences.load();
     expect(reloaded.showRuleIssues, isFalse);
     expect(find.text('Spielhilfen'), findsNothing);
+  });
+
+  testWidgets('Slitherlink rules explain that colors require active help',
+      (tester) async {
+    final preferences = await AppPreferences.load();
+    await tester.pumpWidget(
+      PreferencesScope(
+        preferences: preferences,
+        child: const MaterialApp(
+          home: SlitherlinkGameScreen(puzzle: slitherlinkTutorialPuzzle),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Spielregeln & Bedienung'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining(
+          'Nur wenn die Spielhilfe „Regelfehler markieren“ eingeschaltet ist'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Lila bedeutet'), findsOneWidget);
+    expect(find.textContaining('Rot zeigt einen sicheren Regelkonflikt'),
+        findsOneWidget);
   });
 
   testWidgets('debug solve is clearly marked as a test completion',
