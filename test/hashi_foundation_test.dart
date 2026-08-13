@@ -147,7 +147,7 @@ void main() {
     }
   });
 
-  testWidgets('dragging from one island to another requests a bridge',
+  testWidgets('drag direction requests a bridge without precise release',
       (tester) async {
     (int, int)? draggedConnection;
     await tester.pumpWidget(
@@ -182,11 +182,48 @@ void main() {
 
     await tester.dragFrom(
       islandCenter(0),
-      islandCenter(1) - islandCenter(0),
+      (islandCenter(1) - islandCenter(0)) * 0.55,
     );
     await tester.pump();
 
     expect(draggedConnection, (0, 1));
+  });
+
+  testWidgets('short diagonal Hashi movement does not request a bridge',
+      (tester) async {
+    (int, int)? draggedConnection;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox.square(
+              dimension: 300,
+              child: HashiBoard(
+                puzzle: hashiTutorialPuzzle,
+                bridges: const [],
+                onIslandTap: (_) {},
+                onIslandDrag: (first, second) {
+                  draggedConnection = (first, second);
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final board = tester.getRect(find.byType(HashiBoard));
+    final cell = board.width / hashiTutorialPuzzle.size;
+    final island = hashiTutorialPuzzle.islands.first;
+    final start = Offset(
+      board.left + (island.column + 0.5) * cell,
+      board.top + (island.row + 0.5) * cell,
+    );
+
+    await tester.dragFrom(start, Offset(cell * 0.45, cell * 0.45));
+    await tester.pump();
+
+    expect(draggedConnection, isNull);
   });
 
   test('Hashi chapters preserve every puzzle and difficulty filter', () {

@@ -1,3 +1,13 @@
+## v0.8.13 – Hashi-Ziehen per Richtung
+
+- Hashi-Ziehen vollständig auf Richtungssteuerung umgestellt: Eine klare horizontale oder vertikale Bewegung wählt die nächste sichtbare Insel.
+- Der Finger muss nicht mehr punktgenau auf der Zielinsel losgelassen werden.
+- Start- und Zielinsel werden bereits während des Ziehens hervorgehoben.
+- Kurze und diagonale Bewegungen bleiben ohne Wirkung; die bestehende Tippbedienung bleibt erhalten.
+- Realistischere Gestentests für ungenaues Loslassen und ungültige Bewegungen ergänzt.
+- Fortschrittsstufen, einmalige XP-Synchronisierung und erweiterte Katalognavigation erneut geprüft.
+- Paketversion auf 0.8.13+42 erhöht.
+
 ## v0.8.12 – Langfristiger Fortschritt
 
 - Drei Langzeitziele zu jeweils sechs aufeinanderfolgenden Stufen ausgebaut; nach einem Abschluss erscheint automatisch die nächste Stufe.

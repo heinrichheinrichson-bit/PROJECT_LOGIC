@@ -2337,6 +2337,52 @@ class HashiBoard extends StatelessWidget {
     return null;
   }
 
+  int? _targetInDragDirection(int startIndex, Offset position, Size size) {
+    final cell = size.shortestSide / puzzle.size;
+    final offsetX = (size.width - cell * puzzle.size) / 2;
+    final offsetY = (size.height - cell * puzzle.size) / 2;
+    final start = puzzle.islands[startIndex];
+    final startPoint = Offset(
+      offsetX + (start.column + 0.5) * cell,
+      offsetY + (start.row + 0.5) * cell,
+    );
+    final delta = position - startPoint;
+    final minimumDistance = math.max(14.0, cell * 0.28);
+    if (delta.distance < minimumDistance) return null;
+
+    final horizontal = delta.dx.abs() > delta.dy.abs() * 1.25;
+    final vertical = delta.dy.abs() > delta.dx.abs() * 1.25;
+    if (!horizontal && !vertical) return null;
+
+    final candidates = <int>[];
+    for (var index = 0; index < puzzle.islands.length; index++) {
+      if (index == startIndex) continue;
+      final island = puzzle.islands[index];
+      if (horizontal &&
+          island.row == start.row &&
+          (island.column - start.column).sign == delta.dx.sign) {
+        candidates.add(index);
+      } else if (vertical &&
+          island.column == start.column &&
+          (island.row - start.row).sign == delta.dy.sign) {
+        candidates.add(index);
+      }
+    }
+    if (candidates.isEmpty) return null;
+    candidates.sort((first, second) {
+      final a = puzzle.islands[first];
+      final b = puzzle.islands[second];
+      final aDistance = horizontal
+          ? (a.column - start.column).abs()
+          : (a.row - start.row).abs();
+      final bDistance = horizontal
+          ? (b.column - start.column).abs()
+          : (b.row - start.row).abs();
+      return aDistance.compareTo(bDistance);
+    });
+    return candidates.first;
+  }
+
   HashiBridge? _bridgeAtPosition(Offset position, Size size) {
     if (bridges.isEmpty) return null;
     final cell = size.shortestSide / puzzle.size;
@@ -2391,87 +2437,120 @@ class HashiBoard extends StatelessWidget {
       builder: (context, constraints) {
         final side = math.min(constraints.maxWidth, constraints.maxHeight);
         int? dragStart;
-        return SizedBox.square(
-          dimension: side,
-          child: Listener(
-            onPointerDown: onIslandDrag == null
-                ? null
-                : (event) {
-                    dragStart = _islandAtPosition(
-                      event.localPosition,
-                      Size.square(side),
-                    );
-                  },
-            onPointerUp: onIslandDrag == null
-                ? null
-                : (event) {
-                    final first = dragStart;
-                    final second = _islandAtPosition(
-                      event.localPosition,
-                      Size.square(side),
-                    );
-                    dragStart = null;
-                    if (first != null && second != null && first != second) {
-                      onIslandDrag!(first, second);
-                    }
-                  },
-            onPointerCancel: onIslandDrag == null
-                ? null
-                : (_) {
-                    dragStart = null;
-                  },
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTapUp: onBridgeTap == null
+        int? dragTarget;
+        return StatefulBuilder(
+          builder: (context, setInteractionState) => SizedBox.square(
+            dimension: side,
+            child: Listener(
+              onPointerDown: onIslandDrag == null
                   ? null
-                  : (details) {
-                      final bridge = _bridgeAtPosition(
-                        details.localPosition,
+                  : (event) {
+                      final start = _islandAtPosition(
+                        event.localPosition,
                         Size.square(side),
                       );
-                      if (bridge != null) onBridgeTap!(bridge);
+                      setInteractionState(() {
+                        dragStart = start;
+                        dragTarget = null;
+                      });
                     },
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _HashiBoardPainter(
-                        puzzle: puzzle,
-                        bridges: bridges,
-                        selectedIsland: selectedIsland,
-                        possibleTargets: possibleTargets,
-                        bridgeCounts: bridgeCounts,
-                        incorrectBridges: incorrectBridges,
-                        incorrectIslands: incorrectIslands,
-                        colorScheme: Theme.of(context).colorScheme,
-                        palette: palette,
+              onPointerMove: onIslandDrag == null
+                  ? null
+                  : (event) {
+                      final first = dragStart;
+                      if (first == null) return;
+                      final target = _targetInDragDirection(
+                        first,
+                        event.localPosition,
+                        Size.square(side),
+                      );
+                      if (target != dragTarget) {
+                        setInteractionState(() => dragTarget = target);
+                      }
+                    },
+              onPointerUp: onIslandDrag == null
+                  ? null
+                  : (event) {
+                      final first = dragStart;
+                      final second = first == null
+                          ? null
+                          : dragTarget ??
+                              _targetInDragDirection(
+                                first,
+                                event.localPosition,
+                                Size.square(side),
+                              );
+                      setInteractionState(() {
+                        dragStart = null;
+                        dragTarget = null;
+                      });
+                      if (first != null && second != null && first != second) {
+                        onIslandDrag!(first, second);
+                      }
+                    },
+              onPointerCancel: onIslandDrag == null
+                  ? null
+                  : (_) {
+                      setInteractionState(() {
+                        dragStart = null;
+                        dragTarget = null;
+                      });
+                    },
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapUp: onBridgeTap == null
+                    ? null
+                    : (details) {
+                        final bridge = _bridgeAtPosition(
+                          details.localPosition,
+                          Size.square(side),
+                        );
+                        if (bridge != null) onBridgeTap!(bridge);
+                      },
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _HashiBoardPainter(
+                          puzzle: puzzle,
+                          bridges: bridges,
+                          selectedIsland: dragStart ?? selectedIsland,
+                          possibleTargets: dragTarget == null
+                              ? possibleTargets
+                              : [dragTarget!],
+                          bridgeCounts: bridgeCounts,
+                          incorrectBridges: incorrectBridges,
+                          incorrectIslands: incorrectIslands,
+                          colorScheme: Theme.of(context).colorScheme,
+                          palette: palette,
+                        ),
                       ),
                     ),
-                  ),
-                  if (onIslandTap != null)
-                    ...List.generate(puzzle.islands.length, (index) {
-                      final island = puzzle.islands[index];
-                      final cell = side / puzzle.size;
-                      final diameter = cell * 0.72;
-                      return Positioned(
-                        left: (island.column + 0.5) * cell - diameter / 2,
-                        top: (island.row + 0.5) * cell - diameter / 2,
-                        width: diameter,
-                        height: diameter,
-                        child: Semantics(
-                          button: true,
-                          label: 'Insel ${island.bridges}',
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              customBorder: const CircleBorder(),
-                              onTap: () => onIslandTap!(index),
+                    if (onIslandTap != null)
+                      ...List.generate(puzzle.islands.length, (index) {
+                        final island = puzzle.islands[index];
+                        final cell = side / puzzle.size;
+                        final diameter = cell * 0.72;
+                        return Positioned(
+                          left: (island.column + 0.5) * cell - diameter / 2,
+                          top: (island.row + 0.5) * cell - diameter / 2,
+                          width: diameter,
+                          height: diameter,
+                          child: Semantics(
+                            button: true,
+                            label: 'Insel ${island.bridges}',
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                customBorder: const CircleBorder(),
+                                onTap: () => onIslandTap!(index),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }),
-                ],
+                        );
+                      }),
+                  ],
+                ),
               ),
             ),
           ),
