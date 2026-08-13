@@ -15,6 +15,9 @@ void main() {
       (id: 10, difficulty: 3),
       (id: 12, difficulty: 3),
       for (var id = 40; id <= 50; id++) (id: id, difficulty: 3),
+      for (var id = 51; id <= 53; id++) (id: id, difficulty: 1),
+      for (var id = 54; id <= 56; id++) (id: id, difficulty: 2),
+      for (var id = 57; id <= 60; id++) (id: id, difficulty: 3),
     ];
     final puzzles = <HashiPuzzle>[];
     for (final specification in specifications) {
@@ -53,7 +56,7 @@ void main() {
     output.writeln('];');
     File('lib/generated_hashi_catalog.dart')
         .writeAsStringSync(output.toString());
-    expect(puzzles, hasLength(42));
+    expect(puzzles, hasLength(52));
   });
 }
 

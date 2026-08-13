@@ -1,3 +1,14 @@
+## v0.8.12 – Langfristiger Fortschritt
+
+- Drei Langzeitziele zu jeweils sechs aufeinanderfolgenden Stufen ausgebaut; nach einem Abschluss erscheint automatisch die nächste Stufe.
+- Langzeitstufen vergeben rückwirkend und idempotent eigene XP, ohne bestehende Buchungen zu verändern.
+- 30 zusätzliche dauerhafte Erfolge für spielartspezifische Abschlüsse, schwere und hintfreie Rätsel, Tagesrätsel sowie lange Spielzeiten ergänzt.
+- „Vielseitiger Denker“ zählt nun korrekt die sechs tatsächlich spielbaren Spielarten statt zukünftiger, noch nicht verfügbarer Typen.
+- Hashi-Ziehbedienung mit großzügigerer Inselerkennung und sichtbarem Bedienhinweis für Smartphones nachgebessert.
+- Kataloge erweitert: Hashi 50 → 60, Futoshiki 32 → 44 und Hitori 28 → 45 feste Rätsel.
+- Alle neuen Katalogrätsel besitzen stabile neue IDs; vorhandene Lösungen und Fortschritte bleiben erhalten.
+- Paketversion auf 0.8.12+41 erhöht.
+
 ## v0.8.11 – Klare Ziele und stabile Wochen
 
 - XP-Verlauf unterscheidet Tagesziele, Wochenziele und ihre jeweiligen Komplettboni eindeutig.

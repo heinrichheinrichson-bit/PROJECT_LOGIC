@@ -1958,7 +1958,7 @@ class _HashiGameScreenState extends State<HashiGameScreen>
         .length;
     final instruction = _actionMessage ??
         (_selectedIsland == null
-            ? 'Wähle eine Insel.'
+            ? 'Tippe eine Insel an oder ziehe direkt zur Zielinsel.'
             : 'Wähle eine leuchtende Zielinsel.');
 
     return Scaffold(
@@ -2325,7 +2325,7 @@ class HashiBoard extends StatelessWidget {
     final cell = size.shortestSide / puzzle.size;
     final offsetX = (size.width - cell * puzzle.size) / 2;
     final offsetY = (size.height - cell * puzzle.size) / 2;
-    final radius = cell * 0.42;
+    final radius = cell * 0.48;
     for (var index = 0; index < puzzle.islands.length; index++) {
       final island = puzzle.islands[index];
       final center = Offset(

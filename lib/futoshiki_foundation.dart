@@ -128,7 +128,7 @@ class SavedFutoshikiGame {
 
 final List<FutoshikiPuzzle> futoshikiPuzzleCatalog = [
   for (final difficulty in PuzzleDifficulty.values)
-    for (var index = 0; index < 8; index++)
+    for (var index = 0; index < 12; index++)
       const FutoshikiGenerator().generate(
         seed: 8100 + difficulty.index * 100 + index,
         difficulty: difficulty,
@@ -141,7 +141,11 @@ final List<FutoshikiPuzzle> futoshikiPuzzleCatalog = [
           4 => 'Zahlenspiel',
           5 => 'Enger Rahmen',
           6 => 'Logische Ordnung',
-          _ => 'Kapitelabschluss',
+          7 => 'Kapitelabschluss',
+          8 => 'Neue Beziehungen',
+          9 => 'Verdeckte Reihenfolge',
+          10 => 'Enges Zahlenfeld',
+          _ => 'Letzte Einordnung',
         },
       ),
   for (var index = 0; index < 8; index++)

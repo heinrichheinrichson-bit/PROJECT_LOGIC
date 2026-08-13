@@ -57,14 +57,40 @@ class ExperiencePointsPolicy {
         'catalog-complete' => 400,
         'hard-five' => 100,
         'large-board' => 50,
-        _ => 50,
+        _ => _tieredAchievement(id),
       };
+
+  static int _tieredAchievement(String id) {
+    final target = int.tryParse(id.split('-').last) ?? 0;
+    if (id.startsWith('play-hours-')) {
+      if (target >= 250 * 3600) return 750;
+      if (target >= 100 * 3600) return 400;
+      return 250;
+    }
+    if (target >= 365) return 750;
+    if (target >= 250) return 500;
+    if (target >= 100) return 250;
+    if (target >= 50) return 150;
+    if (target >= 25) return 100;
+    return 75;
+  }
 
   static int mission(String id) {
     if (id.endsWith('-daily-complete')) return 15;
     if (id.endsWith('-weekly-complete')) return 30;
     if (id.startsWith('daily-')) return 5;
     if (id.startsWith('week-')) return 40;
+    if (id.startsWith('longterm-')) {
+      final target = int.tryParse(id.split('-').last) ?? 0;
+      if (target >= 250) return 300;
+      if (target >= 150) return 225;
+      if (target >= 100) return 175;
+      if (target >= 60) return 125;
+      if (target >= 30) return 90;
+      if (target >= 15) return 60;
+      if (target >= 7) return 40;
+      return 25;
+    }
     return 0;
   }
 }

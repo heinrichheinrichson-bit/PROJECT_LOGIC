@@ -32,5 +32,13 @@ void main() {
       missionEventDetail('week-2026-08-10-weekly-complete'),
       'Wochen-Komplettbonus',
     );
+    expect(
+      missionEventTitle('longterm-active-days-30'),
+      'Regelmäßig dabei',
+    );
+    expect(
+      missionEventDetail('longterm-active-days-30'),
+      'Langzeitziel erreicht',
+    );
   });
 }

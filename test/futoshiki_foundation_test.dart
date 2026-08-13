@@ -45,11 +45,11 @@ void main() {
     expect(state.isSolved, isFalse);
   });
 
-  test('collection contains eight distinct puzzles per chapter', () {
-    expect(futoshikiPuzzleCatalog, hasLength(32));
+  test('collection contains expanded distinct puzzle chapters', () {
+    expect(futoshikiPuzzleCatalog, hasLength(44));
     expect(
       futoshikiPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
-      hasLength(32),
+      hasLength(44),
     );
     for (final chapter in const [
       (difficulty: PuzzleDifficulty.easy, size: 4),
@@ -61,7 +61,7 @@ void main() {
         futoshikiPuzzleCatalog.where((puzzle) =>
             puzzle.difficulty == chapter.difficulty &&
             puzzle.size == chapter.size),
-        hasLength(8),
+        hasLength(chapter.size == 7 ? 8 : 12),
       );
     }
   });

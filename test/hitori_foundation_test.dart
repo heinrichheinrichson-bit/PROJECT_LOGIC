@@ -72,15 +72,15 @@ void main() {
     }
   });
 
-  test('collection contains 28 unique and uniquely solvable puzzles', () {
+  test('collection contains 45 unique and uniquely solvable puzzles', () {
     const solver = HitoriSolver();
     expect(hitoriChapters, hasLength(3));
     expect(
-        hitoriChapters.map((chapter) => chapter.puzzles.length), [10, 10, 8]);
-    expect(hitoriPuzzleCatalog, hasLength(28));
+        hitoriChapters.map((chapter) => chapter.puzzles.length), [15, 15, 15]);
+    expect(hitoriPuzzleCatalog, hasLength(45));
     expect(
       hitoriPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
-      hasLength(28),
+      hasLength(45),
     );
     for (final puzzle in hitoriPuzzleCatalog) {
       expect(solver.hasUniqueSolution(puzzle), isTrue, reason: puzzle.id);
@@ -175,7 +175,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: HitoriHubScreen()));
     await tester.pumpAndSettle();
 
-    expect(find.text('Sammlungsfortschritt: 1 von 28'), findsOneWidget);
+    expect(find.text('Sammlungsfortschritt: 1 von 45'), findsOneWidget);
     await tester.tap(find.text('Rätselsammlung'));
     await tester.pumpAndSettle();
     expect(find.text('Doppelte entdecken'), findsOneWidget);

@@ -49,8 +49,8 @@ void main() {
     );
 
     final mission = service
-        .missions(snapshot)
-        .firstWhere((goal) => goal.id == 'generator-three');
+        .longTermMilestones(snapshot)
+        .firstWhere((goal) => goal.id == 'longterm-generated-3');
 
     expect(mission.current, 3);
     expect(mission.isCompleted, isTrue);
@@ -379,6 +379,70 @@ void main() {
           (event) => event.referenceId?.endsWith('daily-complete') ?? false),
       isTrue,
     );
+  });
+
+  test('long-term goals advance to the next tier', () {
+    const snapshot = ProgressSnapshot(
+      results: {},
+      progress: PlayerProgress(
+        totalCompleted: 0,
+        totalPlaySeconds: 0,
+        completedDays: [
+          '2026-08-01',
+          '2026-08-02',
+          '2026-08-03',
+          '2026-08-04',
+        ],
+      ),
+      catalogPuzzleIds: {},
+    );
+
+    final goals = service.longTermMissions(snapshot);
+
+    expect(goals, hasLength(3));
+    expect(goals.last.id, 'longterm-active-days-7');
+    expect(goals.last.title, 'Regelmäßig dabei · Stufe 2');
+    expect(goals.last.current, 4);
+  });
+
+  test('completed long-term tiers award XP once', () {
+    final results = <String, PuzzleResult>{
+      for (var index = 0; index < 16; index++)
+        'catalog-$index': PuzzleResult(
+          puzzleId: 'catalog-$index',
+          bestSeconds: 30,
+          completedAt: DateTime(2026, 8, 13),
+          source: PuzzleSource.catalog,
+          difficulty: PuzzleDifficulty.easy,
+          boardSize: 6,
+        ),
+    };
+    final snapshot = ProgressSnapshot(
+      results: results,
+      progress: const PlayerProgress.empty(),
+      catalogPuzzleIds: results.keys.toSet(),
+    );
+
+    final first = service.synchronizeMissionXp(
+      snapshot,
+      const [],
+      now: DateTime(2026, 8, 13),
+    );
+    final second = service.synchronizeMissionXp(
+      snapshot,
+      first,
+      now: DateTime(2026, 8, 14),
+    );
+
+    expect(
+      first.where((event) => event.referenceId == 'longterm-catalog-5'),
+      hasLength(1),
+    );
+    expect(
+      first.where((event) => event.referenceId == 'longterm-catalog-15'),
+      hasLength(1),
+    );
+    expect(second, hasLength(first.length));
   });
 }
 

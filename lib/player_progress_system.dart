@@ -11,6 +11,15 @@ DateTime _weekStart(DateTime value) => DateTime(
       value.day - value.weekday + 1,
     );
 
+const _supportedGameTypes = [
+  GameType.binairo,
+  GameType.hashi,
+  GameType.slitherlink,
+  GameType.futoshiki,
+  GameType.hitori,
+  GameType.tents,
+];
+
 enum ProgressGoalKind { achievement, mission }
 
 class ProgressSnapshot {
@@ -46,6 +55,9 @@ class ProgressSnapshot {
   int get hardCompleted => results.values
       .where((result) => result.effectiveDifficulty == PuzzleDifficulty.hard)
       .fold(0, (sum, result) => sum + result.completionCount);
+
+  int get noHintCompleted =>
+      attempts.where((attempt) => attempt.hintsUsed == 0).length;
 
   int get largeBoardCompleted => results.values
       .where((result) => (result.effectiveBoardSize ?? 0) >= 10)
@@ -135,6 +147,8 @@ class ProgressSnapshot {
   int get distinctGamesCompleted => GameType.values
       .where((gameType) => completedForGame(gameType) > 0)
       .length;
+
+  int get activeDaysTotal => progress.completedDays.toSet().length;
 }
 
 class ProgressGoal {
@@ -368,7 +382,7 @@ class PlayerProgressService {
           description: 'Löse mindestens ein Rätsel in jeder Spielart.',
           iconName: 'category',
           current: snapshot.distinctGamesCompleted,
-          target: GameType.values.length,
+          target: _supportedGameTypes.length,
         ),
         _achievement(
           id: 'play-hour',
@@ -414,6 +428,101 @@ class PlayerProgressService {
           current: snapshot.largeBoardCompleted,
           target: 1,
         ),
+        for (final gameType in _supportedGameTypes)
+          ..._gameAchievementChain(snapshot, gameType),
+        ..._achievementChain(
+          key: 'hard',
+          titles: const [
+            'Harte Kost',
+            'Schwere Denkarbeit',
+            'Meister der Schwierigkeit',
+          ],
+          description: (target) => 'Löse $target schwere Rätsel.',
+          iconName: 'diamond',
+          current: snapshot.hardCompleted,
+          targets: const [25, 100, 250],
+        ),
+        ..._achievementChain(
+          key: 'no-hint',
+          titles: const [
+            'Ohne Stützräder',
+            'Sicherer Blick',
+            'Ganz aus eigener Kraft',
+          ],
+          description: (target) => 'Löse $target Rätsel ohne Hinweis.',
+          iconName: 'psychology',
+          current: snapshot.noHintCompleted,
+          targets: const [10, 50, 100],
+        ),
+        ..._achievementChain(
+          key: 'daily',
+          titles: const [
+            'Hundert Tage Logik',
+            'Halbes Kalenderjahr',
+            'Ein Jahr Tagesrätsel',
+          ],
+          description: (target) => 'Löse $target Tagesrätsel.',
+          iconName: 'calendar_month',
+          current: snapshot.dailyCompleted,
+          targets: const [100, 180, 365],
+        ),
+        ..._achievementChain(
+          key: 'play-hours',
+          titles: const [
+            'Fünfzig Stunden Logik',
+            'Hundert Stunden Fokus',
+            'Logik als Leidenschaft',
+          ],
+          description: (target) =>
+              'Verbringe insgesamt $target Stunden beim Rätseln.',
+          iconName: 'timer',
+          current: snapshot.progress.totalPlaySeconds,
+          targets: const [50 * 3600, 100 * 3600, 250 * 3600],
+        ),
+      ];
+
+  List<ProgressGoal> _gameAchievementChain(
+    ProgressSnapshot snapshot,
+    GameType gameType,
+  ) {
+    final label = gameType.label;
+    return _achievementChain(
+      key: 'game-${gameType.name}',
+      titles: [
+        '$label · Vertraut',
+        '$label · Erfahren',
+        '$label · Meisterlich',
+      ],
+      description: (target) => 'Löse $target $label-Rätsel.',
+      iconName: switch (gameType) {
+        GameType.hashi => 'hub',
+        GameType.slitherlink => 'gesture',
+        GameType.tents => 'park',
+        _ => 'grid_on',
+      },
+      current: snapshot.completedForGame(gameType),
+      targets: const [10, 50, 100],
+    );
+  }
+
+  List<ProgressGoal> _achievementChain({
+    required String key,
+    required List<String> titles,
+    required String Function(int target) description,
+    required String iconName,
+    required int current,
+    required List<int> targets,
+  }) =>
+      [
+        for (var index = 0; index < targets.length; index++)
+          _achievement(
+            id: '$key-${targets[index]}',
+            title: titles[index],
+            description: description(targets[index]),
+            iconName: iconName,
+            current: current,
+            target: targets[index],
+          ),
       ];
 
   List<ProgressGoal> dailyMissions(
@@ -566,31 +675,70 @@ class PlayerProgressService {
     return [optional[rotation], optional[(rotation + 1) % optional.length]];
   }
 
-  List<ProgressGoal> longTermMissions(ProgressSnapshot snapshot) => [
-        _mission(
-          id: 'catalog-five',
-          title: 'Sammlung entdecken',
-          description: 'Löse 5 verschiedene Rätsel aus der Sammlung.',
+  List<ProgressGoal> longTermMissions(ProgressSnapshot snapshot) {
+    final chains = _longTermMissionChains(snapshot);
+    return [
+      for (final chain in chains)
+        chain.firstWhere(
+          (goal) => !goal.isCompleted,
+          orElse: () => chain.last,
+        ),
+    ];
+  }
+
+  List<ProgressGoal> longTermMilestones(ProgressSnapshot snapshot) =>
+      _longTermMissionChains(snapshot).expand((chain) => chain).toList();
+
+  List<List<ProgressGoal>> _longTermMissionChains(
+    ProgressSnapshot snapshot,
+  ) =>
+      [
+        _longTermChain(
+          key: 'catalog',
+          title: 'Sammlung erkunden',
+          description: (target) =>
+              'Löse $target verschiedene Rätsel aus der Sammlung.',
           iconName: 'menu_book',
           current: snapshot.catalogCompleted,
-          target: 5,
+          targets: const [5, 15, 30, 75, 150, 300],
         ),
-        _mission(
-          id: 'generator-three',
+        _longTermChain(
+          key: 'generated',
           title: 'Eigene Auswahl',
-          description: 'Löse 3 frei erzeugte Rätsel.',
+          description: (target) => 'Löse $target frei erzeugte Rätsel.',
           iconName: 'auto_awesome',
           current: snapshot.generatedCompleted,
-          target: 3,
+          targets: const [3, 10, 25, 50, 100, 250],
         ),
-        _mission(
-          id: 'streak-three',
-          title: 'Drei Tage dabei',
-          description: 'Spiele an 3 Tagen in Folge.',
-          iconName: 'local_fire_department',
-          current: snapshot.progress.currentStreak,
-          target: 3,
+        _longTermChain(
+          key: 'active-days',
+          title: 'Regelmäßig dabei',
+          description: (target) =>
+              'Spiele an $target verschiedenen Tagen – ohne Seriendruck.',
+          iconName: 'event_available',
+          current: snapshot.activeDaysTotal,
+          targets: const [3, 7, 14, 30, 60, 100],
         ),
+      ];
+
+  List<ProgressGoal> _longTermChain({
+    required String key,
+    required String title,
+    required String Function(int target) description,
+    required String iconName,
+    required int current,
+    required List<int> targets,
+  }) =>
+      [
+        for (var index = 0; index < targets.length; index++)
+          _mission(
+            id: 'longterm-$key-${targets[index]}',
+            title: '$title · Stufe ${index + 1}',
+            description: description(targets[index]),
+            iconName: iconName,
+            current: current,
+            target: targets[index],
+          ),
       ];
 
   String _dateKey(DateTime value) => '${value.year.toString().padLeft(4, '0')}-'
@@ -678,6 +826,11 @@ class PlayerProgressService {
           occurredAt,
         );
       }
+    }
+
+    for (final goal
+        in longTermMilestones(snapshot).where((goal) => goal.isCompleted)) {
+      _addMissionEvent(events, goal.id, current);
     }
 
     return events.values.toList(growable: false)
