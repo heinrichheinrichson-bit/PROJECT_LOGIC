@@ -23,6 +23,7 @@ class AppPreferences extends ChangeNotifier {
   AppPreferences._({
     required this.themePreference,
     required this.animationsEnabled,
+    required this.soundsEnabled,
     required this.hapticsEnabled,
     required this.showRuleIssues,
     required this.premiumSimulationEnabled,
@@ -30,12 +31,14 @@ class AppPreferences extends ChangeNotifier {
 
   static const _themeKey = 'setting_theme_v1';
   static const _animationsKey = 'setting_animations_v1';
+  static const _soundsKey = 'setting_sounds_v1';
   static const _hapticsKey = 'setting_haptics_v1';
   static const _showRuleIssuesKey = 'setting_rule_issues_v1';
   static const _premiumSimulationKey = 'debug_premium_simulation_v1';
 
   AppThemePreference themePreference;
   bool animationsEnabled;
+  bool soundsEnabled;
   bool hapticsEnabled;
   bool showRuleIssues;
   bool premiumSimulationEnabled;
@@ -52,6 +55,7 @@ class AppPreferences extends ChangeNotifier {
     return AppPreferences._(
       themePreference: theme,
       animationsEnabled: preferences.getBool(_animationsKey) ?? true,
+      soundsEnabled: preferences.getBool(_soundsKey) ?? true,
       hapticsEnabled: preferences.getBool(_hapticsKey) ?? true,
       showRuleIssues: preferences.getBool(_showRuleIssuesKey) ?? true,
       premiumSimulationEnabled:
@@ -81,6 +85,14 @@ class AppPreferences extends ChangeNotifier {
     notifyListeners();
     final preferences = await SharedPreferences.getInstance();
     await preferences.setBool(_hapticsKey, value);
+  }
+
+  Future<void> setSoundsEnabled(bool value) async {
+    if (soundsEnabled == value) return;
+    soundsEnabled = value;
+    notifyListeners();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(_soundsKey, value);
   }
 
   Future<void> setShowRuleIssues(bool value) async {

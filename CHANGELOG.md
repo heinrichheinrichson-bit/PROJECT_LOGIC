@@ -1,3 +1,12 @@
+## v0.8.21 – Töne und haptisches Feedback getrennt steuerbar
+
+- Eigenes, separat abschaltbares Tonsystem für Spielzüge, Hinweise und Erfolge ergänzt.
+- Dezenter digitaler Zugton und eigener tieferer Rücknahmeton eingeführt.
+- Hashi-Brücken erhalten ein kurzes elektrisches Neon-Knistern; das Entfernen klingt bewusst anders.
+- Melodische Klänge für gelöste Rätsel und Levelaufstiege ergänzt.
+- Alle Klangdateien reproduzierbar im Projekt erzeugt und ohne externe Lizenzabhängigkeit gespeichert.
+- Paketversion auf 0.8.21+50 erhöht.
+
 ## v0.8.20 – Verständliche Slitherlink-Farbhilfen
 
 - Farblegende direkt in den Slitherlink-Spielhilfen ergänzt.

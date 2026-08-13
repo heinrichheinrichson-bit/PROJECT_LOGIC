@@ -44,6 +44,7 @@ Future<void> main() async {
   await const AppDataMigrationService().migrate();
   final preferences = await AppPreferences.load();
   runApp(ProjectLogicApp(preferences: preferences));
+  if (preferences.soundsEnabled) PuzzleInteractionFeedback.warmUpSounds();
 }
 
 class ProjectLogicApp extends StatelessWidget {
@@ -2683,6 +2684,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
     int? previousBestSeconds;
     int? earnedXp;
     String? collectionProgress;
+    final firstCompletion = !_completionRecorded;
     if (!_completionRecorded) {
       _completionRecorded = true;
       final countsForTesting =
@@ -2749,6 +2751,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (firstCompletion) PuzzleInteractionFeedback.success(context);
       final isNewRecord =
           previousBestSeconds == null || elapsedSeconds < previousBestSeconds;
       showDialog<void>(
@@ -3128,6 +3131,15 @@ class SettingsScreen extends StatelessWidget {
                             ),
                             value: preferences.animationsEnabled,
                             onChanged: preferences.setAnimationsEnabled,
+                          ),
+                          const Divider(height: 1),
+                          SwitchListTile(
+                            title: const Text('Töne'),
+                            subtitle: const Text(
+                              'Leise Spielklänge und melodische Erfolge',
+                            ),
+                            value: preferences.soundsEnabled,
+                            onChanged: preferences.setSoundsEnabled,
                           ),
                           const Divider(height: 1),
                           SwitchListTile(
@@ -3535,7 +3547,10 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     });
     if (reachedNewLevel) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _showLevelUpDialog(freshRank);
+        if (mounted) {
+          PuzzleInteractionFeedback.levelUp(context);
+          _showLevelUpDialog(freshRank);
+        }
       });
     }
   }

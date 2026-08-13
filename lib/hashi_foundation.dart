@@ -1411,12 +1411,13 @@ class _HashiGameScreenState extends State<HashiGameScreen>
 
   Future<void> _handleIslandTap(int index) async {
     if (_completionShown) return;
-    PuzzleInteractionFeedback.selection(context);
     if (_selectedIsland == null) {
+      PuzzleInteractionFeedback.selection(context);
       setState(() => _selectedIsland = index);
       return;
     }
     if (_selectedIsland == index) {
+      PuzzleInteractionFeedback.removal(context);
       setState(() => _selectedIsland = null);
       return;
     }
@@ -1427,7 +1428,6 @@ class _HashiGameScreenState extends State<HashiGameScreen>
 
   Future<void> _handleIslandDrag(int first, int second) async {
     if (_completionShown || first == second) return;
-    PuzzleInteractionFeedback.selection(context);
     await _connectIslands(first, second);
   }
 
@@ -1447,6 +1447,10 @@ class _HashiGameScreenState extends State<HashiGameScreen>
     });
     if (!identical(previous, next)) {
       final nextCount = next.bridgeCountBetween(first, second);
+      PuzzleInteractionFeedback.hashiBridge(
+        context,
+        removed: nextCount == 0,
+      );
       _showActionMessage(
         nextCount == 0
             ? 'Brücke entfernt'
