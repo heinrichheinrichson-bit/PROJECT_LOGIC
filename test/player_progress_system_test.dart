@@ -161,6 +161,78 @@ void main() {
     expect(firstDay.first.id, isNot(nextDay.first.id));
   });
 
+  test('daily mission rotation is independent of time and daylight saving', () {
+    const snapshot = ProgressSnapshot(
+      results: {},
+      progress: PlayerProgress.empty(),
+      catalogPuzzleIds: {},
+    );
+
+    final midnight = service.dailyMissions(
+      snapshot,
+      date: DateTime(2026, 8, 12),
+    );
+    final evening = service.dailyMissions(
+      snapshot,
+      date: DateTime(2026, 8, 12, 20, 23),
+    );
+
+    expect(evening.map((goal) => goal.id), midnight.map((goal) => goal.id));
+  });
+
+  test('daily completion bonus waits for all goals on August 12 and 13', () {
+    const dailyService = DailyChallengeService();
+
+    for (final day in [
+      DateTime(2026, 8, 12, 20, 23),
+      DateTime(2026, 8, 13, 6, 1),
+    ]) {
+      final attempts = <PuzzleAttempt>[
+        _attempt(
+          id: 'daily-${day.day}',
+          puzzleId: dailyService.summaryForGame(day, GameType.binairo).puzzleId,
+          gameType: GameType.binairo,
+          mode: GameMode.daily,
+          date: day,
+        ),
+        _attempt(
+          id: 'second-${day.day}',
+          puzzleId:
+              day.day == 12 ? 'catalog-${day.day}' : 'generated-${day.day}',
+          gameType: GameType.hashi,
+          mode: day.day == 12 ? GameMode.catalog : GameMode.generated,
+          date: day,
+        ),
+      ];
+      final snapshot = ProgressSnapshot(
+        results: const {},
+        progress: const PlayerProgress.empty(),
+        catalogPuzzleIds: const {},
+        attempts: attempts,
+      );
+
+      final goals = service.dailyMissions(snapshot, date: day);
+      final events = service.synchronizeMissionXp(
+        snapshot,
+        const [],
+        now: day,
+      );
+
+      expect(
+        goals.where((goal) => goal.isCompleted),
+        hasLength(2),
+        reason: 'reported date ${day.day}.8.2026',
+      );
+      expect(
+        events.where(
+          (event) => event.referenceId?.endsWith('daily-complete') ?? false,
+        ),
+        isEmpty,
+        reason: 'reported date ${day.day}.8.2026',
+      );
+    }
+  });
+
   test('game-specific achievements count Binairo and Hashi separately', () {
     final hashi = PuzzleResult(
       puzzleId: 'easy-01',

@@ -1,3 +1,11 @@
+## v0.8.10 – Korrekte Tagesziel-Boni
+
+- Tages- und Wochenzielrotation verwendet reine Kalendertage und ist damit unabhängig von Uhrzeit und Sommerzeit.
+- Der Komplettbonus wird erst vergeben, wenn exakt die drei sichtbaren Tagesziele erfüllt sind.
+- Bestehende XP-Buchungen bleiben unangetastet; die Korrektur verhindert ausschließlich künftige Frühvergaben.
+- Regressionstests für die auf dem Galaxy S22 beobachteten Fälle vom 12. und 13. August 2026 ergänzt.
+- Paketversion auf 0.8.10+39 erhöht.
+
 ## v0.8.9 – Datensicherheit und mobile Stabilität
 
 - App-weite sichere Systemabstände für Android, iOS und Tablets ergänzt.

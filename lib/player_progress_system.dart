@@ -480,8 +480,7 @@ class PlayerProgressService {
         target: 2,
       ),
     ];
-    final rotation =
-        today.difference(DateTime(2026)).inDays.abs() % optional.length;
+    final rotation = _calendarDayIndex(today).abs() % optional.length;
     return [
       _mission(
         id: 'daily-${_dateKey(today)}-challenge',
@@ -558,8 +557,8 @@ class PlayerProgressService {
         target: 2,
       ),
     ];
-    final rotation = (weekStart.difference(DateTime(2026)).inDays.abs() ~/ 7) %
-        optional.length;
+    final rotation =
+        (_calendarDayIndex(weekStart).abs() ~/ 7) % optional.length;
     return [optional[rotation], optional[(rotation + 1) % optional.length]];
   }
 
@@ -593,6 +592,12 @@ class PlayerProgressService {
   String _dateKey(DateTime value) => '${value.year.toString().padLeft(4, '0')}-'
       '${value.month.toString().padLeft(2, '0')}-'
       '${value.day.toString().padLeft(2, '0')}';
+
+  int _calendarDayIndex(DateTime value) => DateTime.utc(
+        value.year,
+        value.month,
+        value.day,
+      ).difference(DateTime.utc(2026)).inDays;
 
   List<ExperienceEvent> synchronizeAchievementXp(
     ProgressSnapshot snapshot,
