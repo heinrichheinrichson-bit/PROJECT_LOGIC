@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../../app_preferences.dart';
+import 'puzzle_haptics.dart';
 import 'puzzle_sound.dart';
 
 /// Central haptic language for every puzzle type.
@@ -25,14 +25,18 @@ abstract final class PuzzleInteractionFeedback {
     if (_soundsEnabled(context)) PuzzleSoundPlayer.playUnawaited(sound);
   }
 
+  static void _haptic(BuildContext context, PuzzleHaptic haptic) {
+    if (_hapticsEnabled(context)) PuzzleHapticPlayer.playUnawaited(haptic);
+  }
+
   static void selection(BuildContext context) {
     _sound(context, PuzzleSound.move);
-    if (_hapticsEnabled(context)) unawaited(HapticFeedback.selectionClick());
+    _haptic(context, PuzzleHaptic.selection);
   }
 
   static void removal(BuildContext context) {
     _sound(context, PuzzleSound.remove);
-    if (_hapticsEnabled(context)) unawaited(HapticFeedback.selectionClick());
+    _haptic(context, PuzzleHaptic.selection);
   }
 
   static void hashiBridge(BuildContext context, {required bool removed}) {
@@ -40,21 +44,21 @@ abstract final class PuzzleInteractionFeedback {
       context,
       removed ? PuzzleSound.hashiRemove : PuzzleSound.hashiConnect,
     );
-    if (_hapticsEnabled(context)) unawaited(HapticFeedback.selectionClick());
+    _haptic(context, PuzzleHaptic.bridge);
   }
 
   static void hint(BuildContext context) {
     _sound(context, PuzzleSound.hint);
-    if (_hapticsEnabled(context)) unawaited(HapticFeedback.lightImpact());
+    _haptic(context, PuzzleHaptic.hint);
   }
 
   static void success(BuildContext context) {
     _sound(context, PuzzleSound.success);
-    if (_hapticsEnabled(context)) unawaited(HapticFeedback.mediumImpact());
+    _haptic(context, PuzzleHaptic.success);
   }
 
   static void levelUp(BuildContext context) {
     _sound(context, PuzzleSound.levelUp);
-    if (_hapticsEnabled(context)) unawaited(HapticFeedback.heavyImpact());
+    _haptic(context, PuzzleHaptic.levelUp);
   }
 }

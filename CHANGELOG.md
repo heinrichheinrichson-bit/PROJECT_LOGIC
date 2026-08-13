@@ -1,3 +1,11 @@
+## v0.8.24 – Zuverlässige Android-Vibrationen
+
+- Systemabhängiges Flutter-Berührungsfeedback durch echte kurze Android-Vibrationsimpulse ersetzt.
+- Erforderliche Android-Vibrationsberechtigung ergänzt.
+- Unterschiedliche Stärken und Muster für Spielzug, Hashi-Brücke, Hinweis, Abschluss und Levelaufstieg eingeführt.
+- Separater App-Schalter für haptisches Feedback bleibt erhalten.
+- Paketversion auf 0.8.24+53 erhöht.
+
 ## v0.8.23 – Dezentes Hashi-Knistern
 
 - Synthetischen Hashi-Verbindungston durch ein kurzes, dezentes elektrostatisches Knistern ersetzt.
