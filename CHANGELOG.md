@@ -1,3 +1,13 @@
+## v0.8.19 – Slitherlink-Spielhilfen wieder schaltbar
+
+- Fehlenden Ein-/Aus-Schalter „Regelfehler markieren“ in den Slitherlink-Spielhilfen wiederhergestellt.
+- Einstellung wird dauerhaft in den appweiten Einstellungen gespeichert.
+- Zahlenüberschreitungen und vollständig widersprüchliche Zahlen werden bei aktiver Hilfe rot markiert.
+- Linien an ungültigen Abzweigungen werden bei aktiver Hilfe rot markiert.
+- Bei ausgeschalteter Hilfe bleiben diese unmittelbaren Fehlermarkierungen verborgen; Lösungsprüfung und Hinweise bleiben unverändert.
+- Regressionstests für Fehlererkennung, Schalterbedienung und Speicherung ergänzt.
+- Paketversion auf 0.8.19+48 erhöht.
+
 ## v0.8.18 – Mehr Slitherlink-Schleifen
 
 - Slitherlink-Katalog von 36 auf 48 Rätsel erweitert.

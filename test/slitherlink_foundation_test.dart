@@ -206,6 +206,61 @@ void main() {
     expect(emptyAgain.markAt(edge), SlitherEdgeMark.empty);
   });
 
+  test('rule issues detect clue conflicts and branching lines', () {
+    const puzzle = SlitherlinkPuzzle(
+      id: 'rule-issue-regression',
+      title: 'Rule issue regression',
+      rows: 1,
+      columns: 1,
+      clues: [
+        <int?>[0]
+      ],
+      solution: <String>{},
+    );
+    const clueConflict = SlitherlinkState(
+      puzzle: puzzle,
+      marks: {'h:0:0': SlitherEdgeMark.line},
+    );
+    const branching = SlitherlinkState(
+      puzzle: puzzle,
+      marks: {
+        'h:0:0': SlitherEdgeMark.line,
+        'h:0:1': SlitherEdgeMark.line,
+        'v:0:1': SlitherEdgeMark.line,
+      },
+    );
+
+    expect(clueConflict.clueHasRuleIssue(0, 0), isTrue);
+    expect(branching.branchingLineIds, hasLength(3));
+  });
+
+  testWidgets('Slitherlink rule issue switch is interactive and persisted',
+      (tester) async {
+    final preferences = await AppPreferences.load();
+    await tester.pumpWidget(
+      PreferencesScope(
+        preferences: preferences,
+        child: const MaterialApp(
+          home: SlitherlinkGameScreen(puzzle: slitherlinkTutorialPuzzle),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byTooltip('Spielhilfen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Regelfehler markieren'), findsOneWidget);
+    expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
+        isTrue);
+
+    await tester.tap(find.byType(SwitchListTile));
+    await tester.pumpAndSettle();
+
+    expect(preferences.showRuleIssues, isFalse);
+    final reloaded = await AppPreferences.load();
+    expect(reloaded.showRuleIssues, isFalse);
+    expect(find.text('Spielhilfen'), findsNothing);
+  });
+
   testWidgets('debug solve is clearly marked as a test completion',
       (tester) async {
     SharedPreferences.setMockInitialValues({});

@@ -144,6 +144,35 @@ class SlitherlinkState {
     return clue == null || linesAround(row, column) == clue;
   }
 
+  bool clueHasRuleIssue(int row, int column) {
+    final clue = puzzle.clues[row][column];
+    if (clue == null) return false;
+    final ids = [
+      'h:$row:$column',
+      'h:${row + 1}:$column',
+      'v:$row:$column',
+      'v:$row:${column + 1}',
+    ];
+    final lines = ids.where((id) => marks[id] == SlitherEdgeMark.line).length;
+    if (lines > clue) return true;
+    final undecided = ids.where((id) => !marks.containsKey(id)).length;
+    return undecided == 0 && lines != clue;
+  }
+
+  Set<String> get branchingLineIds {
+    final lineSet = lineIds.toSet();
+    final touching = <String, Set<String>>{};
+    for (final id in lineSet) {
+      final points = _edgePoints(id);
+      touching.putIfAbsent(points.$1, () => {}).add(id);
+      touching.putIfAbsent(points.$2, () => {}).add(id);
+    }
+    return {
+      for (final entry in touching.entries)
+        if (entry.value.length > 2) ...entry.value,
+    };
+  }
+
   bool get isSolved {
     for (var row = 0; row < puzzle.rows; row++) {
       for (var column = 0; column < puzzle.columns; column++) {
@@ -1568,16 +1597,23 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
             ),
             IconButton(
               tooltip: 'Spielhilfen',
-              onPressed: () => showPuzzleGameOptions(context, children: const [
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(Icons.fact_check_outlined),
-                  title: Text('Regelfehler'),
-                  subtitle: Text(
-                    'Ungültige Abzweigungen und Zahlenkonflikte werden direkt am Brett markiert.',
+              onPressed: () {
+                final preferences = PreferencesScope.of(context);
+                showPuzzleGameOptions(context, children: [
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Regelfehler markieren'),
+                    subtitle: const Text(
+                      'Zeigt ungültige Abzweigungen und Zahlenkonflikte direkt am Brett.',
+                    ),
+                    value: preferences.showRuleIssues,
+                    onChanged: (value) async {
+                      await preferences.setShowRuleIssues(value);
+                      if (context.mounted) Navigator.pop(context);
+                    },
                   ),
-                ),
-              ]),
+                ]);
+              },
               icon: const Icon(Icons.tune_rounded),
             ),
           ],
@@ -1648,6 +1684,8 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                       child: SlitherlinkBoard(
                         state: _state,
                         enabled: !_completionShown,
+                        showRuleIssues:
+                            PreferencesScope.of(context).showRuleIssues,
                         onEdgeTap: _cycle,
                       ),
                     ),
@@ -1690,12 +1728,14 @@ class SlitherlinkBoard extends StatelessWidget {
   const SlitherlinkBoard({
     required this.state,
     required this.enabled,
+    this.showRuleIssues = true,
     required this.onEdgeTap,
     super.key,
   });
 
   final SlitherlinkState state;
   final bool enabled;
+  final bool showRuleIssues;
   final ValueChanged<SlitherEdge> onEdgeTap;
 
   @override
@@ -1714,6 +1754,7 @@ class SlitherlinkBoard extends StatelessWidget {
             child: CustomPaint(
               painter: _SlitherlinkPainter(
                 state: state,
+                showRuleIssues: showRuleIssues,
                 colors: Theme.of(context).colorScheme,
                 palette: AppTheme.boardPalette(
                   'slitherlink',
@@ -1755,11 +1796,13 @@ class SlitherlinkBoard extends StatelessWidget {
 class _SlitherlinkPainter extends CustomPainter {
   const _SlitherlinkPainter({
     required this.state,
+    required this.showRuleIssues,
     required this.colors,
     required this.palette,
   });
 
   final SlitherlinkState state;
+  final bool showRuleIssues;
   final ColorScheme colors;
   final GameBoardPalette palette;
 
@@ -1775,24 +1818,34 @@ class _SlitherlinkPainter extends CustomPainter {
       ..color = palette.accent
       ..strokeWidth = 5
       ..strokeCap = StrokeCap.round;
+    final errorLine = Paint()
+      ..color = colors.error
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
     final blocked = Paint()
       ..color = palette.muted
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
     final dot = Paint()..color = palette.foreground;
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
+    final branchingLines =
+        showRuleIssues ? state.branchingLineIds : const <String>{};
 
     for (var row = 0; row < puzzle.rows; row++) {
       for (var column = 0; column < puzzle.columns; column++) {
         final clue = puzzle.clues[row][column];
         if (clue != null) {
           final satisfied = state.clueSatisfied(row, column);
+          final hasIssue =
+              showRuleIssues && state.clueHasRuleIssue(row, column);
           textPainter.text = TextSpan(
             text: '$clue',
             style: TextStyle(
-              color: satisfied && state.lineIds.isNotEmpty
-                  ? palette.accentAlt
-                  : palette.foreground,
+              color: hasIssue
+                  ? colors.error
+                  : satisfied && state.lineIds.isNotEmpty
+                      ? palette.accentAlt
+                      : palette.foreground,
               fontSize: (dx < dy ? dx : dy) * 0.38,
               fontWeight: FontWeight.w700,
             ),
@@ -1818,7 +1871,11 @@ class _SlitherlinkPainter extends CustomPainter {
           : Offset(edge.column * dx, (edge.row + 1) * dy);
       final mark = state.markAt(edge);
       if (mark == SlitherEdgeMark.line) {
-        canvas.drawLine(start, end, line);
+        canvas.drawLine(
+          start,
+          end,
+          branchingLines.contains(edge.id) ? errorLine : line,
+        );
       } else {
         canvas.drawLine(start, end, faint);
         if (mark == SlitherEdgeMark.blocked) {
@@ -1848,6 +1905,7 @@ class _SlitherlinkPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _SlitherlinkPainter oldDelegate) =>
       oldDelegate.state != state ||
+      oldDelegate.showRuleIssues != showRuleIssues ||
       oldDelegate.colors != colors ||
       oldDelegate.palette != palette;
 }
