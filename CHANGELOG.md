@@ -1,3 +1,10 @@
+## v0.8.23 – Dezentes Hashi-Knistern
+
+- Synthetischen Hashi-Verbindungston durch ein kurzes, dezentes elektrostatisches Knistern ersetzt.
+- Pixabay-Ausgangsmaterial auf 0,30 Sekunden gekürzt, leiser abgestimmt, gefiltert und weich ausgeblendet.
+- Herkunft und zulässige Verwendung intern bei den Klangassets dokumentiert; in der App ist keine Namensnennung erforderlich.
+- Paketversion auf 0.8.23+52 erhöht.
+
 ## v0.8.22 – Kurze Klicks und echtes Hashi-Knistern
 
 - Tonales Quietschen bei normalen Spielzügen durch einen sehr kurzen, neutralen Klick ersetzt.

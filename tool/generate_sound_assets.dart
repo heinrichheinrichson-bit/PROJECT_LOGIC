@@ -144,6 +144,7 @@ void main() {
       strength: 0.5,
     ),
   );
-  _writeWav('$directory/hashi_connect.wav', _crackle(descending: false));
+  // hashi_connect.wav is a curated Pixabay-derived asset; it is intentionally
+  // not overwritten by this generator. See assets/sounds/SOURCES.md.
   _writeWav('$directory/hashi_remove.wav', _crackle(descending: true));
 }
