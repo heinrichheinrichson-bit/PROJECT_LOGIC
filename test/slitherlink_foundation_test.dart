@@ -22,10 +22,10 @@ void main() {
   });
 
   test('every collection puzzle contains a valid advertised solution', () {
-    expect(slitherlinkPuzzleCatalog, hasLength(48));
+    expect(slitherlinkPuzzleCatalog, hasLength(60));
     expect(
       slitherlinkPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
-      hasLength(48),
+      hasLength(60),
     );
     expect(
       slitherlinkPuzzleCatalog
@@ -43,6 +43,9 @@ void main() {
           'Ruhige Runde',
           'Kombinierte Runde',
           'Letzte Meisterrunde',
+          'Leichte Schleife',
+          'Geschlossene Fährte',
+          'Finale Schleife',
         ],
       ),
     );
@@ -50,7 +53,7 @@ void main() {
       expect(
         slitherlinkPuzzleCatalog
             .where((puzzle) => puzzle.difficulty == difficulty),
-        hasLength(16),
+        hasLength(20),
       );
     }
     for (final puzzle in slitherlinkPuzzleCatalog) {

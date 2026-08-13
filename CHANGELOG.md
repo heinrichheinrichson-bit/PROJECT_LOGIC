@@ -586,3 +586,9 @@
 - Tagesrätsel-Serie vorbereitet und sichtbar gemacht.
 - Savegame-Schema auf Version 3 erweitert.
 - Version auf 0.6.9+23 erhöht.
+## v0.8.25 – Mehr Slitherlink-Rätsel
+
+- Slitherlink-Sammlung von 48 auf 60 eindeutig lösbare Rätsel erweitert.
+- Je vier neue Rätsel für Leicht, Mittel und Schwer ergänzt.
+- Alle neuen Lösungen auf Zahlenregeln, eine einzige geschlossene Schleife und Eindeutigkeit geprüft.
+- Paketversion auf 0.8.25+54 erhöht.

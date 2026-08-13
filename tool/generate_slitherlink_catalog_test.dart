@@ -18,23 +18,35 @@ void main() {
         'Klare Kanten',
         'Sanfter Umweg',
         'Sichere Kurve',
+        'Leichte Schleife',
+        'Freie Passage',
+        'Helle Spur',
+        'Runder Abschluss',
       ],
       PuzzleDifficulty.medium: [
         'Verdeckter Bogen',
         'Versetzte Spuren',
         'Langer Wendepunkt',
         'Kombinierte Runde',
+        'Geteilte Wege',
+        'Raffinierte Kurven',
+        'Verwobene Kanten',
+        'Geschlossene Fährte',
       ],
       PuzzleDifficulty.hard: [
         'Tiefe Abzweigung',
         'Sparsame Hinweise',
         'Verborgener Verlauf',
         'Letzte Meisterrunde',
+        'Täuschende Kreuzung',
+        'Enge Entscheidung',
+        'Meisterhafte Windung',
+        'Finale Schleife',
       ],
     };
 
     for (final difficulty in PuzzleDifficulty.values) {
-      for (var offset = 0; offset < 4; offset++) {
+      for (var offset = 0; offset < 8; offset++) {
         final seed = 31000 + difficulty.index * 100 + offset;
         final generated = generator.generate(
           seed: seed,
@@ -89,7 +101,7 @@ void main() {
       '${generatedSection.toString()}\n',
     );
     file.writeAsStringSync(source);
-    expect(puzzles, hasLength(12));
+    expect(puzzles, hasLength(24));
   });
 }
 
