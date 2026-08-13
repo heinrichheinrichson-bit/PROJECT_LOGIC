@@ -94,6 +94,7 @@ class _HomeScreenState extends State<HomeScreen> {
   PlayerProgress _progress = const PlayerProgress.empty();
   SavedHashiGame? _savedHashiGame;
   SavedSlitherlinkGame? _savedSlitherlinkGame;
+  PlayerRank? _rank;
   bool _loading = true;
 
   @override
@@ -105,14 +106,44 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _refresh() async {
     final results = await _storage.loadResults();
     final progress = await _storage.loadPlayerProgress();
+    final attempts = await _storage.loadAttempts();
+    final existingEvents = await _storage.loadExperienceEvents();
     final savedHashiGame = await HashiGameStore().load();
     final savedSlitherlinkGame = await SlitherlinkGameStore().load();
+    const progressService = PlayerProgressService();
+    final snapshot = ProgressSnapshot(
+      results: results,
+      progress: progress,
+      catalogPuzzleIds: {
+        ...binaryPuzzleCatalog.map((puzzle) => puzzle.id),
+        ...hashiPuzzleCatalog.map((puzzle) => 'hashi:${puzzle.id}'),
+        ...slitherlinkPuzzleCatalog.map((puzzle) => 'slitherlink:${puzzle.id}'),
+        ...futoshikiPuzzleCatalog.map((puzzle) => puzzle.id),
+        ...hitoriPuzzleCatalog.map((puzzle) => puzzle.id),
+        ...tentsPuzzleCatalog.map((puzzle) => puzzle.id),
+      },
+      attempts: attempts,
+    );
+    final withAchievements = progressService.synchronizeAchievementXp(
+      snapshot,
+      existingEvents.values,
+    );
+    final synchronized = progressService.synchronizeMissionXp(
+      snapshot,
+      withAchievements,
+    );
+    await _storage.saveExperienceEvents(synchronized);
+    final rank = progressService.rank(
+      snapshot,
+      experienceEvents: synchronized,
+    );
     if (!mounted) return;
     setState(() {
       _results = results;
       _progress = progress;
       _savedHashiGame = savedHashiGame;
       _savedSlitherlinkGame = savedSlitherlinkGame;
+      _rank = rank;
       _loading = false;
     });
   }
@@ -139,10 +170,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       await _refresh();
                     },
                   ),
-                  const SizedBox(height: 28),
+                  const SizedBox(height: 18),
                   if (_loading)
                     const Center(child: CircularProgressIndicator())
                   else ...[
+                    if (_rank case final rank?) ...[
+                      _HomeLevelCard(
+                        rank: rank,
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => PlayerProfileScreen(
+                                results: _results,
+                                progress: _progress,
+                              ),
+                            ),
+                          );
+                          await _refresh();
+                        },
+                      ),
+                      const SizedBox(height: 14),
+                    ],
                     if (_savedHashiGame case final saved?) ...[
                       _HomeAction(
                         icon: Icons.play_circle_outline_rounded,
@@ -1399,6 +1447,101 @@ class _StreakCard extends StatelessWidget {
         ),
         trailing:
             secured ? const Icon(Icons.check_circle_outline_rounded) : null,
+      ),
+    );
+  }
+}
+
+class _HomeLevelCard extends StatelessWidget {
+  const _HomeLevelCard({required this.rank, required this.onTap});
+
+  final PlayerRank rank;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final remaining = rank.nextLevelXp - rank.currentXp;
+    return Semantics(
+      button: true,
+      label: 'Level ${rank.level}, ${rank.title}',
+      hint: 'Deinen Fortschritt öffnen',
+      child: Card(
+        color: colors.primaryContainer.withValues(alpha: .55),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 14, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: colors.primary,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    '${rank.level}',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: colors.onPrimary,
+                          fontWeight: FontWeight.w900,
+                        ),
+                  ),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Level ${rank.level} · ${rank.title}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${rank.currentXp} / ${rank.nextLevelXp} XP',
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 7),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(99),
+                        child: LinearProgressIndicator(
+                          minHeight: 6,
+                          value: rank.progress,
+                          backgroundColor:
+                              colors.surface.withValues(alpha: .65),
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Noch $remaining XP bis Level ${rank.level + 1}',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 5),
+                const Icon(Icons.chevron_right_rounded, size: 20),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

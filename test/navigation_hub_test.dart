@@ -26,6 +26,41 @@ void main() {
     expect(find.text('Binärpuzzle-Statistik'), findsOneWidget);
   });
 
+  testWidgets('home shows the current level and opens progress',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await AppPreferences.load();
+
+    await tester.pumpWidget(ProjectLogicApp(preferences: preferences));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Level 1 ·'), findsOneWidget);
+    expect(find.text('0 / 200 XP'), findsOneWidget);
+    expect(find.text('Noch 200 XP bis Level 2'), findsOneWidget);
+
+    await tester.tap(find.textContaining('Level 1 ·'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Dein Fortschritt'), findsOneWidget);
+    expect(find.text('Heute'), findsOneWidget);
+  });
+
+  testWidgets('home level card fits a narrow phone without overflow',
+      (tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await AppPreferences.load();
+
+    await tester.pumpWidget(ProjectLogicApp(preferences: preferences));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Level 1 ·'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('home opens the Hashi foundation', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final preferences = await AppPreferences.load();
@@ -34,6 +69,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Hashi'), findsOneWidget);
+    await tester.ensureVisible(find.text('Hashi'));
     await tester.tap(find.text('Hashi'));
     await tester.pumpAndSettle();
 

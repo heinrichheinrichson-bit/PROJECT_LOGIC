@@ -1,3 +1,12 @@
+## v0.8.17 – Level direkt auf der Startseite
+
+- Kompakte Levelkarte direkt unter der Begrüßung auf der Startseite ergänzt.
+- Karte zeigt Level, Rangtitel, aktuelle XP, Fortschrittsbalken und verbleibende XP bis zum nächsten Level.
+- Antippen öffnet den bestehenden Bereich „Dein Fortschritt“.
+- Die Startseite verwendet dieselbe synchronisierte XP-Berechnung wie der Fortschrittsbereich statt einer Schätzung.
+- Layout- und Navigationstests für normale und schmale Smartphones ergänzt.
+- Paketversion auf 0.8.17+46 erhöht.
+
 ## v0.8.16 – Größere Futoshiki- und Hitori-Sammlungen
 
 - Futoshiki-Katalog von 44 auf 60 Rätsel erweitert.
