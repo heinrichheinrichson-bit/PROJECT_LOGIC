@@ -226,6 +226,79 @@ void main() {
     expect(draggedConnection, isNull);
   });
 
+  testWidgets('central board gesture still recognizes an island tap',
+      (tester) async {
+    int? tappedIsland;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox.square(
+              dimension: 300,
+              child: HashiBoard(
+                puzzle: hashiTutorialPuzzle,
+                bridges: const [],
+                onIslandTap: (index) => tappedIsland = index,
+                onIslandDrag: (_, __) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final board = tester.getRect(find.byType(HashiBoard));
+    final cell = board.width / hashiTutorialPuzzle.size;
+    final island = hashiTutorialPuzzle.islands.first;
+    await tester.tapAt(Offset(
+      board.left + (island.column + 0.5) * cell,
+      board.top + (island.row + 0.5) * cell,
+    ));
+    await tester.pump();
+
+    expect(tappedIsland, 0);
+  });
+
+  testWidgets('central board gesture still recognizes a bridge tap',
+      (tester) async {
+    HashiBridge? tappedBridge;
+    final bridge = hashiPreviewBridges.first;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox.square(
+              dimension: 300,
+              child: HashiBoard(
+                puzzle: hashiTutorialPuzzle,
+                bridges: [bridge],
+                onIslandTap: (_) {},
+                onIslandDrag: (_, __) {},
+                onBridgeTap: (value) => tappedBridge = value,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final board = tester.getRect(find.byType(HashiBoard));
+    final cell = board.width / hashiTutorialPuzzle.size;
+    Offset center(int index) {
+      final island = hashiTutorialPuzzle.islands[index];
+      return Offset(
+        board.left + (island.column + 0.5) * cell,
+        board.top + (island.row + 0.5) * cell,
+      );
+    }
+
+    await tester
+        .tapAt(Offset.lerp(center(bridge.from), center(bridge.to), 0.5)!);
+    await tester.pump();
+
+    expect(tappedBridge, bridge);
+  });
+
   test('Hashi chapters preserve every puzzle and difficulty filter', () {
     final all = hashiChaptersFor();
     final medium = hashiChaptersFor(difficulty: 2);

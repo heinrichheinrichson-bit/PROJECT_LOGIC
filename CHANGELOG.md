@@ -1,3 +1,13 @@
+## v0.8.14 – Einheitliche Hashi-Touchsteuerung
+
+- Hashi-Brettinteraktion grundlegend neu aufgebaut: Eine einzige zentrale Gestenfläche verarbeitet Tippen und Ziehen.
+- Konkurrierende Insel-Schaltflächen und der zusätzliche rohe Pointer-Listener wurden entfernt.
+- Kurzer Kontakt wählt eine Insel; eine klare Bewegung rastet horizontal oder vertikal auf die nächste sichtbare Insel ein.
+- Eine Vorschau-Linie folgt dem Finger und verbindet sich sichtbar mit der erkannten Zielinsel.
+- Direktes Antippen vorhandener Brücken zum Entfernen bleibt erhalten.
+- Regressionstests für ungenaues Ziehen, ungültige Diagonalbewegungen, Insel-Tippen und Brücken-Tippen ergänzt.
+- Paketversion auf 0.8.14+43 erhöht.
+
 ## v0.8.13 – Hashi-Ziehen per Richtung
 
 - Hashi-Ziehen vollständig auf Richtungssteuerung umgestellt: Eine klare horizontale oder vertikale Bewegung wählt die nächste sichtbare Insel.

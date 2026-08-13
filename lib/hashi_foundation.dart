@@ -2295,7 +2295,7 @@ class HashiRulesScreen extends StatelessWidget {
   }
 }
 
-class HashiBoard extends StatelessWidget {
+class HashiBoard extends StatefulWidget {
   const HashiBoard({
     required this.puzzle,
     required this.bridges,
@@ -2321,13 +2321,22 @@ class HashiBoard extends StatelessWidget {
   final void Function(int first, int second)? onIslandDrag;
   final ValueChanged<HashiBridge>? onBridgeTap;
 
+  @override
+  State<HashiBoard> createState() => _HashiBoardState();
+}
+
+class _HashiBoardState extends State<HashiBoard> {
+  int? _dragStart;
+  int? _dragTarget;
+  Offset? _dragPosition;
+
   int? _islandAtPosition(Offset position, Size size) {
-    final cell = size.shortestSide / puzzle.size;
-    final offsetX = (size.width - cell * puzzle.size) / 2;
-    final offsetY = (size.height - cell * puzzle.size) / 2;
+    final cell = size.shortestSide / widget.puzzle.size;
+    final offsetX = (size.width - cell * widget.puzzle.size) / 2;
+    final offsetY = (size.height - cell * widget.puzzle.size) / 2;
     final radius = cell * 0.48;
-    for (var index = 0; index < puzzle.islands.length; index++) {
-      final island = puzzle.islands[index];
+    for (var index = 0; index < widget.puzzle.islands.length; index++) {
+      final island = widget.puzzle.islands[index];
       final center = Offset(
         offsetX + (island.column + 0.5) * cell,
         offsetY + (island.row + 0.5) * cell,
@@ -2338,10 +2347,10 @@ class HashiBoard extends StatelessWidget {
   }
 
   int? _targetInDragDirection(int startIndex, Offset position, Size size) {
-    final cell = size.shortestSide / puzzle.size;
-    final offsetX = (size.width - cell * puzzle.size) / 2;
-    final offsetY = (size.height - cell * puzzle.size) / 2;
-    final start = puzzle.islands[startIndex];
+    final cell = size.shortestSide / widget.puzzle.size;
+    final offsetX = (size.width - cell * widget.puzzle.size) / 2;
+    final offsetY = (size.height - cell * widget.puzzle.size) / 2;
+    final start = widget.puzzle.islands[startIndex];
     final startPoint = Offset(
       offsetX + (start.column + 0.5) * cell,
       offsetY + (start.row + 0.5) * cell,
@@ -2355,9 +2364,9 @@ class HashiBoard extends StatelessWidget {
     if (!horizontal && !vertical) return null;
 
     final candidates = <int>[];
-    for (var index = 0; index < puzzle.islands.length; index++) {
+    for (var index = 0; index < widget.puzzle.islands.length; index++) {
       if (index == startIndex) continue;
-      final island = puzzle.islands[index];
+      final island = widget.puzzle.islands[index];
       if (horizontal &&
           island.row == start.row &&
           (island.column - start.column).sign == delta.dx.sign) {
@@ -2370,8 +2379,8 @@ class HashiBoard extends StatelessWidget {
     }
     if (candidates.isEmpty) return null;
     candidates.sort((first, second) {
-      final a = puzzle.islands[first];
-      final b = puzzle.islands[second];
+      final a = widget.puzzle.islands[first];
+      final b = widget.puzzle.islands[second];
       final aDistance = horizontal
           ? (a.column - start.column).abs()
           : (a.row - start.row).abs();
@@ -2384,10 +2393,10 @@ class HashiBoard extends StatelessWidget {
   }
 
   HashiBridge? _bridgeAtPosition(Offset position, Size size) {
-    if (bridges.isEmpty) return null;
-    final cell = size.shortestSide / puzzle.size;
-    final offsetX = (size.width - cell * puzzle.size) / 2;
-    final offsetY = (size.height - cell * puzzle.size) / 2;
+    if (widget.bridges.isEmpty) return null;
+    final cell = size.shortestSide / widget.puzzle.size;
+    final offsetX = (size.width - cell * widget.puzzle.size) / 2;
+    final offsetY = (size.height - cell * widget.puzzle.size) / 2;
     final threshold = math.max(14.0, cell * 0.22);
     final islandRadius = cell * 0.34;
 
@@ -2398,9 +2407,9 @@ class HashiBoard extends StatelessWidget {
 
     HashiBridge? closest;
     var closestDistance = double.infinity;
-    for (final bridge in bridges) {
-      final start = point(puzzle.islands[bridge.from]);
-      final end = point(puzzle.islands[bridge.to]);
+    for (final bridge in widget.bridges) {
+      final start = point(widget.puzzle.islands[bridge.from]);
+      final end = point(widget.puzzle.islands[bridge.to]);
       if ((position - start).distance <= islandRadius ||
           (position - end).distance <= islandRadius) {
         continue;
@@ -2436,120 +2445,97 @@ class HashiBoard extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final side = math.min(constraints.maxWidth, constraints.maxHeight);
-        int? dragStart;
-        int? dragTarget;
-        return StatefulBuilder(
-          builder: (context, setInteractionState) => SizedBox.square(
-            dimension: side,
-            child: Listener(
-              onPointerDown: onIslandDrag == null
+        final boardSize = Size.square(side);
+        return SizedBox.square(
+          dimension: side,
+          child: Semantics(
+            label: 'Hashi-Spielbrett',
+            hint: 'Insel antippen oder in Richtung einer Zielinsel ziehen',
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapUp: (details) {
+                final island = _islandAtPosition(
+                  details.localPosition,
+                  boardSize,
+                );
+                if (island != null && widget.onIslandTap != null) {
+                  widget.onIslandTap!(island);
+                  return;
+                }
+                final bridge = _bridgeAtPosition(
+                  details.localPosition,
+                  boardSize,
+                );
+                if (bridge != null) widget.onBridgeTap?.call(bridge);
+              },
+              onPanStart: widget.onIslandDrag == null
                   ? null
-                  : (event) {
+                  : (details) {
                       final start = _islandAtPosition(
-                        event.localPosition,
-                        Size.square(side),
+                        details.localPosition,
+                        boardSize,
                       );
-                      setInteractionState(() {
-                        dragStart = start;
-                        dragTarget = null;
+                      if (start == null) return;
+                      setState(() {
+                        _dragStart = start;
+                        _dragTarget = null;
+                        _dragPosition = details.localPosition;
                       });
                     },
-              onPointerMove: onIslandDrag == null
+              onPanUpdate: widget.onIslandDrag == null
                   ? null
-                  : (event) {
-                      final first = dragStart;
-                      if (first == null) return;
+                  : (details) {
+                      final start = _dragStart;
+                      if (start == null) return;
                       final target = _targetInDragDirection(
-                        first,
-                        event.localPosition,
-                        Size.square(side),
+                        start,
+                        details.localPosition,
+                        boardSize,
                       );
-                      if (target != dragTarget) {
-                        setInteractionState(() => dragTarget = target);
-                      }
-                    },
-              onPointerUp: onIslandDrag == null
-                  ? null
-                  : (event) {
-                      final first = dragStart;
-                      final second = first == null
-                          ? null
-                          : dragTarget ??
-                              _targetInDragDirection(
-                                first,
-                                event.localPosition,
-                                Size.square(side),
-                              );
-                      setInteractionState(() {
-                        dragStart = null;
-                        dragTarget = null;
+                      setState(() {
+                        _dragTarget = target;
+                        _dragPosition = details.localPosition;
                       });
-                      if (first != null && second != null && first != second) {
-                        onIslandDrag!(first, second);
-                      }
                     },
-              onPointerCancel: onIslandDrag == null
+              onPanEnd: widget.onIslandDrag == null
                   ? null
                   : (_) {
-                      setInteractionState(() {
-                        dragStart = null;
-                        dragTarget = null;
+                      final start = _dragStart;
+                      final target = _dragTarget;
+                      setState(() {
+                        _dragStart = null;
+                        _dragTarget = null;
+                        _dragPosition = null;
+                      });
+                      if (start != null && target != null) {
+                        widget.onIslandDrag!(start, target);
+                      }
+                    },
+              onPanCancel: widget.onIslandDrag == null
+                  ? null
+                  : () {
+                      setState(() {
+                        _dragStart = null;
+                        _dragTarget = null;
+                        _dragPosition = null;
                       });
                     },
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapUp: onBridgeTap == null
-                    ? null
-                    : (details) {
-                        final bridge = _bridgeAtPosition(
-                          details.localPosition,
-                          Size.square(side),
-                        );
-                        if (bridge != null) onBridgeTap!(bridge);
-                      },
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _HashiBoardPainter(
-                          puzzle: puzzle,
-                          bridges: bridges,
-                          selectedIsland: dragStart ?? selectedIsland,
-                          possibleTargets: dragTarget == null
-                              ? possibleTargets
-                              : [dragTarget!],
-                          bridgeCounts: bridgeCounts,
-                          incorrectBridges: incorrectBridges,
-                          incorrectIslands: incorrectIslands,
-                          colorScheme: Theme.of(context).colorScheme,
-                          palette: palette,
-                        ),
-                      ),
-                    ),
-                    if (onIslandTap != null)
-                      ...List.generate(puzzle.islands.length, (index) {
-                        final island = puzzle.islands[index];
-                        final cell = side / puzzle.size;
-                        final diameter = cell * 0.72;
-                        return Positioned(
-                          left: (island.column + 0.5) * cell - diameter / 2,
-                          top: (island.row + 0.5) * cell - diameter / 2,
-                          width: diameter,
-                          height: diameter,
-                          child: Semantics(
-                            button: true,
-                            label: 'Insel ${island.bridges}',
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                customBorder: const CircleBorder(),
-                                onTap: () => onIslandTap!(index),
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                  ],
+              child: CustomPaint(
+                painter: _HashiBoardPainter(
+                  puzzle: widget.puzzle,
+                  bridges: widget.bridges,
+                  selectedIsland: _dragStart ?? widget.selectedIsland,
+                  possibleTargets: _dragTarget == null
+                      ? widget.possibleTargets
+                      : [_dragTarget!],
+                  previewStart: _dragStart,
+                  previewTarget: _dragTarget,
+                  previewPosition: _dragPosition,
+                  bridgeCounts: widget.bridgeCounts,
+                  incorrectBridges: widget.incorrectBridges,
+                  incorrectIslands: widget.incorrectIslands,
+                  colorScheme: Theme.of(context).colorScheme,
+                  palette: palette,
                 ),
               ),
             ),
@@ -2566,6 +2552,9 @@ class _HashiBoardPainter extends CustomPainter {
     required this.bridges,
     required this.selectedIsland,
     required this.possibleTargets,
+    required this.previewStart,
+    required this.previewTarget,
+    required this.previewPosition,
     required this.bridgeCounts,
     required this.incorrectBridges,
     required this.incorrectIslands,
@@ -2577,6 +2566,9 @@ class _HashiBoardPainter extends CustomPainter {
   final List<HashiBridge> bridges;
   final int? selectedIsland;
   final List<int> possibleTargets;
+  final int? previewStart;
+  final int? previewTarget;
+  final Offset? previewPosition;
   final List<int>? bridgeCounts;
   final List<HashiBridge> incorrectBridges;
   final Set<int> incorrectIslands;
@@ -2623,6 +2615,18 @@ class _HashiBoardPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round;
       canvas.drawLine(start, end, bridgeUnderlay);
       canvas.drawLine(start, end, bridgePaint);
+    }
+
+    if (previewStart != null && previewPosition != null) {
+      final start = point(puzzle.islands[previewStart!]);
+      final end = previewTarget == null
+          ? previewPosition!
+          : point(puzzle.islands[previewTarget!]);
+      final previewPaint = Paint()
+        ..color = palette.accentAlt.withValues(alpha: 0.72)
+        ..strokeWidth = (bridgeWidth * 0.72).clamp(2.0, 4.0)
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(start, end, previewPaint);
     }
 
     for (final bridge in bridges) {
@@ -2759,6 +2763,9 @@ class _HashiBoardPainter extends CustomPainter {
         oldDelegate.bridges != bridges ||
         oldDelegate.selectedIsland != selectedIsland ||
         oldDelegate.possibleTargets != possibleTargets ||
+        oldDelegate.previewStart != previewStart ||
+        oldDelegate.previewTarget != previewTarget ||
+        oldDelegate.previewPosition != previewPosition ||
         oldDelegate.bridgeCounts != bridgeCounts ||
         oldDelegate.incorrectBridges != incorrectBridges ||
         oldDelegate.colorScheme != colorScheme ||
