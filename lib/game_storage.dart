@@ -414,23 +414,40 @@ class PlayerProgress {
     required this.totalCompleted,
     required this.totalPlaySeconds,
     required this.completedDays,
+    this.frozenDays = const <String>[],
+    this.streakFreezeAvailable = true,
+    this.streakFreezeRefillDays = 0,
+    this.streakProtectionStartedOn,
+    this.lastRefillCountedDay,
   });
 
   const PlayerProgress.empty()
       : totalCompleted = 0,
         totalPlaySeconds = 0,
-        completedDays = const <String>[];
+        completedDays = const <String>[],
+        frozenDays = const <String>[],
+        streakFreezeAvailable = true,
+        streakFreezeRefillDays = 0,
+        streakProtectionStartedOn = null,
+        lastRefillCountedDay = null;
 
   final int totalCompleted;
   final int totalPlaySeconds;
   final List<String> completedDays;
+  final List<String> frozenDays;
+  final bool streakFreezeAvailable;
+  final int streakFreezeRefillDays;
+  final String? streakProtectionStartedOn;
+  final String? lastRefillCountedDay;
 
   bool get completedToday => completedDays.contains(_dayKey(DateTime.now()));
 
-  int get currentStreak {
-    final days = _parsedDays;
+  int get currentStreak => currentStreakAt(DateTime.now());
+
+  int currentStreakAt(DateTime now) {
+    final days = _parsedStreakDays;
     if (days.isEmpty) return 0;
-    final today = _dateOnly(DateTime.now());
+    final today = _dateOnly(now);
     final latest = days.last;
     if (today.difference(latest).inDays > 1) return 0;
 
@@ -446,7 +463,7 @@ class PlayerProgress {
   }
 
   int get bestStreak {
-    final days = _parsedDays;
+    final days = _parsedStreakDays;
     if (days.isEmpty) return 0;
     var best = 1;
     var current = 1;
@@ -461,8 +478,8 @@ class PlayerProgress {
     return best;
   }
 
-  List<DateTime> get _parsedDays {
-    final values = completedDays
+  List<DateTime> get _parsedStreakDays {
+    final values = [...completedDays, ...frozenDays]
         .map(DateTime.tryParse)
         .whereType<DateTime>()
         .map(_dateOnly)
@@ -472,32 +489,122 @@ class PlayerProgress {
     return values;
   }
 
+  bool isCompletedOn(DateTime day) => completedDays.contains(_dayKey(day));
+
+  bool isFrozenOn(DateTime day) => frozenDays.contains(_dayKey(day));
+
+  PlayerProgress reconcileStreak({required DateTime now}) {
+    final today = _dateOnly(now);
+    final started = DateTime.tryParse(streakProtectionStartedOn ?? '');
+    if (started == null) {
+      return copyWith(streakProtectionStartedOn: _dayKey(today));
+    }
+    final yesterday = today.subtract(const Duration(days: 1));
+    if (!streakFreezeAvailable ||
+        yesterday.isBefore(_dateOnly(started)) ||
+        isCompletedOn(yesterday) ||
+        isFrozenOn(yesterday)) {
+      return this;
+    }
+    final previous = yesterday.subtract(const Duration(days: 1));
+    if (!isCompletedOn(previous) && !isFrozenOn(previous)) return this;
+    final frozen = {...frozenDays, _dayKey(yesterday)}.toList()..sort();
+    return copyWith(
+      frozenDays: frozen,
+      streakFreezeAvailable: false,
+      streakFreezeRefillDays: 0,
+      clearLastRefillCountedDay: true,
+    );
+  }
+
   PlayerProgress recordCompletion({
     required int elapsedSeconds,
     required DateTime completedAt,
   }) {
-    final days = {...completedDays, _dayKey(completedAt)}.toList()..sort();
+    final dayKey = _dayKey(completedAt);
+    final isNewDay = !completedDays.contains(dayKey);
+    final days = {...completedDays, dayKey}.toList()..sort();
+    var refillDays = streakFreezeRefillDays;
+    var freezeAvailable = streakFreezeAvailable;
+    var countedDay = lastRefillCountedDay;
+    if (isNewDay && !freezeAvailable && countedDay != dayKey) {
+      refillDays++;
+      countedDay = dayKey;
+      if (refillDays >= 10) {
+        freezeAvailable = true;
+        refillDays = 0;
+        countedDay = null;
+      }
+    }
     return PlayerProgress(
       totalCompleted: totalCompleted + 1,
       totalPlaySeconds: totalPlaySeconds + elapsedSeconds,
       completedDays: days,
+      frozenDays: frozenDays,
+      streakFreezeAvailable: freezeAvailable,
+      streakFreezeRefillDays: refillDays,
+      streakProtectionStartedOn:
+          streakProtectionStartedOn ?? _dayKey(completedAt),
+      lastRefillCountedDay: countedDay,
     );
   }
+
+  PlayerProgress copyWith({
+    List<String>? frozenDays,
+    bool? streakFreezeAvailable,
+    int? streakFreezeRefillDays,
+    String? streakProtectionStartedOn,
+    String? lastRefillCountedDay,
+    bool clearLastRefillCountedDay = false,
+  }) =>
+      PlayerProgress(
+        totalCompleted: totalCompleted,
+        totalPlaySeconds: totalPlaySeconds,
+        completedDays: completedDays,
+        frozenDays: frozenDays ?? this.frozenDays,
+        streakFreezeAvailable:
+            streakFreezeAvailable ?? this.streakFreezeAvailable,
+        streakFreezeRefillDays:
+            streakFreezeRefillDays ?? this.streakFreezeRefillDays,
+        streakProtectionStartedOn:
+            streakProtectionStartedOn ?? this.streakProtectionStartedOn,
+        lastRefillCountedDay: clearLastRefillCountedDay
+            ? null
+            : lastRefillCountedDay ?? this.lastRefillCountedDay,
+      );
 
   Map<String, Object?> toJson() => {
         'totalCompleted': totalCompleted,
         'totalPlaySeconds': totalPlaySeconds,
         'completedDays': completedDays,
+        'frozenDays': frozenDays,
+        'streakFreezeAvailable': streakFreezeAvailable,
+        'streakFreezeRefillDays': streakFreezeRefillDays,
+        if (streakProtectionStartedOn != null)
+          'streakProtectionStartedOn': streakProtectionStartedOn,
+        if (lastRefillCountedDay != null)
+          'lastRefillCountedDay': lastRefillCountedDay,
       };
 
   factory PlayerProgress.fromJson(Map<String, Object?> json) {
     final rawDays = json['completedDays'];
+    final rawFrozenDays = json['frozenDays'];
     return PlayerProgress(
       totalCompleted: (json['totalCompleted'] as num?)?.toInt() ?? 0,
       totalPlaySeconds: (json['totalPlaySeconds'] as num?)?.toInt() ?? 0,
       completedDays: rawDays is List
           ? (rawDays.whereType<String>().toSet().toList()..sort())
           : const <String>[],
+      frozenDays: rawFrozenDays is List
+          ? (rawFrozenDays.whereType<String>().toSet().toList()..sort())
+          : const <String>[],
+      streakFreezeAvailable: json['streakFreezeAvailable'] as bool? ?? true,
+      streakFreezeRefillDays:
+          ((json['streakFreezeRefillDays'] as num?)?.toInt() ?? 0)
+              .clamp(0, 9)
+              .toInt(),
+      streakProtectionStartedOn: json['streakProtectionStartedOn'] as String?,
+      lastRefillCountedDay: json['lastRefillCountedDay'] as String?,
     );
   }
 
@@ -570,9 +677,17 @@ class GameStorage {
     final raw = preferences.getString(_playerProgressKey);
     if (raw != null) {
       try {
-        return PlayerProgress.fromJson(
+        final loaded = PlayerProgress.fromJson(
           Map<String, Object?>.from(jsonDecode(raw) as Map),
         );
+        final reconciled = loaded.reconcileStreak(now: DateTime.now());
+        if (reconciled.toJson().toString() != loaded.toJson().toString()) {
+          await preferences.setString(
+            _playerProgressKey,
+            jsonEncode(reconciled.toJson()),
+          );
+        }
+        return reconciled;
       } on Object {
         // Fall through to a safe migration from the existing result data.
       }
@@ -616,7 +731,9 @@ class GameStorage {
     Map<String, Object?>? dailyPuzzleData,
   }) async {
     final results = await loadResults();
-    final progress = await loadPlayerProgress();
+    final progress = (await loadPlayerProgress()).reconcileStreak(
+      now: completedAt ?? DateTime.now(),
+    );
     final resultKey =
         gameType == GameType.binairo ? puzzleId : '${gameType.name}:$puzzleId';
     final existing = results[resultKey];

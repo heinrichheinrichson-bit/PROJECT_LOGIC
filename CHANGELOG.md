@@ -599,3 +599,11 @@
 - Bestehende Rätsel-IDs und gespeicherte Fortschritte bleiben unverändert.
 - Alle neuen Katalogrätsel werden mit den jeweiligen Solvern auf eindeutige Lösbarkeit geprüft.
 - Paketversion auf 0.8.26+55 erhöht.
+## v0.8.27 – Appweiter Streak auf Eis
+
+- Appweiten Monatskalender mit Markierungen für gespielte, eingefrorene und verpasste Tage ergänzt.
+- Ein kostenloser Eiszapfen schützt automatisch genau einen verpassten Tag und hält die Spielserie am Leben.
+- Verbrauchter Eiszapfen füllt sich nach zehn verschiedenen aktiven Spieltagen wieder auf.
+- Bestehende Serien werden beim Update nicht rückwirkend verändert oder künstlich eingefroren.
+- Eisbestand und Auffüllfortschritt werden lokal, in Backups und bei Wiederherstellungen mitgeführt.
+- Paketversion auf 0.8.27+56 erhöht.

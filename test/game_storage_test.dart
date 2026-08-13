@@ -737,4 +737,89 @@ void main() {
       '{not-json',
     );
   });
+
+  test('one available freeze protects exactly one missed streak day', () {
+    final initialized = const PlayerProgress(
+      totalCompleted: 2,
+      totalPlaySeconds: 60,
+      completedDays: ['2026-08-10', '2026-08-11'],
+    ).reconcileStreak(now: DateTime(2026, 8, 12));
+
+    final protected = initialized.reconcileStreak(
+      now: DateTime(2026, 8, 13),
+    );
+
+    expect(protected.frozenDays, ['2026-08-12']);
+    expect(protected.streakFreezeAvailable, isFalse);
+    expect(protected.currentStreakAt(DateTime(2026, 8, 13)), 3);
+    expect(
+      protected.reconcileStreak(now: DateTime(2026, 8, 14)).frozenDays,
+      ['2026-08-12'],
+      reason: 'one freeze cannot protect consecutive missed days',
+    );
+  });
+
+  test('freeze refills after ten distinct active days, not ten puzzles', () {
+    var progress = const PlayerProgress(
+      totalCompleted: 1,
+      totalPlaySeconds: 30,
+      completedDays: ['2026-08-01'],
+      frozenDays: ['2026-08-02'],
+      streakFreezeAvailable: false,
+      streakProtectionStartedOn: '2026-08-01',
+    );
+    for (var offset = 0; offset < 9; offset++) {
+      final day = DateTime(2026, 8, 3 + offset);
+      progress = progress.recordCompletion(
+        elapsedSeconds: 30,
+        completedAt: day,
+      );
+      progress = progress.recordCompletion(
+        elapsedSeconds: 20,
+        completedAt: day,
+      );
+    }
+    expect(progress.streakFreezeAvailable, isFalse);
+    expect(progress.streakFreezeRefillDays, 9);
+
+    progress = progress.recordCompletion(
+      elapsedSeconds: 30,
+      completedAt: DateTime(2026, 8, 12),
+    );
+    expect(progress.streakFreezeAvailable, isTrue);
+    expect(progress.streakFreezeRefillDays, 0);
+  });
+
+  test('legacy progress activates protection without freezing old gaps', () {
+    final migrated = const PlayerProgress(
+      totalCompleted: 2,
+      totalPlaySeconds: 60,
+      completedDays: ['2026-08-01', '2026-08-05'],
+    ).reconcileStreak(now: DateTime(2026, 8, 13));
+
+    expect(migrated.frozenDays, isEmpty);
+    expect(migrated.streakProtectionStartedOn, '2026-08-13');
+    expect(migrated.streakFreezeAvailable, isTrue);
+  });
+
+  test('freeze state survives progress JSON and portable backup storage', () {
+    const progress = PlayerProgress(
+      totalCompleted: 12,
+      totalPlaySeconds: 600,
+      completedDays: ['2026-08-10', '2026-08-12'],
+      frozenDays: ['2026-08-11'],
+      streakFreezeAvailable: false,
+      streakFreezeRefillDays: 4,
+      streakProtectionStartedOn: '2026-08-10',
+      lastRefillCountedDay: '2026-08-12',
+    );
+
+    final restored = PlayerProgress.fromJson(progress.toJson());
+
+    expect(restored.frozenDays, ['2026-08-11']);
+    expect(restored.streakFreezeAvailable, isFalse);
+    expect(restored.streakFreezeRefillDays, 4);
+    expect(restored.streakProtectionStartedOn, '2026-08-10');
+    expect(restored.lastRefillCountedDay, '2026-08-12');
+  });
 }

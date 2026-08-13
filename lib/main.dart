@@ -14,6 +14,7 @@ import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/mission_event_presentation.dart';
 import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
+import 'core/presentation/streak_calendar.dart';
 import 'core/presentation/xp_award_badge.dart';
 import 'core/statistics/game_statistics.dart';
 import 'core/statistics/puzzle_attempt.dart';
@@ -3725,6 +3726,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                       ),
                     ),
                   ],
+                  const SizedBox(height: 20),
+                  StreakCalendarCard(progress: snapshot.progress),
                   const SizedBox(height: 20),
                   Text(
                     'Heute',
