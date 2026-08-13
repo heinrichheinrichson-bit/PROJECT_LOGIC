@@ -834,16 +834,19 @@ class _SlitherCollectionChapterState extends State<_SlitherCollectionChapter> {
           ('Grundlinien', 'Ecken, Ränder und sichere erste Schritte'),
           ('Kurven lesen', 'Hinweise verbinden und Wege ausschließen'),
           ('Sichere Schleifen', 'Das Gelernte selbstständig anwenden'),
+          ('Neue Runden', 'Weitere ruhige Schleifen sicher schließen'),
         ],
       PuzzleDifficulty.medium => const [
           ('Verdeckte Wege', 'Mehrere Hinweise gemeinsam betrachten'),
           ('Wendepunkte', 'Längere Schlussketten sicher verfolgen'),
           ('Kombinierte Logik', 'Verschiedene Muster geschickt verbinden'),
+          ('Neue Verläufe', 'Zusätzliche Schleifen mit Ausdauer verfolgen'),
         ],
       PuzzleDifficulty.hard => const [
           ('Wenige Spuren', 'Mit sparsamen Vorgaben Orientierung finden'),
           ('Tiefe Schlüsse', 'Entscheidungen über mehrere Schritte absichern'),
           ('Meisterschleifen', 'Die anspruchsvollsten Netze der Sammlung'),
+          ('Letzte Prüfungen', 'Neue sparsame Hinweise vollständig verbinden'),
         ],
     };
     return Card(

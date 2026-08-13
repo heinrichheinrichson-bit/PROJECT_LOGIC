@@ -1,3 +1,13 @@
+## v0.8.18 – Mehr Slitherlink-Schleifen
+
+- Slitherlink-Katalog von 36 auf 48 Rätsel erweitert.
+- Jede Schwierigkeitsstufe enthält nun 16 statt 12 Rätsel in vier Kapiteln.
+- Zwölf neue Rätsel statisch gespeichert, damit beim App-Start keine zusätzliche Generierungsarbeit entsteht.
+- Reproduzierbares Entwicklungswerkzeug zum Erzeugen und Validieren weiterer statischer Slitherlink-Rätsel ergänzt.
+- Jedes neue Rätsel auf eindeutige Lösbarkeit und genau eine geschlossene, zusammenhängende Schleife geprüft.
+- Sammlungsansicht um ein viertes Kapitel je Schwierigkeit erweitert, sodass alle neuen Rätsel erreichbar sind.
+- Paketversion auf 0.8.18+47 erhöht.
+
 ## v0.8.17 – Level direkt auf der Startseite
 
 - Kompakte Levelkarte direkt unter der Begrüßung auf der Startseite ergänzt.

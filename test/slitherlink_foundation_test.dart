@@ -22,10 +22,10 @@ void main() {
   });
 
   test('every collection puzzle contains a valid advertised solution', () {
-    expect(slitherlinkPuzzleCatalog, hasLength(36));
+    expect(slitherlinkPuzzleCatalog, hasLength(48));
     expect(
       slitherlinkPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
-      hasLength(36),
+      hasLength(48),
     );
     expect(
       slitherlinkPuzzleCatalog
@@ -39,7 +39,10 @@ void main() {
           'Letzte Übung',
           'Viele Möglichkeiten',
           'Falsche Fährten',
-          'Große Prüfung'
+          'Große Prüfung',
+          'Ruhige Runde',
+          'Kombinierte Runde',
+          'Letzte Meisterrunde',
         ],
       ),
     );
@@ -47,7 +50,7 @@ void main() {
       expect(
         slitherlinkPuzzleCatalog
             .where((puzzle) => puzzle.difficulty == difficulty),
-        hasLength(12),
+        hasLength(16),
       );
     }
     for (final puzzle in slitherlinkPuzzleCatalog) {
@@ -64,6 +67,23 @@ void main() {
         reason: '${puzzle.id} must be unique',
       );
     }
+  });
+
+  testWidgets('collection exposes the fourth chapter and new puzzles',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: SlitherlinkHubScreen()),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Rätselsammlung'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Leicht'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Neue Runden'), findsOneWidget);
+    expect(find.text('Ruhige Runde'), findsOneWidget);
+    expect(find.text('Sichere Kurve'), findsOneWidget);
   });
 
   test('solver confirms the tutorial has exactly one solution', () {
