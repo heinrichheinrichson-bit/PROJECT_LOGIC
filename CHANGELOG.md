@@ -1,3 +1,11 @@
+## v0.8.37 – Erfolge lesbarer gegliedert
+
+- Spielzeit-Erfolge zeigen Fortschritt und Ziel jetzt als Stunden und Minuten statt als interne Sekundenwerte.
+- Beschreibungen der langfristigen Spielzeit-Erfolge nennen wieder die tatsächlichen Zielstunden.
+- Die umfangreiche Erfolgsliste in Rätsel-Meilensteine, Spielserien, Tagesrätsel, Spielarten, besondere Herausforderungen und Spielzeit gegliedert.
+- Regressionstests für deutsche und englische Zeitangaben sowie unveränderte Standardzähler ergänzt.
+- Paketversion auf 0.8.37+66 erhöht.
+
 ## v0.8.36 – Streak-Freeze produktreif erweitert
 
 - Automatischen Verbrauch eines Eiszapfens und Wiederauffüllung nach zehn unterschiedlichen aktiven Tagen verständlicher dargestellt.

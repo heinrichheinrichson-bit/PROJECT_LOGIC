@@ -496,7 +496,7 @@ class PlayerProgressService {
             'Tausend Stunden Logik',
           ],
           description: (target) =>
-              'Verbringe insgesamt $target Stunden beim Rätseln.',
+              'Verbringe insgesamt ${target ~/ 3600} Stunden beim Rätseln.',
           iconName: 'timer',
           current: snapshot.progress.totalPlaySeconds,
           targets: const [

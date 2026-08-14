@@ -34,6 +34,7 @@ import 'hashi_foundation.dart';
 import 'hitori_foundation.dart';
 import 'futoshiki_foundation.dart';
 import 'player_progress_system.dart';
+import 'progress_goal_formatting.dart';
 import 'slitherlink_foundation.dart';
 import 'tents_game.dart';
 import 'features/binary_puzzle/domain/binary_puzzle_generator.dart';
@@ -4392,6 +4393,15 @@ IconData _xpEventIcon(ExperienceEvent event) => switch (event.kind) {
 
 enum _AchievementFilter { all, open, unlocked }
 
+enum _AchievementSection {
+  foundations,
+  streaks,
+  daily,
+  gameTypes,
+  challenges,
+  playTime,
+}
+
 class _AchievementsScreen extends StatefulWidget {
   const _AchievementsScreen({required this.achievements});
 
@@ -4419,6 +4429,12 @@ class _AchievementsScreenState extends State<_AchievementsScreen> {
         if (a.isCompleted != b.isCompleted) return a.isCompleted ? 1 : -1;
         return b.progress.compareTo(a.progress);
       });
+    final sections = <_AchievementSection, List<ProgressGoal>>{};
+    for (final achievement in visible) {
+      sections
+          .putIfAbsent(_achievementSection(achievement), () => [])
+          .add(achievement);
+    }
     final colors = Theme.of(context).colorScheme;
     final strings = context.strings;
 
@@ -4501,8 +4517,21 @@ class _AchievementsScreenState extends State<_AchievementsScreen> {
                       ),
                     )
                   else
-                    for (final achievement in visible)
-                      _ProgressGoalCard(goal: achievement),
+                    for (final section in _AchievementSection.values)
+                      if (sections[section] case final goals?) ...[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(4, 14, 4, 6),
+                          child: Text(
+                            _achievementSectionLabel(strings, section),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                        for (final achievement in goals)
+                          _ProgressGoalCard(goal: achievement),
+                      ],
                 ],
               ),
             ),
@@ -4512,6 +4541,40 @@ class _AchievementsScreenState extends State<_AchievementsScreen> {
     );
   }
 }
+
+_AchievementSection _achievementSection(ProgressGoal goal) {
+  final id = goal.id;
+  if (id.startsWith('streak-')) return _AchievementSection.streaks;
+  if (id.startsWith('daily-')) return _AchievementSection.daily;
+  if (id == 'play-hour' ||
+      id == 'play-ten-hours' ||
+      id.startsWith('play-hours-')) {
+    return _AchievementSection.playTime;
+  }
+  if (id.endsWith('-first') || id.startsWith('game-')) {
+    return _AchievementSection.gameTypes;
+  }
+  if (id.startsWith('hard-') || id.startsWith('no-hint-')) {
+    return _AchievementSection.challenges;
+  }
+  return _AchievementSection.foundations;
+}
+
+String _achievementSectionLabel(
+  AppLocalizations strings,
+  _AchievementSection section,
+) =>
+    switch (section) {
+      _AchievementSection.foundations =>
+        strings.text('Rätsel & Meilensteine', 'Puzzles & milestones'),
+      _AchievementSection.streaks => strings.text('Spielserien', 'Streaks'),
+      _AchievementSection.daily => strings.text('Tagesrätsel', 'Daily puzzles'),
+      _AchievementSection.gameTypes =>
+        strings.text('Spielarten', 'Puzzle types'),
+      _AchievementSection.challenges =>
+        strings.text('Besondere Herausforderungen', 'Special challenges'),
+      _AchievementSection.playTime => strings.text('Spielzeit', 'Playtime'),
+    };
 
 class _ProgressGoalCard extends StatelessWidget {
   const _ProgressGoalCard({required this.goal});
@@ -4572,7 +4635,10 @@ class _ProgressGoalCard extends StatelessWidget {
                         )
                       else
                         Text(
-                          '${goal.current.clamp(0, goal.target)} / ${goal.target}',
+                          formatProgressGoalCounter(
+                            goal,
+                            isGerman: !strings.isEnglish,
+                          ),
                         ),
                     ],
                   ),

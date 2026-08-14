@@ -392,6 +392,27 @@ void main() {
     expect(achievements.length, greaterThanOrEqualTo(75));
   });
 
+  test('playtime achievements describe hour targets instead of raw seconds',
+      () {
+    const snapshot = ProgressSnapshot(
+      results: {},
+      progress: PlayerProgress(
+        totalCompleted: 12,
+        totalPlaySeconds: 17564,
+        completedDays: [],
+      ),
+      catalogPuzzleIds: {},
+    );
+
+    final goal = service
+        .achievements(snapshot)
+        .firstWhere((goal) => goal.id == 'play-hours-${50 * 3600}');
+
+    expect(goal.current, 17564);
+    expect(goal.target, 180000);
+    expect(goal.description, 'Verbringe insgesamt 50 Stunden beim Rätseln.');
+  });
+
   test('weekly active-day mission counts unique days in the current week', () {
     const snapshot = ProgressSnapshot(
       results: {},
