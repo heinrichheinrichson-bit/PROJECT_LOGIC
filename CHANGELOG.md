@@ -1,3 +1,14 @@
+## v0.8.31 – Fortschritt und Statistiken auf Englisch
+
+- Fortschrittsseite mit Level, XP-Verlauf, Tages-, Wochen- und Langzeitzielen zweisprachig umgesetzt.
+- Alle bestehenden Ziel- und Erfolgsketten erhalten englische Titel und Beschreibungen, ohne gespeicherte IDs oder XP-Logik zu verändern.
+- Streak-Kalender mit Monatsnamen, Wochentagen, Legende, Tagesdetails und Eiszapfenstatus lokalisiert.
+- Persönliche Rekorde einschließlich lokaler Datums- und Monatsdarstellung übersetzt.
+- Erfolgsübersicht, Filter und Statusanzeigen zweisprachig umgesetzt.
+- Globale und spielspezifische Statistikansichten mit lokalisierten Überschriften und Leistungskennzahlen erweitert.
+- Regressionstests für englische Fortschrittsansichten und dynamische Zieltexte ergänzt.
+- Paketversion auf 0.8.31+60 erhöht.
+
 ## v0.8.30 – Deutsche und englische App-Basis
 
 - Dauerhafte Sprachwahl für Deutsch, Englisch oder die Systemsprache ergänzt.

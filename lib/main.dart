@@ -3894,19 +3894,23 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
         context: context,
         builder: (context) => AlertDialog(
           icon: const Icon(Icons.workspace_premium_rounded, size: 52),
-          title: Text('Level ${rank.level} erreicht!'),
+          title: Text(context.strings.text(
+              'Level ${rank.level} erreicht!', 'Level ${rank.level} reached!')),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                rank.title,
+                context.strings.known(rank.title),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Deine gelösten Rätsel, Ziele und Erfolge haben dich auf das nächste Level gebracht.',
+              Text(
+                context.strings.text(
+                  'Deine gelösten Rätsel, Ziele und Erfolge haben dich auf das nächste Level gebracht.',
+                  'Your solved puzzles, goals, and achievements have taken you to the next level.',
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -3914,7 +3918,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
           actions: [
             FilledButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Weiterknobeln'),
+              child:
+                  Text(context.strings.text('Weiterknobeln', 'Keep puzzling')),
             ),
           ],
         ),
@@ -3922,6 +3927,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
     final snapshot = _snapshot;
     const service = PlayerProgressService();
     final rank = _persistedRank ?? service.rank(snapshot);
@@ -3954,7 +3960,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Dein Fortschritt')),
+      appBar: AppBar(
+          title: Text(strings.text('Dein Fortschritt', 'Your progress'))),
       body: Center(
         child: ListView(
           padding: const EdgeInsets.all(24),
@@ -3989,7 +3996,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                                 .headlineSmall
                                 ?.copyWith(fontWeight: FontWeight.w800),
                           ),
-                          Text(rank.title),
+                          Text(strings.known(rank.title)),
                           const SizedBox(height: 16),
                           TweenAnimationBuilder<double>(
                             duration: const Duration(milliseconds: 650),
@@ -4000,12 +4007,18 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '${rank.currentXp} von ${rank.nextLevelXp} XP in diesem Level',
+                            strings.text(
+                              '${rank.currentXp} von ${rank.nextLevelXp} XP in diesem Level',
+                              '${rank.currentXp} of ${rank.nextLevelXp} XP in this level',
+                            ),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Insgesamt $totalXp XP · noch ${rank.nextLevelXp - rank.currentXp} XP bis Level ${rank.level + 1}',
+                            strings.text(
+                              'Insgesamt $totalXp XP · noch ${rank.nextLevelXp - rank.currentXp} XP bis Level ${rank.level + 1}',
+                              '$totalXp XP total · ${rank.nextLevelXp - rank.currentXp} XP to level ${rank.level + 1}',
+                            ),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ],
@@ -4017,22 +4030,25 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                     Card(
                       child: ExpansionTile(
                         leading: const Icon(Icons.auto_awesome_rounded),
-                        title: const Text('Deine letzten XP'),
-                        subtitle: const Text('Jede Gutschrift nachvollziehen'),
+                        title: Text(
+                            strings.text('Deine letzten XP', 'Your latest XP')),
+                        subtitle: Text(strings.text(
+                            'Jede Gutschrift nachvollziehen',
+                            'See every XP award')),
                         children: [
                           for (final event in recentXp.take(6))
                             ListTile(
                               dense: true,
                               leading: Icon(_xpEventIcon(event)),
-                              title: Text(_xpEventTitle(
+                              title: Text(strings.known(_xpEventTitle(
                                 event,
                                 attemptsById,
                                 achievementTitles,
-                              )),
-                              subtitle: Text(_xpEventDetail(
+                              ))),
+                              subtitle: Text(strings.known(_xpEventDetail(
                                 event,
                                 attemptsById,
-                              )),
+                              ))),
                               trailing: Text(
                                 '+${event.points} XP',
                                 style: const TextStyle(
@@ -4057,8 +4073,10 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                                     ),
                                   ),
                                   icon: const Icon(Icons.history_rounded),
-                                  label: const Text(
-                                      'Gesamten XP-Verlauf anzeigen'),
+                                  label: Text(strings.text(
+                                    'Gesamten XP-Verlauf anzeigen',
+                                    'View full XP history',
+                                  )),
                                 ),
                               ),
                             ),
@@ -4072,12 +4090,15 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                   PersonalRecordsSection(records: records),
                   const SizedBox(height: 20),
                   Text(
-                    'Heute',
+                    strings.text('Heute', 'Today'),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Drei klare Ziele, die jeden Tag neu beginnen.',
+                    strings.text(
+                      'Drei klare Ziele, die jeden Tag neu beginnen.',
+                      'Three clear goals that begin again every day.',
+                    ),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -4086,18 +4107,22 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                   for (final mission in dailyMissions)
                     _ProgressGoalCard(goal: mission),
                   if (dailyMissions.every((mission) => mission.isCompleted))
-                    const _MissionSetBonusCard(
-                      title: 'Alle Tagesziele geschafft',
+                    _MissionSetBonusCard(
+                      title: strings.text('Alle Tagesziele geschafft',
+                          'All daily goals complete'),
                       points: 15,
                     ),
                   const SizedBox(height: 20),
                   Text(
-                    'Diese Woche',
+                    strings.text('Diese Woche', 'This week'),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Zwei ruhige Wochenziele – ohne täglichen Druck.',
+                    strings.text(
+                      'Zwei ruhige Wochenziele – ohne täglichen Druck.',
+                      'Two calm weekly goals — without daily pressure.',
+                    ),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -4106,18 +4131,22 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                   for (final mission in weeklyMissions)
                     _ProgressGoalCard(goal: mission),
                   if (weeklyMissions.every((mission) => mission.isCompleted))
-                    const _MissionSetBonusCard(
-                      title: 'Alle Wochenziele geschafft',
+                    _MissionSetBonusCard(
+                      title: strings.text('Alle Wochenziele geschafft',
+                          'All weekly goals complete'),
                       points: 30,
                     ),
                   const SizedBox(height: 20),
                   Text(
-                    'Langzeitziele',
+                    strings.text('Langzeitziele', 'Long-term goals'),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Fortschritt, der über den heutigen Tag hinaus zählt.',
+                    strings.text(
+                      'Fortschritt, der über den heutigen Tag hinaus zählt.',
+                      'Progress that matters beyond today.',
+                    ),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -4130,11 +4159,14 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          'Erfolge',
+                          strings.text('Erfolge', 'Achievements'),
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                       ),
-                      Text('$unlockedCount von ${achievements.length}'),
+                      Text(strings.text(
+                        '$unlockedCount von ${achievements.length}',
+                        '$unlockedCount of ${achievements.length}',
+                      )),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -4143,9 +4175,13 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                   Card(
                     child: ListTile(
                       leading: const Icon(Icons.emoji_events_outlined),
-                      title: const Text('Alle Erfolge ansehen'),
+                      title: Text(strings.text(
+                          'Alle Erfolge ansehen', 'View all achievements')),
                       subtitle: Text(
-                        '${completedAchievements.length} freigeschaltet · ${achievements.length} insgesamt',
+                        strings.text(
+                          '${completedAchievements.length} freigeschaltet · ${achievements.length} insgesamt',
+                          '${completedAchievements.length} unlocked · ${achievements.length} total',
+                        ),
                       ),
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () => Navigator.push(
@@ -4224,50 +4260,55 @@ class _XpHistoryScreen extends StatelessWidget {
   final Map<String, String> achievementTitles;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('XP-Verlauf')),
-        body: Center(
-          child: ListView.separated(
-            padding: const EdgeInsets.all(20),
-            itemCount: events.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final event = events[index];
-              return ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 6,
-                ),
-                leading: CircleAvatar(
-                  child: Icon(_xpEventIcon(event)),
-                ),
-                title: Text(_xpEventTitle(
-                  event,
-                  attempts,
-                  achievementTitles,
-                )),
-                subtitle: Text(
-                  '${_xpEventDetail(event, attempts)}\n${_xpDate(event.occurredAt)}',
-                ),
-                isThreeLine: true,
-                trailing: Text(
-                  '+${event.points} XP',
-                  style: const TextStyle(fontWeight: FontWeight.w800),
-                ),
-              );
-            },
-          ),
+  Widget build(BuildContext context) {
+    final strings = context.strings;
+    return Scaffold(
+      appBar: AppBar(title: Text(strings.text('XP-Verlauf', 'XP history'))),
+      body: Center(
+        child: ListView.separated(
+          padding: const EdgeInsets.all(20),
+          itemCount: events.length,
+          separatorBuilder: (_, __) => const Divider(height: 1),
+          itemBuilder: (context, index) {
+            final event = events[index];
+            return ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 6,
+              ),
+              leading: CircleAvatar(
+                child: Icon(_xpEventIcon(event)),
+              ),
+              title: Text(strings.known(_xpEventTitle(
+                event,
+                attempts,
+                achievementTitles,
+              ))),
+              subtitle: Text(
+                '${strings.known(_xpEventDetail(event, attempts))}\n${_xpDate(context, event.occurredAt)}',
+              ),
+              isThreeLine: true,
+              trailing: Text(
+                '+${event.points} XP',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            );
+          },
         ),
-      );
+      ),
+    );
+  }
 }
 
-String _xpDate(DateTime value) {
+String _xpDate(BuildContext context, DateTime value) {
   final local = value.toLocal();
-  final day = local.day.toString().padLeft(2, '0');
-  final month = local.month.toString().padLeft(2, '0');
-  final hour = local.hour.toString().padLeft(2, '0');
-  final minute = local.minute.toString().padLeft(2, '0');
-  return '$day.$month.${local.year} · $hour:$minute';
+  final material = MaterialLocalizations.of(context);
+  final date = material.formatCompactDate(local);
+  final time = material.formatTimeOfDay(
+    TimeOfDay.fromDateTime(local),
+    alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+  );
+  return '$date · $time';
 }
 
 IconData _xpEventIcon(ExperienceEvent event) => switch (event.kind) {
@@ -4306,9 +4347,10 @@ class _AchievementsScreenState extends State<_AchievementsScreen> {
         return b.progress.compareTo(a.progress);
       });
     final colors = Theme.of(context).colorScheme;
+    final strings = context.strings;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Erfolge')),
+      appBar: AppBar(title: Text(strings.text('Erfolge', 'Achievements'))),
       body: Center(
         child: ListView(
           padding: const EdgeInsets.all(20),
@@ -4331,7 +4373,10 @@ class _AchievementsScreenState extends State<_AchievementsScreen> {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            '$unlocked von ${widget.achievements.length} freigeschaltet',
+                            strings.text(
+                              '$unlocked von ${widget.achievements.length} freigeschaltet',
+                              '$unlocked of ${widget.achievements.length} unlocked',
+                            ),
                             style: Theme.of(context)
                                 .textTheme
                                 .titleLarge
@@ -4349,18 +4394,18 @@ class _AchievementsScreenState extends State<_AchievementsScreen> {
                   ),
                   const SizedBox(height: 12),
                   SegmentedButton<_AchievementFilter>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: _AchievementFilter.all,
-                        label: Text('Alle'),
+                        label: Text(strings.text('Alle', 'All')),
                       ),
                       ButtonSegment(
                         value: _AchievementFilter.open,
-                        label: Text('Offen'),
+                        label: Text(strings.text('Offen', 'Open')),
                       ),
                       ButtonSegment(
                         value: _AchievementFilter.unlocked,
-                        label: Text('Erreicht'),
+                        label: Text(strings.text('Erreicht', 'Unlocked')),
                       ),
                     ],
                     selected: {_filter},
@@ -4370,11 +4415,14 @@ class _AchievementsScreenState extends State<_AchievementsScreen> {
                   ),
                   const SizedBox(height: 12),
                   if (visible.isEmpty)
-                    const Card(
+                    Card(
                       child: Padding(
-                        padding: EdgeInsets.all(24),
+                        padding: const EdgeInsets.all(24),
                         child: Text(
-                          'In diesem Bereich gibt es derzeit keine Erfolge.',
+                          strings.text(
+                            'In diesem Bereich gibt es derzeit keine Erfolge.',
+                            'There are currently no achievements in this section.',
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -4401,6 +4449,7 @@ class _ProgressGoalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final completed = goal.isCompleted;
     final colors = Theme.of(context).colorScheme;
+    final strings = context.strings;
     final reward = goal.kind == ProgressGoalKind.mission
         ? ExperiencePointsPolicy.mission(goal.id)
         : ExperiencePointsPolicy.achievement(goal.id);
@@ -4436,7 +4485,7 @@ class _ProgressGoalCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          goal.title,
+                          strings.known(goal.title),
                           style: Theme.of(context)
                               .textTheme
                               .titleMedium
@@ -4444,9 +4493,9 @@ class _ProgressGoalCard extends StatelessWidget {
                         ),
                       ),
                       if (completed)
-                        const Text(
-                          'Geschafft',
-                          style: TextStyle(fontWeight: FontWeight.w700),
+                        Text(
+                          strings.text('Geschafft', 'Complete'),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
                         )
                       else
                         Text(
@@ -4455,7 +4504,7 @@ class _ProgressGoalCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 3),
-                  Text(goal.description),
+                  Text(strings.known(goal.description)),
                   if (reward > 0) ...[
                     const SizedBox(height: 5),
                     Text(
@@ -4517,7 +4566,8 @@ class _MissionSetBonusCard extends StatelessWidget {
         leading: Icon(Icons.workspace_premium_rounded,
             color: colors.onPrimaryContainer),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-        subtitle: const Text('Komplettbonus gutgeschrieben'),
+        subtitle: Text(context.strings
+            .text('Komplettbonus gutgeschrieben', 'Completion bonus awarded')),
         trailing: Text(
           '+$points XP',
           style: const TextStyle(fontWeight: FontWeight.w900),
@@ -4559,6 +4609,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
     final results = widget.results;
     final progress = widget.progress;
     final catalogIds = binaryPuzzleCatalog.map((puzzle) => puzzle.id).toSet();
@@ -4726,8 +4777,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-            isGameDetail ? '${widget.gameType!.label}-Statistik' : 'Statistik'),
+        title: Text(isGameDetail
+            ? strings.text(
+                '${widget.gameType!.label}-Statistik',
+                '${strings.known(widget.gameType!.label)} statistics',
+              )
+            : strings.text('Statistik', 'Statistics')),
       ),
       body: Center(
         child: ListView(
@@ -4741,8 +4796,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   _StatisticsHero(
                     value: selectedCompleted,
                     label: isGameDetail
-                        ? '${widget.gameType!.label}-Rätsel gelöst'
-                        : 'Rätsel insgesamt gelöst',
+                        ? strings.text(
+                            '${widget.gameType!.label}-Rätsel gelöst',
+                            '${strings.known(widget.gameType!.label)} puzzles solved',
+                          )
+                        : strings.text(
+                            'Rätsel insgesamt gelöst', 'Total puzzles solved'),
                   ),
                   if (isBinairoDetail) ...[
                     const SizedBox(height: 12),
@@ -4798,7 +4857,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Rätselsammlung',
+                      strings.text('Rätselsammlung', 'Puzzle collection'),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 10),
@@ -4809,7 +4868,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       ),
                     const SizedBox(height: 24),
                     Text(
-                      'Zufallsrätsel nach Größe',
+                      strings.text(
+                          'Zufallsrätsel nach Größe', 'Random puzzles by size'),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 10),
@@ -4996,7 +5056,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Nach Rastergröße',
+                      strings.text('Nach Rastergröße', 'By grid size'),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 10),
@@ -5136,7 +5196,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Nach Rastergr\u00f6\u00dfe',
+                      strings.text('Nach Rastergröße', 'By grid size'),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 10),
@@ -5188,12 +5248,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Deine Spiele',
+                      strings.text('Deine Spiele', 'Your games'),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Kompakte Übersicht – ausführliche Werte findest du direkt im jeweiligen Spielbereich.',
+                      strings.text(
+                        'Kompakte Übersicht – ausführliche Werte findest du direkt im jeweiligen Spielbereich.',
+                        'Compact overview — detailed values are available in each game section.',
+                      ),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -5373,7 +5436,7 @@ class _StatisticsHero extends StatelessWidget {
                     ),
               ),
               const SizedBox(height: 4),
-              Text(label),
+              Text(context.strings.known(label)),
             ],
           ),
         ),
@@ -5397,9 +5460,10 @@ class _StatisticListCard extends StatelessWidget {
   Widget build(BuildContext context) => Card(
         child: ListTile(
           leading: Icon(icon),
-          title: Text(title),
-          subtitle: Text(subtitle),
-          trailing: trailing == null ? null : Text(trailing!),
+          title: Text(context.strings.known(title)),
+          subtitle: Text(context.strings.known(subtitle)),
+          trailing:
+              trailing == null ? null : Text(context.strings.known(trailing!)),
         ),
       );
 }
@@ -5431,7 +5495,8 @@ class _PerformanceStatisticsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Leistung', style: Theme.of(context).textTheme.titleLarge),
+        Text(context.strings.text('Leistung', 'Performance'),
+            style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 10),
         Card(
           child: Padding(
@@ -5492,7 +5557,10 @@ class _PerformanceStatisticsSection extends StatelessWidget {
         if (statistics.completedCount == 0 && legacyBestSeconds == null) ...[
           const SizedBox(height: 6),
           Text(
-            'Deine Rekorde erscheinen nach dem nächsten abgeschlossenen Rätsel.',
+            context.strings.text(
+              'Deine Rekorde erscheinen nach dem nächsten abgeschlossenen Rätsel.',
+              'Your records will appear after your next completed puzzle.',
+            ),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -5520,7 +5588,7 @@ class _DifficultyPerformanceSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Nach Schwierigkeit',
+          context.strings.text('Nach Schwierigkeit', 'By difficulty'),
           style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 10),
@@ -5587,8 +5655,9 @@ class _DifficultyPerformanceCard extends StatelessWidget {
           PuzzleDifficulty.medium => Icons.psychology_alt_outlined,
           PuzzleDifficulty.hard => Icons.local_fire_department_outlined,
         }),
-        title: Text(difficulty.label),
-        subtitle: Text('$completedCount abgeschlossen'),
+        title: Text(context.strings.known(difficulty.label)),
+        subtitle: Text(context.strings.text(
+            '$completedCount abgeschlossen', '$completedCount completed')),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
           Row(
@@ -5636,10 +5705,14 @@ class _ModePerformanceSection extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Nach Spielart', style: Theme.of(context).textTheme.titleLarge),
+          Text(context.strings.text('Nach Spielart', 'By mode'),
+              style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 4),
           Text(
-            'Aufgeschlüsselt nach Sammlung, Zufalls- und Tagesrätseln.',
+            context.strings.text(
+              'Aufgeschlüsselt nach Sammlung, Zufalls- und Tagesrätseln.',
+              'Broken down by collection, random, and daily puzzles.',
+            ),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -5688,8 +5761,11 @@ class _ModePerformanceCard extends StatelessWidget {
     return Card(
       child: ExpansionTile(
         leading: Icon(icon),
-        title: Text(title),
-        subtitle: Text('${statistics.completedCount} abgeschlossen'),
+        title: Text(context.strings.known(title)),
+        subtitle: Text(context.strings.text(
+          '${statistics.completedCount} abgeschlossen',
+          '${statistics.completedCount} completed',
+        )),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
           Row(
@@ -5771,7 +5847,8 @@ class _RecentActivitySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Letzte 7 Tage', style: Theme.of(context).textTheme.titleLarge),
+        Text(context.strings.text('Letzte 7 Tage', 'Last 7 days'),
+            style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 10),
         Card(
           child: Padding(
@@ -5839,10 +5916,11 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
           child: Icon(icon),
         ),
         title: Text(
-          gameType.label,
+          context.strings.known(gameType.label),
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
-        subtitle: Text('$completed Rätsel abgeschlossen'),
+        subtitle: Text(context.strings.text(
+            '$completed Rätsel abgeschlossen', '$completed puzzles completed')),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
           if (catalogTotal > 0) ...[
@@ -5879,7 +5957,8 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
             child: TextButton.icon(
               onPressed: onOpenDetails,
               icon: const Icon(Icons.insights_outlined),
-              label: const Text('Alle Statistiken'),
+              label: Text(
+                  context.strings.text('Alle Statistiken', 'All statistics')),
             ),
           ),
         ],
@@ -5905,7 +5984,7 @@ class _CompactStatistic extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            label,
+            context.strings.known(label),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall,
           ),

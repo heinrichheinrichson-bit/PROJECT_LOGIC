@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app_localizations.dart';
 import '../../game_storage.dart';
 
 class StreakCalendarCard extends StatefulWidget {
@@ -17,6 +18,7 @@ class _StreakCalendarCardState extends State<StreakCalendarCard> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final strings = context.strings;
     final today = _dateOnly(DateTime.now());
     final first = DateTime(_month.year, _month.month, 1);
     final count = DateTime(_month.year, _month.month + 1, 0).day;
@@ -37,10 +39,19 @@ class _StreakCalendarCardState extends State<StreakCalendarCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${widget.progress.currentStreak} Tage Spielserie',
+                        strings.plural(
+                          widget.progress.currentStreak,
+                          '1 Tag Spielserie',
+                          '${widget.progress.currentStreak} Tage Spielserie',
+                          '1 day streak',
+                          '${widget.progress.currentStreak} day streak',
+                        ),
                         style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
-                      Text('Beste Serie: ${widget.progress.bestStreak} Tage'),
+                      Text(strings.text(
+                        'Beste Serie: ${widget.progress.bestStreak} Tage',
+                        'Best streak: ${widget.progress.bestStreak} days',
+                      )),
                     ],
                   ),
                 ),
@@ -51,20 +62,20 @@ class _StreakCalendarCardState extends State<StreakCalendarCard> {
             Row(
               children: [
                 IconButton(
-                  tooltip: 'Vorheriger Monat',
+                  tooltip: strings.text('Vorheriger Monat', 'Previous month'),
                   onPressed: () => setState(
                       () => _month = DateTime(_month.year, _month.month - 1)),
                   icon: const Icon(Icons.chevron_left_rounded),
                 ),
                 Expanded(
                   child: Text(
-                    '${_monthName(_month.month)} ${_month.year}',
+                    MaterialLocalizations.of(context).formatMonthYear(_month),
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Nächster Monat',
+                  tooltip: strings.text('Nächster Monat', 'Next month'),
                   onPressed:
                       _month.year == today.year && _month.month == today.month
                           ? null
@@ -76,7 +87,9 @@ class _StreakCalendarCardState extends State<StreakCalendarCard> {
             ),
             Row(
               children: [
-                for (final label in ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'])
+                for (final label in strings.isEnglish
+                    ? ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                    : ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'])
                   Expanded(
                     child: Text(label,
                         textAlign: TextAlign.center,
@@ -107,15 +120,19 @@ class _StreakCalendarCardState extends State<StreakCalendarCard> {
               },
             ),
             const SizedBox(height: 12),
-            const Wrap(
+            Wrap(
               spacing: 14,
               runSpacing: 8,
               children: [
                 _Legend(
                     icon: Icons.local_fire_department_rounded,
-                    text: 'Gespielt'),
-                _Legend(icon: Icons.ac_unit_rounded, text: 'Auf Eis'),
-                _Legend(icon: Icons.remove_circle_outline, text: 'Verpasst'),
+                    text: strings.text('Gespielt', 'Played')),
+                _Legend(
+                    icon: Icons.ac_unit_rounded,
+                    text: strings.text('Auf Eis', 'Frozen')),
+                _Legend(
+                    icon: Icons.remove_circle_outline,
+                    text: strings.text('Verpasst', 'Missed')),
               ],
             ),
           ],
@@ -132,10 +149,17 @@ class _FreezeBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final available = progress.streakFreezeAvailable;
+    final strings = context.strings;
     return Tooltip(
       message: available
-          ? 'Ein Eiszapfen schützt automatisch einen verpassten Tag.'
-          : '${progress.streakFreezeRefillDays} von 10 aktiven Tagen bis zum neuen Eiszapfen.',
+          ? strings.text(
+              'Ein Eiszapfen schützt automatisch einen verpassten Tag.',
+              'One streak freeze automatically protects a missed day.',
+            )
+          : strings.text(
+              '${progress.streakFreezeRefillDays} von 10 aktiven Tagen bis zum neuen Eiszapfen.',
+              '${progress.streakFreezeRefillDays} of 10 active days until a new streak freeze.',
+            ),
       child: Chip(
         avatar: const Icon(Icons.ac_unit_rounded, size: 18),
         label:
@@ -161,6 +185,7 @@ class _StreakDay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final strings = context.strings;
     final future = day.isAfter(today);
     final isToday = day.isAtSameMomentAs(today);
     final missed = !future && !completed && !frozen && !isToday;
@@ -172,23 +197,24 @@ class _StreakDay extends StatelessWidget {
                 ? Icons.remove_circle_outline
                 : null;
     final description = completed
-        ? 'Rätsel gelöst'
+        ? strings.text('Rätsel gelöst', 'Puzzle solved')
         : frozen
-            ? 'Durch Eiszapfen geschützt'
+            ? strings.text(
+                'Durch Eiszapfen geschützt', 'Protected by a streak freeze')
             : missed
-                ? 'Kein Rätsel abgeschlossen'
+                ? strings.text(
+                    'Kein Rätsel abgeschlossen', 'No puzzle completed')
                 : isToday
-                    ? 'Heute'
-                    : 'Zukünftiger Tag';
+                    ? strings.text('Heute', 'Today')
+                    : strings.text('Zukünftiger Tag', 'Future day');
+    final date = MaterialLocalizations.of(context).formatMediumDate(day);
     return Semantics(
-      label: '${day.day}. ${_monthName(day.month)}: $description',
+      label: '$date: $description',
       button: true,
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('${day.day}. ${_monthName(day.month)}: $description')),
+          SnackBar(content: Text('$date: $description')),
         ),
         child: Container(
           decoration: BoxDecoration(
@@ -232,18 +258,3 @@ class _Legend extends StatelessWidget {
 DateTime _dateOnly(DateTime value) =>
     DateTime(value.year, value.month, value.day);
 DateTime _monthOnly(DateTime value) => DateTime(value.year, value.month);
-
-String _monthName(int month) => const [
-      'Januar',
-      'Februar',
-      'März',
-      'April',
-      'Mai',
-      'Juni',
-      'Juli',
-      'August',
-      'September',
-      'Oktober',
-      'November',
-      'Dezember',
-    ][month - 1];
