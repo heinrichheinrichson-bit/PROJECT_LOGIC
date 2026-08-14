@@ -58,6 +58,35 @@ class _StreakCalendarCardState extends State<StreakCalendarCard> {
                 _FreezeBadge(progress: widget.progress),
               ],
             ),
+            if (widget.progress.wasProtectedYesterdayAt(DateTime.now())) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colors.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.ac_unit_rounded,
+                        color: colors.onTertiaryContainer),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        strings.text(
+                          'Dein Eiszapfen hat gestern deine Spielserie gerettet.',
+                          'Your streak freeze saved your streak yesterday.',
+                        ),
+                        style: TextStyle(
+                          color: colors.onTertiaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 14),
             Row(
               children: [
@@ -157,13 +186,16 @@ class _FreezeBadge extends StatelessWidget {
               'One streak freeze automatically protects a missed day.',
             )
           : strings.text(
-              '${progress.streakFreezeRefillDays} von 10 aktiven Tagen bis zum neuen Eiszapfen.',
-              '${progress.streakFreezeRefillDays} of 10 active days until a new streak freeze.',
+              'Noch ${progress.streakFreezeRefillDaysRemaining} aktive Tage bis zum neuen Eiszapfen.',
+              '${progress.streakFreezeRefillDaysRemaining} active days until a new streak freeze.',
             ),
       child: Chip(
         avatar: const Icon(Icons.ac_unit_rounded, size: 18),
-        label:
-            Text(available ? '1/1' : '${progress.streakFreezeRefillDays}/10'),
+        label: Text(available
+            ? strings.text('1 verfügbar', '1 available')
+            : strings.text(
+                'Noch ${progress.streakFreezeRefillDaysRemaining} Tage',
+                '${progress.streakFreezeRefillDaysRemaining} days left')),
       ),
     );
   }

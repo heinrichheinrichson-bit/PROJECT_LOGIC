@@ -1,3 +1,13 @@
+## v0.8.36 – Streak-Freeze produktreif erweitert
+
+- Automatischen Verbrauch eines Eiszapfens und Wiederauffüllung nach zehn unterschiedlichen aktiven Tagen verständlicher dargestellt.
+- Verbleibende aktive Tage bis zum nächsten Eiszapfen direkt im Streak-Kalender sichtbar gemacht.
+- Deutliche zweisprachige Rückmeldung ergänzt, wenn der gestrige Fehltag automatisch geschützt wurde.
+- Streak-Berechnung gegen Sommerzeit, Winterzeit sowie Monats- und Jahreswechsel abgesichert.
+- Langfristige Streak-Erfolge für 60, 100, 365, 730 und 1.000 aufeinanderfolgende Tage ergänzt.
+- Regressionstests für Freeze-Verbrauch, Auffüllung, Rückmeldung und lange Streak-Ziele erweitert.
+- Paketversion auf 0.8.36+65 erhöht.
+
 ## v0.8.35 – Weitere dynamische Sprachmischungen beseitigt
 
 - Levelkarte, Streak-Statistik und dynamische Binairo-Spielinformationen vollständig lokalisiert.

@@ -790,6 +790,32 @@ void main() {
     expect(progress.streakFreezeRefillDays, 0);
   });
 
+  test('streak calculation follows calendar days across daylight saving time',
+      () {
+    const progress = PlayerProgress(
+      totalCompleted: 3,
+      totalPlaySeconds: 90,
+      completedDays: ['2026-03-28', '2026-03-29', '2026-03-30'],
+    );
+
+    expect(progress.currentStreakAt(DateTime(2026, 3, 30, 12)), 3);
+    expect(progress.bestStreak, 3);
+  });
+
+  test('freeze exposes remaining refill days and recent protection', () {
+    const progress = PlayerProgress(
+      totalCompleted: 2,
+      totalPlaySeconds: 60,
+      completedDays: ['2026-08-10', '2026-08-12'],
+      frozenDays: ['2026-08-11'],
+      streakFreezeAvailable: false,
+      streakFreezeRefillDays: 4,
+    );
+
+    expect(progress.streakFreezeRefillDaysRemaining, 6);
+    expect(progress.wasProtectedYesterdayAt(DateTime(2026, 8, 12)), isTrue);
+  });
+
   test('legacy progress activates protection without freezing old gaps', () {
     final migrated = const PlayerProgress(
       totalCompleted: 2,

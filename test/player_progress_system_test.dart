@@ -385,6 +385,7 @@ void main() {
         'hard-1000',
         'no-hint-500',
         'daily-1000',
+        'streak-1000',
         'play-hours-${1000 * 3600}',
       ]),
     );

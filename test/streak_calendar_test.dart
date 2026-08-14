@@ -7,10 +7,10 @@ void main() {
   testWidgets('calendar explains played frozen and missed days',
       (tester) async {
     final now = DateTime.now();
-    String key(int day) =>
-        '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
-    final completedDay = now.day > 3 ? now.day - 3 : 1;
-    final frozenDay = now.day > 2 ? now.day - 2 : 2;
+    String key(DateTime day) =>
+        '${day.year.toString().padLeft(4, '0')}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+    final completedDay = now.subtract(const Duration(days: 2));
+    final frozenDay = now.subtract(const Duration(days: 1));
     final progress = PlayerProgress(
       totalCompleted: 1,
       totalPlaySeconds: 30,
@@ -18,7 +18,7 @@ void main() {
       frozenDays: [key(frozenDay)],
       streakFreezeAvailable: false,
       streakFreezeRefillDays: 4,
-      streakProtectionStartedOn: key(1),
+      streakProtectionStartedOn: key(completedDay),
     );
 
     await tester.pumpWidget(MaterialApp(
@@ -29,7 +29,9 @@ void main() {
       ),
     ));
 
-    expect(find.text('4/10'), findsOneWidget);
+    expect(find.text('Noch 6 Tage'), findsOneWidget);
+    expect(find.text('Dein Eiszapfen hat gestern deine Spielserie gerettet.'),
+        findsOneWidget);
     expect(find.text('Gespielt'), findsOneWidget);
     expect(find.text('Auf Eis'), findsOneWidget);
     expect(find.text('Verpasst'), findsOneWidget);

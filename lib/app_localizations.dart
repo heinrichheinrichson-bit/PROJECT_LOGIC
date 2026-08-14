@@ -570,6 +570,11 @@ class AppLocalizations {
       'Enger heller Pfad': 'Narrow open path',
       'Finaler Zusammenhang': 'Final connection',
       'Hashi-Statistik': 'Hashi statistics',
+      'Zwei Monate am Ball': 'Two months going strong',
+      'Hundert Tage Fokus': 'One hundred days of focus',
+      'Ein Jahr Spielserie': 'A one-year streak',
+      'Zwei Jahre Spielserie': 'A two-year streak',
+      'Tausend Tage am Ball': 'One thousand days going strong',
       'Ordne jedem Baum genau ein Zelt zu.':
           'Assign exactly one tent to every tree.',
       'Ein Zelt steht direkt waagerecht oder senkrecht neben seinem Baum.':
@@ -618,6 +623,8 @@ class AppLocalizations {
                 r'^Spiele an (\d+) verschiedenen Tagen – ohne Seriendruck\.$'),
             (match) =>
                 'Play on ${match[1]} different days — without streak pressure.')
+        .replaceAllMapped(RegExp(r'^Spiele an (\d+) Tagen in Folge\.$'),
+            (match) => 'Play on ${match[1]} consecutive days.')
         .replaceAllMapped(
             RegExp(r'^Verbringe insgesamt (\d+) Stunden beim Rätseln\.$'),
             (match) => 'Spend a total of ${match[1]} hours solving puzzles.')

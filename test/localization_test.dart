@@ -105,5 +105,9 @@ void main() {
     expect(strings.known('Neue Verbindungen'), 'New connections');
     expect(strings.known('Heller Korridor'), 'Open corridor');
     expect(strings.known('Verbundene Wege'), 'Connected paths');
+    expect(strings.known('Tausend Tage am Ball'),
+        'One thousand days going strong');
+    expect(strings.known('Spiele an 1000 Tagen in Folge.'),
+        'Play on 1000 consecutive days.');
   });
 }

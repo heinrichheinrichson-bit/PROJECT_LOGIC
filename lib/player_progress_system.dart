@@ -344,6 +344,20 @@ class PlayerProgressService {
           current: snapshot.progress.bestStreak,
           target: 30,
         ),
+        ..._achievementChain(
+          key: 'streak',
+          titles: const [
+            'Zwei Monate am Ball',
+            'Hundert Tage Fokus',
+            'Ein Jahr Spielserie',
+            'Zwei Jahre Spielserie',
+            'Tausend Tage am Ball',
+          ],
+          description: (target) => 'Spiele an $target Tagen in Folge.',
+          iconName: 'local_fire_department',
+          current: snapshot.progress.bestStreak,
+          targets: const [60, 100, 365, 730, 1000],
+        ),
         _achievement(
           id: 'daily-seven',
           title: 'Jeden Tag ein Rätsel',

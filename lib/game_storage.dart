@@ -449,11 +449,11 @@ class PlayerProgress {
     if (days.isEmpty) return 0;
     final today = _dateOnly(now);
     final latest = days.last;
-    if (today.difference(latest).inDays > 1) return 0;
+    if (_calendarDayDistance(latest, today) > 1) return 0;
 
     var streak = 1;
     for (var index = days.length - 1; index > 0; index--) {
-      if (days[index].difference(days[index - 1]).inDays == 1) {
+      if (_calendarDayDistance(days[index - 1], days[index]) == 1) {
         streak++;
       } else {
         break;
@@ -468,7 +468,7 @@ class PlayerProgress {
     var best = 1;
     var current = 1;
     for (var index = 1; index < days.length; index++) {
-      if (days[index].difference(days[index - 1]).inDays == 1) {
+      if (_calendarDayDistance(days[index - 1], days[index]) == 1) {
         current++;
         if (current > best) best = current;
       } else {
@@ -492,6 +492,12 @@ class PlayerProgress {
   bool isCompletedOn(DateTime day) => completedDays.contains(_dayKey(day));
 
   bool isFrozenOn(DateTime day) => frozenDays.contains(_dayKey(day));
+
+  int get streakFreezeRefillDaysRemaining =>
+      streakFreezeAvailable ? 0 : 10 - streakFreezeRefillDays;
+
+  bool wasProtectedYesterdayAt(DateTime now) =>
+      isFrozenOn(_dateOnly(now).subtract(const Duration(days: 1)));
 
   PlayerProgress reconcileStreak({required DateTime now}) {
     final today = _dateOnly(now);
@@ -610,6 +616,12 @@ class PlayerProgress {
 
   static DateTime _dateOnly(DateTime value) =>
       DateTime(value.year, value.month, value.day);
+
+  static int _calendarDayDistance(DateTime from, DateTime to) => DateTime.utc(
+        to.year,
+        to.month,
+        to.day,
+      ).difference(DateTime.utc(from.year, from.month, from.day)).inDays;
 
   static String _dayKey(DateTime value) =>
       '${value.year.toString().padLeft(4, '0')}-'
