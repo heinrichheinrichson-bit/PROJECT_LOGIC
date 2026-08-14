@@ -87,7 +87,7 @@ void main() {
     expect(find.text('Hashi-Zufallsrätsel'), findsOneWidget);
     expect(find.text('Rätsel erstellen'), findsOneWidget);
 
-    await tester.pageBack();
+    Navigator.of(tester.element(find.text('Hashi-Zufallsrätsel'))).pop();
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Hashi-Statistik'));

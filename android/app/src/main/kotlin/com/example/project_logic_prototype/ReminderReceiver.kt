@@ -49,12 +49,19 @@ class ReminderReceiver : BroadcastReceiver() {
         ) return
         val manager = context.getSystemService(NotificationManager::class.java)
         val channelId = "project_logic_reminders"
+        val english = usesEnglish(context)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             manager.createNotificationChannel(NotificationChannel(
                 channelId,
-                "Spielerinnerungen",
+                if (english) "Play reminders" else "Spielerinnerungen",
                 NotificationManager.IMPORTANCE_DEFAULT,
-            ).apply { description = "Tägliche Erinnerungen und Streak-Warnungen" })
+            ).apply {
+                description = if (english) {
+                    "Daily reminders and streak warnings"
+                } else {
+                    "Tägliche Erinnerungen und Streak-Warnungen"
+                }
+            })
         }
         val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
         val pending = PendingIntent.getActivity(
@@ -63,15 +70,35 @@ class ReminderReceiver : BroadcastReceiver() {
         val title: String
         val text: String
         if (streak) {
-            title = "Deine ${state.currentStreak}-Tage-Serie ist noch offen"
-            text = if (state.freezeAvailable) {
-                "Löse heute noch ein Rätsel. Dein Eiszapfen würde dich notfalls schützen."
+            title = if (english) {
+                "Your ${state.currentStreak}-day streak is still at risk"
             } else {
-                "Löse heute noch ein Rätsel, damit deine Serie weiterläuft."
+                "Deine ${state.currentStreak}-Tage-Serie ist noch offen"
+            }
+            text = if (state.freezeAvailable) {
+                if (english) {
+                    "Solve a puzzle today. Your streak freeze can protect you if needed."
+                } else {
+                    "Löse heute noch ein Rätsel. Dein Eiszapfen würde dich notfalls schützen."
+                }
+            } else {
+                if (english) {
+                    "Solve a puzzle today to keep your streak going."
+                } else {
+                    "Löse heute noch ein Rätsel, damit deine Serie weiterläuft."
+                }
             }
         } else {
-            title = "Zeit für eine kleine Logikrunde"
-            text = "Ein Rätsel genügt, um deinen heutigen Spieltag zu sichern."
+            title = if (english) {
+                "Time for a quick logic break"
+            } else {
+                "Zeit für eine kleine Logikrunde"
+            }
+            text = if (english) {
+                "One puzzle is enough to secure today's play day."
+            } else {
+                "Ein Rätsel genügt, um deinen heutigen Spieltag zu sichern."
+            }
         }
         manager.notify(
             if (streak) 4302 else 4301,
@@ -85,6 +112,18 @@ class ReminderReceiver : BroadcastReceiver() {
                 .setOnlyAlertOnce(true)
                 .build(),
         )
+    }
+
+    private fun usesEnglish(context: Context): Boolean {
+        val flutter = context.getSharedPreferences(
+            "FlutterSharedPreferences",
+            Context.MODE_PRIVATE,
+        )
+        return when (flutter.getString("flutter.setting_language_v1", "german")) {
+            "english" -> true
+            "system" -> Locale.getDefault().language == "en"
+            else -> false
+        }
     }
 
     private fun progressState(context: Context): ProgressState {

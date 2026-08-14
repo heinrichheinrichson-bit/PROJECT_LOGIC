@@ -1,12 +1,14 @@
 name: project_logic_prototype
 description: First offline prototype for a binary puzzle collection.
 publish_to: "none"
-version: 0.8.29+58
+version: 0.8.30+59
 environment:
   sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
   shared_preferences: ^2.3.2
 

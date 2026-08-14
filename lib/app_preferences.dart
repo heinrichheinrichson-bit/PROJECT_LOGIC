@@ -19,9 +19,22 @@ enum AppThemePreference {
       };
 }
 
+enum AppLanguagePreference {
+  system,
+  german,
+  english;
+
+  Locale? get locale => switch (this) {
+        AppLanguagePreference.system => null,
+        AppLanguagePreference.german => const Locale('de'),
+        AppLanguagePreference.english => const Locale('en'),
+      };
+}
+
 class AppPreferences extends ChangeNotifier {
   AppPreferences._({
     required this.themePreference,
+    required this.languagePreference,
     required this.animationsEnabled,
     required this.soundsEnabled,
     required this.hapticsEnabled,
@@ -34,6 +47,7 @@ class AppPreferences extends ChangeNotifier {
   });
 
   static const _themeKey = 'setting_theme_v1';
+  static const _languageKey = 'setting_language_v1';
   static const _animationsKey = 'setting_animations_v1';
   static const _soundsKey = 'setting_sounds_v1';
   static const _hapticsKey = 'setting_haptics_v1';
@@ -45,6 +59,7 @@ class AppPreferences extends ChangeNotifier {
   static const _streakWarningMinutesKey = 'setting_streak_warning_minutes_v1';
 
   AppThemePreference themePreference;
+  AppLanguagePreference languagePreference;
   bool animationsEnabled;
   bool soundsEnabled;
   bool hapticsEnabled;
@@ -63,9 +78,16 @@ class AppPreferences extends ChangeNotifier {
       (value) => value.name == themeName,
       orElse: () => AppThemePreference.system,
     );
+    final languageName = preferences.getString(_languageKey) ??
+        AppLanguagePreference.german.name;
+    final language = AppLanguagePreference.values.firstWhere(
+      (value) => value.name == languageName,
+      orElse: () => AppLanguagePreference.german,
+    );
 
     return AppPreferences._(
       themePreference: theme,
+      languagePreference: language,
       animationsEnabled: preferences.getBool(_animationsKey) ?? true,
       soundsEnabled: preferences.getBool(_soundsKey) ?? true,
       hapticsEnabled: preferences.getBool(_hapticsKey) ?? true,
@@ -89,6 +111,14 @@ class AppPreferences extends ChangeNotifier {
     notifyListeners();
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(_themeKey, value.name);
+  }
+
+  Future<void> setLanguage(AppLanguagePreference value) async {
+    if (languagePreference == value) return;
+    languagePreference = value;
+    notifyListeners();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(_languageKey, value.name);
   }
 
   Future<void> setAnimationsEnabled(bool value) async {

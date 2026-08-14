@@ -1,3 +1,15 @@
+## v0.8.30 – Deutsche und englische App-Basis
+
+- Dauerhafte Sprachwahl für Deutsch, Englisch oder die Systemsprache ergänzt.
+- Deutsch bleibt für bestehende Installationen und neue Nutzer zunächst der sichere Standard.
+- Startseite einschließlich Begrüßung, Spieleübersicht, Streak und persönlichem Bereich vollständig zweisprachig umgesetzt.
+- Zentrale Einstellungen, Erinnerungsoptionen, Darstellung, Monetarisierung und Datensicherung zweisprachig umgesetzt.
+- Uhrzeiten und Material-Systemdialoge richten sich nach der gewählten Sprache.
+- Android-Spielerinnerungen und Streak-Warnungen erscheinen passend auf Deutsch oder Englisch.
+- Nicht unterstützte Systemsprachen fallen zuverlässig auf Deutsch zurück.
+- Regressionstests für Speicherung, unmittelbaren Sprachwechsel und Sprachfallback ergänzt.
+- Paketversion auf 0.8.30+59 erhöht.
+
 ## v0.8.24 – Zuverlässige Android-Vibrationen
 
 - Systemabhängiges Flutter-Berührungsfeedback durch echte kurze Android-Vibrationsimpulse ersetzt.

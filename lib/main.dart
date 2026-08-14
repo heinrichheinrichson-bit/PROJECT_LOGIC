@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
+import 'app_localizations.dart';
 import 'app_preferences.dart';
 import 'app_data_migration.dart';
 import 'app_theme.dart';
@@ -71,6 +73,16 @@ class ProjectLogicApp extends StatelessWidget {
         builder: (context, _) => MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'Project Logic',
+          locale: preferences.languagePreference.locale,
+          supportedLocales: AppLocalizations.supportedLocales,
+          localeResolutionCallback: (locale, supportedLocales) =>
+              AppLocalizations.resolve(locale, supportedLocales),
+          localizationsDelegates: const [
+            AppLocalizationsDelegate(),
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           themeMode: preferences.themePreference.themeMode,
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
@@ -161,6 +173,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -205,9 +218,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (_savedHashiGame case final saved?) ...[
                       _HomeAction(
                         icon: Icons.play_circle_outline_rounded,
-                        title: 'Hashi fortsetzen',
+                        title:
+                            strings.text('Hashi fortsetzen', 'Continue Hashi'),
                         subtitle:
-                            '${saved.puzzle.sharedDifficulty.label} · ${saved.moves} Züge · ${_shortTime(saved.elapsedSeconds)}',
+                            '${saved.puzzle.sharedDifficulty.label} · ${saved.moves} ${strings.text('Züge', 'moves')} · ${_shortTime(saved.elapsedSeconds)}',
                         enabled: true,
                         emphasized: true,
                         onTap: () async {
@@ -228,9 +242,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (_savedSlitherlinkGame case final saved?) ...[
                       _HomeAction(
                         icon: Icons.play_circle_outline_rounded,
-                        title: 'Slitherlink fortsetzen',
+                        title: strings.text(
+                            'Slitherlink fortsetzen', 'Continue Slitherlink'),
                         subtitle:
-                            '${saved.puzzle.rows} × ${saved.puzzle.columns} · ${saved.moves} Züge · ${_shortTime(saved.elapsedSeconds)}',
+                            '${saved.puzzle.rows} × ${saved.puzzle.columns} · ${saved.moves} ${strings.text('Züge', 'moves')} · ${_shortTime(saved.elapsedSeconds)}',
                         enabled: true,
                         emphasized: true,
                         onTap: () async {
@@ -249,16 +264,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                     _StreakCard(progress: _progress),
                     const SizedBox(height: 28),
-                    const _HomeSectionHeader(
-                      title: 'Deine Spiele',
-                      subtitle: 'Sechs Arten zu denken. Womit beginnst du?',
+                    _HomeSectionHeader(
+                      title: strings.text('Deine Spiele', 'Your games'),
+                      subtitle: strings.text(
+                        'Sechs Arten zu denken. Womit beginnst du?',
+                        'Six ways to think. Where will you begin?',
+                      ),
                     ),
                     const SizedBox(height: 12),
                     _HomeAction(
                       icon: Icons.grid_4x4_rounded,
-                      title: 'Binärpuzzle',
+                      title: strings.text('Binärpuzzle', 'Binary puzzle'),
                       subtitle:
-                          '${_catalogCompletedCount(_results)} von ${binaryPuzzleCatalog.length} Rätseln gelöst',
+                          '${_catalogCompletedCount(_results)} ${strings.text('von', 'of')} ${binaryPuzzleCatalog.length} ${strings.text('Rätseln gelöst', 'puzzles solved')}',
                       enabled: true,
                       accent: AppTheme.gameColors['binairo'],
                       onTap: () async {
@@ -274,8 +292,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     _HomeAction(
                       icon: Icons.hub_rounded,
                       title: 'Hashi',
-                      subtitle:
-                          'Entdecke Inseln, Brücken und das neue Spielgefühl',
+                      subtitle: strings.text(
+                        'Entdecke Inseln, Brücken und das neue Spielgefühl',
+                        'Discover islands, bridges, and a new way to play',
+                      ),
                       enabled: true,
                       accent: AppTheme.gameColors['hashi'],
                       onTap: () => Navigator.of(context).push(
@@ -312,7 +332,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     _HomeAction(
                       icon: Icons.gesture_rounded,
                       title: 'Slitherlink',
-                      subtitle: 'Zeichne eine einzige geschlossene Schleife',
+                      subtitle: strings.text(
+                        'Zeichne eine einzige geschlossene Schleife',
+                        'Draw one single closed loop',
+                      ),
                       enabled: true,
                       accent: AppTheme.gameColors['slitherlink'],
                       onTap: () => Navigator.of(context).push(
@@ -350,7 +373,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     _HomeAction(
                       icon: Icons.compare_arrows_rounded,
                       title: 'Futoshiki',
-                      subtitle: 'Zahlen logisch in Beziehung setzen',
+                      subtitle: strings.text(
+                        'Zahlen logisch in Beziehung setzen',
+                        'Connect numbers through logical relations',
+                      ),
                       enabled: true,
                       accent: AppTheme.gameColors['futoshiki'],
                       onTap: () => Navigator.of(context).push(
@@ -388,7 +414,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     _HomeAction(
                       icon: Icons.filter_b_and_w_rounded,
                       title: 'Hitori',
-                      subtitle: 'Doppelte Zahlen geschickt schwärzen',
+                      subtitle: strings.text(
+                        'Doppelte Zahlen geschickt schwärzen',
+                        'Carefully shade duplicate numbers',
+                      ),
                       enabled: true,
                       accent: AppTheme.gameColors['hitori'],
                       onTap: () => Navigator.of(context).push(
@@ -425,8 +454,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 12),
                     _HomeAction(
                       icon: Icons.park_rounded,
-                      title: 'Zelte & B\u00e4ume',
-                      subtitle: 'Finde f\u00fcr jeden Baum das passende Zelt',
+                      title: strings.text('Zelte & Bäume', 'Tents & Trees'),
+                      subtitle: strings.text(
+                        'Finde für jeden Baum das passende Zelt',
+                        'Find the matching tent for every tree',
+                      ),
                       enabled: true,
                       accent: AppTheme.gameColors['tents'],
                       onTap: () => Navigator.of(context).push(
@@ -461,15 +493,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 28),
-                    const _HomeSectionHeader(
-                      title: 'Dein Bereich',
-                      subtitle: 'Fortschritt, Statistiken und Einstellungen',
+                    _HomeSectionHeader(
+                      title: strings.text('Dein Bereich', 'Your space'),
+                      subtitle: strings.text(
+                        'Fortschritt, Statistiken und Einstellungen',
+                        'Progress, statistics, and settings',
+                      ),
                     ),
                     const SizedBox(height: 12),
                     _HomeAction(
                       icon: Icons.person_outline_rounded,
-                      title: 'Dein Fortschritt',
-                      subtitle: 'Level, Ziele und Erfolge auf einen Blick',
+                      title: strings.text('Dein Fortschritt', 'Your progress'),
+                      subtitle: strings.text(
+                        'Level, Ziele und Erfolge auf einen Blick',
+                        'Levels, goals, and achievements at a glance',
+                      ),
                       enabled: true,
                       onTap: () async {
                         await Navigator.of(context).push(
@@ -486,8 +524,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 12),
                     _HomeAction(
                       icon: Icons.bar_chart_rounded,
-                      title: 'Statistik',
-                      subtitle: 'Deine bisherigen Partien und Bestleistungen',
+                      title: strings.text('Statistik', 'Statistics'),
+                      subtitle: strings.text(
+                        'Deine bisherigen Partien und Bestleistungen',
+                        'Your games and personal bests',
+                      ),
                       enabled: true,
                       onTap: () async {
                         await Navigator.of(context).push(
@@ -1336,6 +1377,7 @@ class _HomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final strings = context.strings;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1352,22 +1394,25 @@ class _HomeHeader extends StatelessWidget {
                   color: colors.onPrimaryContainer),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('PROJECT LOGIC',
+                  const Text('PROJECT LOGIC',
                       style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 1.4)),
-                  SizedBox(height: 2),
-                  Text('Deine ruhige Rätselecke'),
+                  const SizedBox(height: 2),
+                  Text(strings.text(
+                    'Deine ruhige Rätselecke',
+                    'Your quiet puzzle corner',
+                  )),
                 ],
               ),
             ),
             IconButton.filledTonal(
-              tooltip: 'Einstellungen',
+              tooltip: strings.text('Einstellungen', 'Settings'),
               onPressed: onSettings,
               icon: const Icon(Icons.tune_rounded),
             ),
@@ -1376,15 +1421,22 @@ class _HomeHeader extends StatelessWidget {
         const SizedBox(height: 28),
         Text(
           completedToday
-              ? 'Schön, dass du wieder da bist.'
-              : 'Zeit zum Knobeln?',
+              ? strings.text('Schön, dass du wieder da bist.',
+                  'It’s good to see you again.')
+              : strings.text('Zeit zum Knobeln?', 'Time for a puzzle?'),
           style: Theme.of(context).textTheme.headlineMedium,
         ),
         const SizedBox(height: 8),
         Text(
           completedToday
-              ? 'Dein Tagesziel ist geschafft. Entdecke noch ein Rätsel.'
-              : 'Ein ruhiger Moment, ein klares Ziel – ganz ohne Zeitdruck.',
+              ? strings.text(
+                  'Dein Tagesziel ist geschafft. Entdecke noch ein Rätsel.',
+                  'Your daily goal is complete. Discover another puzzle.',
+                )
+              : strings.text(
+                  'Ein ruhiger Moment, ein klares Ziel – ganz ohne Zeitdruck.',
+                  'A quiet moment, a clear goal — with no time pressure.',
+                ),
           style: Theme.of(context)
               .textTheme
               .bodyLarge
@@ -1427,6 +1479,7 @@ class _StreakCard extends StatelessWidget {
     final streak = progress.currentStreak;
     final secured = progress.completedToday;
     final colors = Theme.of(context).colorScheme;
+    final strings = context.strings;
     return Card(
       color: secured ? colors.secondaryContainer : colors.surfaceContainerLow,
       child: ListTile(
@@ -1446,15 +1499,23 @@ class _StreakCard extends StatelessWidget {
           ),
         ),
         title: Text(
-          streak == 1 ? '1 Tag Spielserie' : '$streak Tage Spielserie',
+          strings.plural(streak, '1 Tag Spielserie', '$streak Tage Spielserie',
+              '1 day streak', '$streak day streak'),
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         subtitle: Text(
           secured
-              ? 'Deine Serie ist für heute gesichert.'
+              ? strings.text('Deine Serie ist für heute gesichert.',
+                  'Your streak is safe for today.')
               : streak == 0
-                  ? 'Löse heute ein Rätsel und starte deine Serie.'
-                  : 'Löse heute ein Rätsel, damit deine Serie weiterläuft.',
+                  ? strings.text(
+                      'Löse heute ein Rätsel und starte deine Serie.',
+                      'Solve a puzzle today to start your streak.',
+                    )
+                  : strings.text(
+                      'Löse heute ein Rätsel, damit deine Serie weiterläuft.',
+                      'Solve a puzzle today to keep your streak going.',
+                    ),
         ),
         trailing:
             secured ? const Icon(Icons.check_circle_outline_rounded) : null,
@@ -3075,9 +3136,10 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final preferences = PreferencesScope.of(context);
+    final strings = context.strings;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Einstellungen')),
+      appBar: AppBar(title: Text(strings.text('Einstellungen', 'Settings'))),
       body: Center(
         child: ListView(
           padding: const EdgeInsets.all(24),
@@ -3090,8 +3152,24 @@ class SettingsScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Darstellung',
+                      strings.text(
+                          'Sprache & Darstellung', 'Language & appearance'),
                       style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.language_rounded),
+                        title: Text(strings.text('Sprache', 'Language')),
+                        subtitle: Text(switch (preferences.languagePreference) {
+                          AppLanguagePreference.system =>
+                            strings.text('Systemsprache', 'System language'),
+                          AppLanguagePreference.german => 'Deutsch',
+                          AppLanguagePreference.english => 'English',
+                        }),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: () => _chooseLanguage(context, preferences),
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Card(
@@ -3100,26 +3178,27 @@ class SettingsScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Text('Farbschema',
+                            Text(strings.text('Farbschema', 'Color scheme'),
                                 style: Theme.of(context).textTheme.titleMedium),
                             const SizedBox(height: 12),
                             SegmentedButton<AppThemePreference>(
                               showSelectedIcon: false,
-                              segments: const [
+                              segments: [
                                 ButtonSegment(
                                   value: AppThemePreference.system,
-                                  icon: Icon(Icons.brightness_auto_outlined),
-                                  label: Text('Auto'),
+                                  icon: const Icon(
+                                      Icons.brightness_auto_outlined),
+                                  label: Text(strings.text('Auto', 'Auto')),
                                 ),
                                 ButtonSegment(
                                   value: AppThemePreference.light,
-                                  icon: Icon(Icons.light_mode_outlined),
-                                  label: Text('Hell'),
+                                  icon: const Icon(Icons.light_mode_outlined),
+                                  label: Text(strings.text('Hell', 'Light')),
                                 ),
                                 ButtonSegment(
                                   value: AppThemePreference.dark,
-                                  icon: Icon(Icons.dark_mode_outlined),
-                                  label: Text('Dunkel'),
+                                  icon: const Icon(Icons.dark_mode_outlined),
+                                  label: Text(strings.text('Dunkel', 'Dark')),
                                 ),
                               ],
                               selected: {preferences.themePreference},
@@ -3135,37 +3214,44 @@ class SettingsScreen extends StatelessWidget {
                       child: Column(
                         children: [
                           SwitchListTile(
-                            title: const Text('Animationen'),
-                            subtitle: const Text(
+                            title:
+                                Text(strings.text('Animationen', 'Animations')),
+                            subtitle: Text(strings.text(
                               'Zahlenwechsel und Erfolgsanimationen anzeigen',
-                            ),
+                              'Show number transitions and success animations',
+                            )),
                             value: preferences.animationsEnabled,
                             onChanged: preferences.setAnimationsEnabled,
                           ),
                           const Divider(height: 1),
                           SwitchListTile(
-                            title: const Text('Töne'),
-                            subtitle: const Text(
+                            title: Text(strings.text('Töne', 'Sounds')),
+                            subtitle: Text(strings.text(
                               'Leise Spielklänge und melodische Erfolge',
-                            ),
+                              'Quiet game sounds and melodic celebrations',
+                            )),
                             value: preferences.soundsEnabled,
                             onChanged: preferences.setSoundsEnabled,
                           ),
                           const Divider(height: 1),
                           SwitchListTile(
-                            title: const Text('Haptisches Feedback'),
-                            subtitle: const Text(
+                            title: Text(strings.text(
+                                'Haptisches Feedback', 'Haptic feedback')),
+                            subtitle: Text(strings.text(
                               'Kurze Rückmeldung auf unterstützten Geräten',
-                            ),
+                              'Brief feedback on supported devices',
+                            )),
                             value: preferences.hapticsEnabled,
                             onChanged: preferences.setHapticsEnabled,
                           ),
                           const Divider(height: 1),
                           SwitchListTile(
-                            title: const Text('Regelfehler markieren'),
-                            subtitle: const Text(
+                            title: Text(strings.text('Regelfehler markieren',
+                                'Highlight rule issues')),
+                            subtitle: Text(strings.text(
                               'Standardwert für neu geöffnete Rätsel',
-                            ),
+                              'Default for newly opened puzzles',
+                            )),
                             value: preferences.showRuleIssues,
                             onChanged: preferences.setShowRuleIssues,
                           ),
@@ -3174,25 +3260,31 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Erinnerungen',
+                      strings.text('Erinnerungen', 'Reminders'),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 10),
                     _ReminderSettingsCard(preferences: preferences),
                     const SizedBox(height: 24),
                     Text(
-                      'Monetarisierung testen',
+                      strings.text(
+                          'Monetarisierung testen', 'Test monetization'),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 10),
                     Card(
                       child: SwitchListTile(
                         secondary: const Icon(Icons.workspace_premium_outlined),
-                        title: const Text('Premium simulieren'),
+                        title: Text(strings.text(
+                            'Premium simulieren', 'Simulate Premium')),
                         subtitle: Text(
                           preferences.premiumSimulationEnabled
-                              ? 'Werbefrei und Hinweise ohne Begrenzung'
-                              : 'Kostenlose Version mit drei Hinweisen pro Rätsel',
+                              ? strings.text(
+                                  'Werbefrei und Hinweise ohne Begrenzung',
+                                  'Ad-free with unlimited hints')
+                              : strings.text(
+                                  'Kostenlose Version mit drei Hinweisen pro Rätsel',
+                                  'Free version with three hints per puzzle'),
                         ),
                         value: preferences.premiumSimulationEnabled,
                         onChanged: preferences.setPremiumSimulationEnabled,
@@ -3200,66 +3292,85 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Sicherung & Wiederherstellung',
+                      strings.text(
+                          'Sicherung & Wiederherstellung', 'Backup & restore'),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 10),
                     Card(
                       child: Column(
                         children: [
-                          const ListTile(
-                            leading: Icon(Icons.cloud_done_outlined),
-                            title: Text('Android-Gerätesicherung aktiv'),
-                            subtitle: Text(
+                          ListTile(
+                            leading: const Icon(Icons.cloud_done_outlined),
+                            title: Text(strings.text(
+                              'Android-Gerätesicherung aktiv',
+                              'Android device backup active',
+                            )),
+                            subtitle: Text(strings.text(
                               'Android kann deine lokalen App-Daten geschützt mit deinem Google-Konto sichern.',
-                            ),
+                              'Android can securely back up your local app data with your Google account.',
+                            )),
                           ),
                           const Divider(height: 1),
                           ListTile(
                             leading: const Icon(Icons.copy_all_outlined),
-                            title: const Text('Sicherung kopieren'),
-                            subtitle: const Text(
+                            title: Text(strings.text(
+                                'Sicherung kopieren', 'Copy backup')),
+                            subtitle: Text(strings.text(
                               'Erstellt eine vollständige, versionierte Sicherung in der Zwischenablage',
-                            ),
+                              'Creates a complete, versioned backup on the clipboard',
+                            )),
                             onTap: () => _copyBackup(context),
                           ),
                           const Divider(height: 1),
                           ListTile(
                             leading: const Icon(Icons.settings_backup_restore),
-                            title: const Text('Sicherung wiederherstellen'),
-                            subtitle: const Text(
+                            title: Text(strings.text(
+                                'Sicherung wiederherstellen',
+                                'Restore backup')),
+                            subtitle: Text(strings.text(
                               'Prüft die Sicherung vollständig vor dem Import',
-                            ),
+                              'Fully validates the backup before importing it',
+                            )),
                             onTap: () => _restoreBackup(context),
                           ),
                           const Divider(height: 1),
                           ListTile(
                             leading: const Icon(Icons.undo_rounded),
-                            title: const Text('Import rückgängig machen'),
-                            subtitle: const Text(
+                            title: Text(strings.text(
+                                'Import rückgängig machen', 'Undo import')),
+                            subtitle: Text(strings.text(
                               'Stellt den lokalen Stand vor dem letzten Import wieder her',
-                            ),
+                              'Restores the local state from before the last import',
+                            )),
                             onTap: () => _restoreRecoveryBackup(context),
                           ),
                           const Divider(height: 1),
-                          const ListTile(
-                            leading: Icon(Icons.cloud_sync_outlined),
-                            title: Text('Google-Cloud-Synchronisierung'),
-                            subtitle: Text(
+                          ListTile(
+                            leading: const Icon(Icons.cloud_sync_outlined),
+                            title: Text(strings.text(
+                              'Google-Cloud-Synchronisierung',
+                              'Google Cloud synchronization',
+                            )),
+                            subtitle: Text(strings.text(
                               'Konfliktsichere Synchronisierung vorbereitet · Google-Anmeldung folgt mit der endgültigen App-ID',
-                            ),
+                              'Conflict-safe synchronization prepared · Google sign-in will follow with the final app ID',
+                            )),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Importierte Daten ersetzen den aktuellen Stand. Vorher wird automatisch eine lokale Sicherheitskopie erstellt.',
+                      strings.text(
+                        'Importierte Daten ersetzen den aktuellen Stand. Vorher wird automatisch eine lokale Sicherheitskopie erstellt.',
+                        'Imported data replaces the current state. A local safety copy is created automatically first.',
+                      ),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Lokale Daten',
+                      strings.text('Lokale Daten', 'Local data'),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 10),
@@ -3269,16 +3380,21 @@ class SettingsScreen extends StatelessWidget {
                           Icons.delete_outline,
                           color: Theme.of(context).colorScheme.error,
                         ),
-                        title: const Text('Gespeicherte Daten löschen'),
-                        subtitle: const Text(
+                        title: Text(strings.text(
+                            'Gespeicherte Daten löschen', 'Delete saved data')),
+                        subtitle: Text(strings.text(
                           'Entfernt aktives Spiel, Bestzeiten und Statistik',
-                        ),
+                          'Removes the active game, best times, and statistics',
+                        )),
                         onTap: () => _confirmReset(context),
                       ),
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Alle Einstellungen und Spielstände werden nur lokal auf diesem Gerät beziehungsweise in diesem Browser gespeichert.',
+                      strings.text(
+                        'Alle Einstellungen und Spielstände werden nur lokal auf diesem Gerät beziehungsweise in diesem Browser gespeichert.',
+                        'All settings and game progress are stored locally on this device or in this browser.',
+                      ),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -3289,6 +3405,61 @@ class SettingsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _chooseLanguage(
+    BuildContext context,
+    AppPreferences preferences,
+  ) async {
+    final strings = context.strings;
+    final selected = await showModalBottomSheet<AppLanguagePreference>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 4, 24, 10),
+                child: Text(
+                  strings.text('Sprache auswählen', 'Choose language'),
+                  style: Theme.of(sheetContext).textTheme.titleLarge,
+                ),
+              ),
+              RadioGroup<AppLanguagePreference>(
+                groupValue: preferences.languagePreference,
+                onChanged: (value) => Navigator.pop(sheetContext, value),
+                child: Column(
+                  children: [
+                    RadioListTile<AppLanguagePreference>(
+                      value: AppLanguagePreference.system,
+                      title: Text(
+                          strings.text('Systemsprache', 'System language')),
+                      subtitle: Text(strings.text(
+                        'Folgt der Sprache deines Geräts',
+                        'Follows your device language',
+                      )),
+                    ),
+                    const RadioListTile<AppLanguagePreference>(
+                      value: AppLanguagePreference.german,
+                      title: Text('Deutsch'),
+                    ),
+                    const RadioListTile<AppLanguagePreference>(
+                      value: AppLanguagePreference.english,
+                      title: Text('English'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected != null) await preferences.setLanguage(selected);
   }
 
   Future<void> _confirmReset(BuildContext context) async {
@@ -3508,13 +3679,16 @@ class _ReminderSettingsCard extends StatelessWidget {
     BuildContext context, {
     required bool streak,
   }) async {
+    final strings = context.strings;
     final minutes = streak
         ? preferences.streakWarningMinutes
         : preferences.dailyReminderMinutes;
     final selected = await showTimePicker(
       context: context,
       initialTime: TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60),
-      helpText: streak ? 'Zeit der Streak-Warnung' : 'Zeit der Spielerinnerung',
+      helpText: streak
+          ? strings.text('Zeit der Streak-Warnung', 'Streak warning time')
+          : strings.text('Zeit der Spielerinnerung', 'Play reminder time'),
     );
     if (selected == null) return;
     final value = selected.hour * 60 + selected.minute;
@@ -3527,53 +3701,66 @@ class _ReminderSettingsCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: Column(
-          children: [
-            SwitchListTile(
-              secondary: const Icon(Icons.notifications_active_outlined),
-              title: const Text('Tägliche Spielerinnerung'),
-              subtitle: Text(
-                'Um ${_formatReminderTime(preferences.dailyReminderMinutes)} · nur wenn heute noch nicht gespielt wurde',
+  Widget build(BuildContext context) {
+    final strings = context.strings;
+    return Card(
+      child: Column(
+        children: [
+          SwitchListTile(
+            secondary: const Icon(Icons.notifications_active_outlined),
+            title: Text(strings.text(
+                'Tägliche Spielerinnerung', 'Daily play reminder')),
+            subtitle: Text(
+              strings.text(
+                'Um ${_formatReminderTime(preferences.dailyReminderMinutes, context)} · nur wenn heute noch nicht gespielt wurde',
+                'At ${_formatReminderTime(preferences.dailyReminderMinutes, context)} · only if you have not played today',
               ),
-              value: preferences.dailyReminderEnabled,
-              onChanged: (value) => _toggleDaily(context, value),
             ),
-            if (preferences.dailyReminderEnabled)
-              ListTile(
-                leading: const SizedBox(width: 24),
-                title: const Text('Uhrzeit ändern'),
-                trailing:
-                    Text(_formatReminderTime(preferences.dailyReminderMinutes)),
-                onTap: () => _pickTime(context, streak: false),
-              ),
-            const Divider(height: 1),
-            SwitchListTile(
-              secondary: const Icon(Icons.local_fire_department_outlined),
-              title: const Text('Streak-Warnung'),
-              subtitle: Text(
-                'Um ${_formatReminderTime(preferences.streakWarningMinutes)} · nur bei laufender, noch offener Serie',
-              ),
-              value: preferences.streakWarningEnabled,
-              onChanged: (value) => _toggleStreak(context, value),
+            value: preferences.dailyReminderEnabled,
+            onChanged: (value) => _toggleDaily(context, value),
+          ),
+          if (preferences.dailyReminderEnabled)
+            ListTile(
+              leading: const SizedBox(width: 24),
+              title: Text(strings.text('Uhrzeit ändern', 'Change time')),
+              trailing: Text(_formatReminderTime(
+                  preferences.dailyReminderMinutes, context)),
+              onTap: () => _pickTime(context, streak: false),
             ),
-            if (preferences.streakWarningEnabled)
-              ListTile(
-                leading: const SizedBox(width: 24),
-                title: const Text('Uhrzeit ändern'),
-                trailing:
-                    Text(_formatReminderTime(preferences.streakWarningMinutes)),
-                onTap: () => _pickTime(context, streak: true),
+          const Divider(height: 1),
+          SwitchListTile(
+            secondary: const Icon(Icons.local_fire_department_outlined),
+            title: Text(strings.text('Streak-Warnung', 'Streak warning')),
+            subtitle: Text(
+              strings.text(
+                'Um ${_formatReminderTime(preferences.streakWarningMinutes, context)} · nur bei laufender, noch offener Serie',
+                'At ${_formatReminderTime(preferences.streakWarningMinutes, context)} · only when an active streak is still at risk',
               ),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: Text(
+            ),
+            value: preferences.streakWarningEnabled,
+            onChanged: (value) => _toggleStreak(context, value),
+          ),
+          if (preferences.streakWarningEnabled)
+            ListTile(
+              leading: const SizedBox(width: 24),
+              title: Text(strings.text('Uhrzeit ändern', 'Change time')),
+              trailing: Text(_formatReminderTime(
+                  preferences.streakWarningMinutes, context)),
+              onTap: () => _pickTime(context, streak: true),
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Text(
+              strings.text(
                 'Liegen beide Zeiten höchstens 60 Minuten auseinander, erscheint bei einer laufenden Serie nur die Streak-Warnung.',
+                'If both times are no more than 60 minutes apart, only the streak warning appears while a streak is active.',
               ),
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 void _showPermissionMessage(BuildContext context) {
@@ -3584,8 +3771,10 @@ void _showPermissionMessage(BuildContext context) {
   ));
 }
 
-String _formatReminderTime(int minutes) =>
-    '${(minutes ~/ 60).toString().padLeft(2, '0')}:${(minutes % 60).toString().padLeft(2, '0')} Uhr';
+String _formatReminderTime(int minutes, BuildContext context) {
+  final time = TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60);
+  return MaterialLocalizations.of(context).formatTimeOfDay(time);
+}
 
 int _dailyStreak(List<PuzzleResult> results, {DateTime? now}) {
   if (results.isEmpty) return 0;

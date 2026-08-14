@@ -43,6 +43,18 @@ void main() {
     expect(restored.streakWarningMinutes, 22 * 60);
   });
 
+  test('language defaults to German and persists independently', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await AppPreferences.load();
+
+    expect(preferences.languagePreference, AppLanguagePreference.german);
+    await preferences.setLanguage(AppLanguagePreference.english);
+
+    final restored = await AppPreferences.load();
+    expect(restored.languagePreference, AppLanguagePreference.english);
+    expect(restored.themePreference, AppThemePreference.system);
+  });
+
   test('all bundled sounds are valid wave assets', () async {
     const assets = [
       'assets/sounds/move.wav',
