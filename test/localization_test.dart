@@ -74,4 +74,23 @@ void main() {
     expect(strings.known('Binärpuzzle'), 'Binairo');
     expect(strings.known('7 von 20 Rätseln gelöst'), '7 of 20 puzzles solved');
   });
+
+  test('daily calendars, result badges and stored catalog data are English',
+      () {
+    const strings = AppLocalizations(Locale('en'));
+
+    expect(strings.known('Heute bereits gelöst'), 'Already solved today');
+    expect(strings.known('Tagesrätsel starten'), 'Start daily puzzle');
+    expect(strings.known('Testabschluss · keine Statistik'),
+        'Test completion · no statistics');
+    expect(strings.known('Testabschluss · im Kalender gewertet'),
+        'Test completion · counted in calendar');
+    expect(strings.known('Rätsel 12'), 'Puzzle 12');
+    expect(strings.known('Brückenweg 13'), 'Bridge path 13');
+    expect(strings.known('Inselnetz 28'), 'Island network 28');
+    expect(strings.known('Sanfte Kurven'), 'Gentle curves');
+    expect(strings.known('Erster Überblick'), 'First overview');
+    expect(strings.known('Mittel · 30 Grundwert + 10 ohne Hinweis'),
+        'Medium · 30 base value + 10 without hints');
+  });
 }

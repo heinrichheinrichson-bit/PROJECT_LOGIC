@@ -95,8 +95,8 @@ class _RecordTile extends StatelessWidget {
   Widget build(BuildContext context) => Card(
         child: ListTile(
           leading: CircleAvatar(child: Icon(item.icon)),
-          title: Text(item.title),
-          subtitle: Text(item.detail),
+          title: Text(context.strings.known(item.title)),
+          subtitle: Text(context.strings.known(item.detail)),
           trailing: Text(item.value,
               style: const TextStyle(fontWeight: FontWeight.w800)),
         ),

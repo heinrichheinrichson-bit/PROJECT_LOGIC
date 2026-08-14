@@ -815,7 +815,7 @@ class _SlitherResumeCardState extends State<_SlitherResumeCard> {
           title: Text(
               context.strings.text('Rätsel fortsetzen', 'Continue puzzle')),
           subtitle: Text(
-            '${saved.puzzle.difficulty.label} · '
+            '${context.strings.known(saved.puzzle.difficulty.label)} · '
             '${saved.puzzle.rows} × ${saved.puzzle.columns} · '
             '${_formatTime(saved.elapsedSeconds)}',
           ),
@@ -902,7 +902,7 @@ class _SlitherCollectionChapterState extends State<_SlitherCollectionChapter> {
             PuzzleDifficulty.hard => Icons.local_fire_department_outlined,
           }),
         ),
-        title: Text(widget.difficulty.label),
+        title: Text(context.strings.known(widget.difficulty.label)),
         subtitle: Text(context.strings
             .known('$solved von ${puzzles.length} Rätseln gelöst')),
         children: [
@@ -932,11 +932,11 @@ class _SlitherCollectionChapterState extends State<_SlitherCollectionChapter> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          chapterNames[chapterIndex].$1,
+                          context.strings.known(chapterNames[chapterIndex].$1),
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         Text(
-                          chapterNames[chapterIndex].$2,
+                          context.strings.known(chapterNames[chapterIndex].$2),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -957,7 +957,7 @@ class _SlitherCollectionChapterState extends State<_SlitherCollectionChapter> {
                       ? Text('${index + 1}')
                       : const Icon(Icons.check_rounded),
                 ),
-                title: Text(puzzles[index].title),
+                title: Text(context.strings.known(puzzles[index].title)),
                 subtitle: Text(
                   '${puzzles[index].rows} × ${puzzles[index].columns}'
                   '${_resultFor(puzzles[index]) == null ? '' : ' · Bestzeit ${_formatTime(_resultFor(puzzles[index])!.bestSeconds)}'}',
@@ -1332,9 +1332,9 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
               Chip(
                 avatar: const Icon(Icons.science_outlined),
                 label: Text(
-                  _gameMode == GameMode.daily
+                  context.strings.known(_gameMode == GameMode.daily
                       ? 'Testabschluss · im Kalender gewertet'
-                      : 'Testabschluss · keine Statistik',
+                      : 'Testabschluss · keine Statistik'),
                 ),
               ),
             ] else ...[

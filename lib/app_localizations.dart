@@ -255,6 +255,7 @@ class AppLocalizations {
       'Spielzeit': 'Playtime',
       'Gesamte Spielzeit': 'Total playtime',
       'Bestzeit': 'Best time',
+      'Schwierigkeit': 'Difficulty',
       'Durchschnitt': 'Average',
       'Bestzeit ohne Hilfe': 'Best time without help',
       'Ohne Hinweise': 'Without hints',
@@ -330,11 +331,204 @@ class AppLocalizations {
           'Solve three puzzles without a hint this week.',
       'Löse diese Woche zwei schwere Rätsel.':
           'Solve two hard puzzles this week.',
+      'Heute bereits gelöst': 'Already solved today',
+      'Dein heutiges Rätsel wartet': 'Today’s puzzle is waiting',
+      'Gelöstes Brett ansehen': 'View solved board',
+      'Tagesrätsel starten': 'Start daily puzzle',
+      'Gelöst': 'Solved',
+      'Offen': 'Open',
+      'Heute': 'Today',
+      'Testabschluss · keine Statistik': 'Test completion · no statistics',
+      'Testabschluss · im Kalender gewertet':
+          'Test completion · counted in calendar',
+      'Zum Kalender': 'To calendar',
+      'Fast lösen': 'Almost solve',
+      'Sofort lösen': 'Solve instantly',
+      'Vorgaben': 'Clues',
+      'Gesamt': 'Total',
+      'Insgesamt': 'Total',
+      'Gesamt gelöst': 'Solved',
+      'Grundlinien': 'Foundations',
+      'Erste Ecken': 'First corners',
+      'Kleine Runde': 'Small loop',
+      'Sanfte Kurven': 'Gentle curves',
+      'Am Rand entlang': 'Along the edge',
+      'Kurven lesen': 'Reading curves',
+      'Klare Spuren': 'Clear tracks',
+      'Ruhige Runde': 'Calm loop',
+      'Klare Kanten': 'Clear edges',
+      'Sanfter Umweg': 'Gentle detour',
+      'Sichere Kurve': 'Safe curve',
+      'Verdeckte Wege': 'Hidden paths',
+      'Verdeckter Weg': 'Hidden path',
+      'Zwischen den Zahlen': 'Between the numbers',
+      'Geteilte Spuren': 'Split tracks',
+      'Die erste Schleife': 'The first loop',
+      'Interaktive Einführung': 'Interactive introduction',
+      'Erste Brücken': 'First bridges',
+      'Zwei Ufer': 'Two shores',
+      'Mittelpunkt': 'Center point',
+      'Inselring': 'Island ring',
+      'Neun Inseln': 'Nine islands',
+      'Fundamentals': 'Fundamentals',
+      'Erste Vergleiche': 'First comparisons',
+      'Klare Reihen': 'Clear rows',
+      'Kleine Ketten': 'Small chains',
+      'Sicher eingeordnet': 'Safely ordered',
+      'Zahlenspiel': 'Number game',
+      'Enger Rahmen': 'Tight frame',
+      'Logische Ordnung': 'Logical order',
+      'Kombinationen': 'Combinations',
+      'Fortgeschrittene Muster': 'Advanced patterns',
+      'Direkte Regeln und kompakte Raster': 'Direct rules and compact grids',
+      'Mehrere Schlüsse über Zeilen und Spalten':
+          'Combine deductions across rows and columns',
+      'Größere Raster und anspruchsvollere Muster':
+          'Larger grids and more challenging patterns',
+      'Grundwert': 'Base value',
+      'ohne Hinweis': 'without hints',
+      'Zeit': 'Time',
+      'Vorherige': 'Previous',
+      'Felder': 'cells',
+      'Ecken, Ränder und sichere erste Schritte':
+          'Corners, edges, and safe first steps',
+      'Hinweise verbinden und Wege ausschließen':
+          'Connect clues and rule out paths',
+      'Sichere Schleifen': 'Safe loops',
+      'Das Gelernte selbstständig anwenden':
+          'Apply what you have learned independently',
+      'Neue Runden': 'New loops',
+      'Weitere ruhige Schleifen sicher schließen':
+          'Safely complete more calm loops',
+      'Mehrere Hinweise gemeinsam betrachten':
+          'Consider multiple clues together',
+      'Wendepunkte': 'Turning points',
+      'Längere Schlussketten sicher verfolgen':
+          'Follow longer chains of deductions safely',
+      'Kombinierte Logik': 'Combined logic',
+      'Verschiedene Muster geschickt verbinden':
+          'Combine different patterns skillfully',
+      'Neue Verläufe': 'New paths',
+      'Zusätzliche Schleifen mit Ausdauer verfolgen':
+          'Follow additional loops with persistence',
+      'Wenige Spuren': 'Sparse tracks',
+      'Mit sparsamen Vorgaben Orientierung finden':
+          'Find your way with sparse clues',
+      'Tiefe Schlüsse': 'Deep deductions',
+      'Entscheidungen über mehrere Schritte absichern':
+          'Confirm decisions across several steps',
+      'Meisterschleifen': 'Master loops',
+      'Die anspruchsvollsten Netze der Sammlung':
+          'The collection’s most challenging networks',
+      'Letzte Prüfungen': 'Final trials',
+      'Neue sparsame Hinweise vollständig verbinden':
+          'Fully connect new sparse clues',
+      'Doppelte Kante': 'Double edge',
+      'Brückenleiter': 'Bridge ladder',
+      'Doppelkreuz': 'Double crossing',
+      'Der Rahmen': 'The frame',
+      'Dichter Nebel': 'Dense fog',
+      'Doppelte Ecke': 'Double corner',
+      'Enge Entscheidung': 'Tight decision',
+      'Enge Kurven': 'Tight curves',
+      'Falsche Fährten': 'False trails',
+      'Finale Schleife': 'Final loop',
+      'Freie Passage': 'Open passage',
+      'Geschlossene Fährte': 'Closed trail',
+      'Geteilte Wege': 'Split paths',
+      'Große Prüfung': 'Great trial',
+      'Helle Spur': 'Bright trail',
+      'Im Gleichgewicht': 'In balance',
+      'Knappe Entscheidung': 'Close decision',
+      'Kombinierte Runde': 'Combined loop',
+      'Kreuz und quer': 'Crisscross',
+      'Kurzer Umweg': 'Short detour',
+      'Langer Gedanke': 'Long thought',
+      'Langer Umweg': 'Long detour',
+      'Langer Wendepunkt': 'Long turning point',
+      'Leichte Schleife': 'Easy loop',
+      'Letzte Hinweise': 'Final clues',
+      'Letzte Meisterrunde': 'Final master loop',
+      'Letzte Übung': 'Final exercise',
+      'Meisterhafte Kurven': 'Masterful curves',
+      'Meisterhafte Windung': 'Masterful twist',
+      'Meisterschleife': 'Master loop',
+      'Offene Hinweise': 'Open clues',
+      'Ohne Umweg': 'Without a detour',
+      'Raffinierte Kurven': 'Clever curves',
+      'Ruhiger Pfad': 'Calm path',
+      'Runder Abschluss': 'A rounded finish',
+      'Schmale Passage': 'Narrow passage',
+      'Schmale Pfade': 'Narrow paths',
+      'Schwierige Balance': 'Difficult balance',
+      'Sicher herum': 'Safely around',
+      'Sicher kombiniert': 'Safely combined',
+      'Sparsame Hinweise': 'Sparse clues',
+      'Täuschende Kreuzung': 'Deceptive crossing',
+      'Tiefe Abzweigung': 'Deep branch',
+      'Tiefe Schleife': 'Deep loop',
+      'Unerwartete Wende': 'Unexpected turn',
+      'Verborgene Schleife': 'Hidden loop',
+      'Verborgener Verlauf': 'Hidden course',
+      'Verdeckter Bogen': 'Hidden arc',
+      'Versetzte Spuren': 'Offset tracks',
+      'Verwobene Kanten': 'Interwoven edges',
+      'Viele Möglichkeiten': 'Many possibilities',
+      'Vier Tore': 'Four gates',
+      'Weite Schleife': 'Wide loop',
+      'Große Herausforderungen': 'Great challenges',
+      'Längere logische Ketten sicher erkennen':
+          'Recognize longer logical chains reliably',
+      'Wenige Vorgaben und komplexe Abhängigkeiten':
+          'Few clues and complex dependencies',
+      'Die anspruchsvollsten Rätsel der Sammlung':
+          'The collection’s most challenging puzzles',
+      'Verknüpfte Zahlen': 'Linked numbers',
+      'Große Vergleiche': 'Large comparisons',
+      'Weite Schlüsse': 'Far-reaching deductions',
+      'Meisterprüfung': 'Master trial',
+      'Verdecktes Gefälle': 'Hidden inequality',
+      'Großer Zusammenhang': 'The big picture',
+      'Große Zahlenwege': 'Large number paths',
+      'Enges Gefälle': 'Tight inequality',
+      'Doppelte entdecken': 'Spot duplicates',
+      'Eindeutige Zahlenpaare sicher auflösen':
+          'Resolve unique number pairs reliably',
+      'Erster Überblick': 'First overview',
+      'Klare Fläche': 'Clear area',
+      'Flächen sichern': 'Secure areas',
+      'Stabile Fläche': 'Stable area',
+      'Mittlere Prüfung': 'Intermediate trial',
+      'Geordnete Fläche': 'Ordered area',
+      'Versetzte Fläche': 'Offset area',
+      'Mehrere Bedingungen über das ganze Raster kombinieren':
+          'Combine multiple conditions across the entire grid',
+      'Verborgene Brücke': 'Hidden bridge',
+      'Verdeckte Fläche': 'Hidden area',
+      'Viele Abhängigkeiten': 'Many dependencies',
+      'Meister der Flächen': 'Master of areas',
+      'Tiefe Flächenlogik': 'Deep area logic',
+      'Meisterhafte Fläche': 'Masterful area',
+      'Ordne jedem Baum genau ein Zelt zu.':
+          'Assign exactly one tent to every tree.',
+      'Ein Zelt steht direkt waagerecht oder senkrecht neben seinem Baum.':
+          'A tent stands directly horizontally or vertically beside its tree.',
+      'Alle Bäume und Zelte müssen sich zu eindeutigen 1:1-Paaren verbinden lassen.':
+          'All trees and tents must form unique one-to-one pairs.',
+      'Zelte dürfen sich weder seitlich noch diagonal berühren.':
+          'Tents may not touch, either orthogonally or diagonally.',
+      'Die Randzahlen nennen die Zelte pro Zeile und Spalte.':
+          'The edge numbers show the tents in each row and column.',
+      'Tippe ein Feld: leer → Zelt → Gras. Gras ist eine freiwillige Ausschlussnotiz.':
+          'Tap a cell: empty → tent → grass. Grass is an optional exclusion mark.',
     };
     final direct = values[value];
     if (direct != null) return direct;
     return value
         .replaceAll('Zelte & Bäume', 'Tents & Trees')
+        .replaceAll('Leicht ·', 'Easy ·')
+        .replaceAll('Mittel ·', 'Medium ·')
+        .replaceAll('Schwer ·', 'Hard ·')
         .replaceAll('Sammlung erkunden', 'Explore the collection')
         .replaceAll('Eigene Auswahl', 'Your own choice')
         .replaceAll('Regelmäßig dabei', 'A regular habit')
@@ -380,6 +574,36 @@ class AppLocalizations {
             (match) => '${match[1]} of ${match[2]} expeditions solved')
         .replaceAllMapped(RegExp(r'^(\d+) von (\d+) geschafft$'),
             (match) => '${match[1]} of ${match[2]} completed')
+        .replaceAllMapped(
+            RegExp(r'^Rätsel (\d+)$'), (match) => 'Puzzle ${match[1]}')
+        .replaceAllMapped(
+            RegExp(r'^Brückenweg (\d+)$'), (match) => 'Bridge path ${match[1]}')
+        .replaceAllMapped(RegExp(r'^Inselnetz (\d+)$'),
+            (match) => 'Island network ${match[1]}')
+        .replaceAllMapped(RegExp(r'^Meisterbrücken (\d+)$'),
+            (match) => 'Master bridges ${match[1]}')
+        .replaceAllMapped(RegExp(r'^(\d+)/(\d+) Inseln$'),
+            (match) => '${match[1]}/${match[2]} islands')
+        .replaceAllMapped(
+            RegExp(r'^(\d+) Inseln$'), (match) => '${match[1]} islands')
+        .replaceAllMapped(
+            RegExp(r'^(\d+) gesamt$'), (match) => '${match[1]} total')
+        .replaceAllMapped(
+            RegExp(r'^(\d+) Vorgaben$'), (match) => '${match[1]} clues')
+        .replaceAllMapped(RegExp(r'^(.+) · Rätselsammlung$'),
+            (match) => '${known(match[1]!)} · Puzzle collection')
+        .replaceAllMapped(RegExp(r'^(.+) · (\d+) Vorgaben$'),
+            (match) => '${match[1]} · ${match[2]} clues')
+        .replaceAllMapped(RegExp(r'^(.+) · (\d+) Inseln$'),
+            (match) => '${match[1]} · ${match[2]} islands')
+        .replaceAllMapped(RegExp(r'^(.+) · (\d+) islands$'),
+            (match) => '${match[1]} · ${match[2]} islands')
+        .replaceAllMapped(RegExp(r'^(.+) · (\d+) XP Grundwert$'),
+            (match) => '${known(match[1]!)} · ${match[2]} XP base value')
+        .replaceAllMapped(
+            RegExp(r'^(.+) · (\d+) Grundwert \+ 10 ohne Hinweis$'),
+            (match) =>
+                '${known(match[1]!)} · ${match[2]} base value + 10 without hints')
         .replaceAllMapped(RegExp(r'^(.+) · Kapitel (\d+)$'),
             (match) => '${known(match[1]!)} · Chapter ${match[2]}')
         .replaceAllMapped(RegExp(r'^Sammlungsfortschritt: (\d+) von (\d+)$'),
@@ -413,6 +637,10 @@ class AppLocalizations {
             (match) => 'Solved today · ${match[1]} total')
         .replaceAllMapped(RegExp(r'^Heute noch offen · (\d+) insgesamt$'),
             (match) => 'Still open today · ${match[1]} total')
+        .replaceAllMapped(RegExp(r'^Heute gelöst · (.+)$'),
+            (match) => 'Solved today · ${known(match[1]!)}')
+        .replaceAllMapped(RegExp(r'^Heute offen · (.+)$'),
+            (match) => 'Open today · ${known(match[1]!)}')
         .replaceAllMapped(
             RegExp(r'^Bestzeit (.+)$'), (match) => 'Best time ${match[1]}')
         .replaceAll('Rätselsammlung', 'Puzzle collection')

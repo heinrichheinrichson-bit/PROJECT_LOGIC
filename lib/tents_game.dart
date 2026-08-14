@@ -782,8 +782,10 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                 title: Text(dialog.strings
                     .text('Lager vollständig!', 'Camp complete!')),
                 content: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text(
-                      '${_time(_elapsed)} \u00b7 $_moves Z\u00fcge${test ? countsForTesting ? '\nTestabschluss \u00b7 im Kalender gewertet' : '\nTestabschluss \u00b7 keine Statistik' : ''}'),
+                  Text(dialog.strings.text(
+                    '${_time(_elapsed)} · $_moves Züge${test ? countsForTesting ? '\nTestabschluss · im Kalender gewertet' : '\nTestabschluss · keine Statistik' : ''}',
+                    '${_time(_elapsed)} · $_moves moves${test ? countsForTesting ? '\nTest completion · counted in calendar' : '\nTest completion · no statistics' : ''}',
+                  )),
                   if (earnedXp != null) ...[
                     const SizedBox(height: 12),
                     XpAwardBadge(points: earnedXp),

@@ -244,7 +244,7 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
                 icon: Icons.play_circle_outline_rounded,
                 title: 'Rätsel fortsetzen',
                 subtitle:
-                    '${saved.puzzle.difficulty.label} · ${saved.puzzle.size} × '
+                    '${context.strings.known(saved.puzzle.difficulty.label)} · ${saved.puzzle.size} × '
                     '${saved.puzzle.size} · ${_formatTime(saved.elapsedSeconds)}',
                 accent: accent,
                 prominent: true,
@@ -833,9 +833,9 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
             if (testCompletion) ...[
               const SizedBox(height: 8),
               Text(
-                countsForTesting
+                context.strings.known(countsForTesting
                     ? 'Testabschluss · im Kalender gewertet'
-                    : 'Testabschluss · keine Statistik',
+                    : 'Testabschluss · keine Statistik'),
               ),
             ],
           ],
@@ -1168,11 +1168,13 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
                         : widget.mode == GameMode.catalog
                             ? Icons.skip_next_rounded
                             : Icons.auto_awesome_rounded),
-                    label: Text(widget.mode == GameMode.daily
-                        ? 'Zum Kalender'
-                        : widget.mode == GameMode.catalog
-                            ? _nextActionLabel
-                            : 'Noch ein Hitori'),
+                    label: Text(context.strings.known(
+                      widget.mode == GameMode.daily
+                          ? 'Zum Kalender'
+                          : widget.mode == GameMode.catalog
+                              ? _nextActionLabel
+                              : 'Noch ein Hitori',
+                    )),
                   ),
                 ),
               ],

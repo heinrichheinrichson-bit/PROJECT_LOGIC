@@ -1,3 +1,13 @@
+## v0.8.34 – Sprachmischungen in Kalendern und Katalogen beseitigt
+
+- Gemeinsamen Tagesrätselkalender einschließlich Statuskarte, Erklärung, Aktionen und Legende vollständig lokalisiert.
+- Deutsche Katalogdaten aller Spielarten beim Anzeigen ins Englische übertragen, darunter Kapitel, Rätselnamen, Schwierigkeitsstufen und Beschreibungen.
+- Testabschluss-Badges, Kalenderaktionen, Statistiktabellen und persönliche Rekorde gegen gemischte Sprachausgabe abgesichert.
+- Dynamische Binairo-Angaben wie Rätselnummer, Vorgaben, Bestzeit und Sammlungsfortschritt übersetzt.
+- XP-Verlauf mit lokalisierten Schwierigkeits-, Grundwert- und Hinweisbonus-Angaben korrigiert.
+- Regressionstest für Tageskalender, Testabschlüsse, Katalogdaten und dynamische XP-Texte ergänzt.
+- Paketversion auf 0.8.34+63 erhöht.
+
 ## v0.8.33 – Vollständige deutsche und englische Spieloberfläche
 
 - Alle sechs Spielarten durchgängig zweisprachig umgesetzt: Einstieg, Sammlung, Generator, Spielbrett, Regeln, Hilfen und Abschluss.

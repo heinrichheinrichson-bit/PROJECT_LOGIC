@@ -325,7 +325,8 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
             PuzzleHubAction(
               icon: Icons.play_circle_outline_rounded,
               title: 'Rätsel fortsetzen',
-              subtitle: '${saved.puzzle.difficulty.label} · '
+              subtitle:
+                  '${context.strings.known(saved.puzzle.difficulty.label)} · '
                   '${saved.puzzle.size} × ${saved.puzzle.size} · '
                   '${_formatTime(saved.elapsedSeconds)}',
               accent: accent,
@@ -1051,9 +1052,9 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
             if (testCompletion) ...[
               const SizedBox(height: 12),
               Text(
-                countsForTesting
+                context.strings.known(countsForTesting
                     ? 'Testabschluss · im Kalender gewertet'
-                    : 'Testabschluss · keine Statistik',
+                    : 'Testabschluss · keine Statistik'),
               ),
             ],
             const SizedBox(height: 22),

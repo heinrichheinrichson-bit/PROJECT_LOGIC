@@ -1585,9 +1585,9 @@ class _HashiGameScreenState extends State<HashiGameScreen>
               Chip(
                 avatar: const Icon(Icons.science_outlined),
                 label: Text(
-                  widget.mode == GameMode.daily
+                  context.strings.known(widget.mode == GameMode.daily
                       ? 'Testabschluss · im Kalender gewertet'
-                      : 'Testabschluss · keine Statistik',
+                      : 'Testabschluss · keine Statistik'),
                 ),
               ),
               const SizedBox(height: 10),

@@ -1186,9 +1186,14 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
                                     const SizedBox(width: 10),
                                     Expanded(
                                       child: Text(
-                                        todayCompleted
-                                            ? 'Heute bereits gelöst'
-                                            : 'Dein heutiges Rätsel wartet',
+                                        context.strings.text(
+                                          todayCompleted
+                                              ? 'Heute bereits gelöst'
+                                              : 'Dein heutiges Rätsel wartet',
+                                          todayCompleted
+                                              ? 'Already solved today'
+                                              : 'Today’s puzzle is waiting',
+                                        ),
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleLarge
@@ -1200,7 +1205,7 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  '${today.difficulty.label} · ${today.size} × ${today.size}',
+                                  '${context.strings.known(today.difficulty.label)} · ${today.size} × ${today.size}',
                                 ),
                                 const SizedBox(height: 16),
                                 FilledButton.icon(
@@ -1213,9 +1218,14 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
                                         : Icons.play_arrow_rounded,
                                   ),
                                   label: Text(
-                                    todayCompleted
-                                        ? 'Gelöstes Brett ansehen'
-                                        : 'Tagesrätsel starten',
+                                    context.strings.text(
+                                      todayCompleted
+                                          ? 'Gelöstes Brett ansehen'
+                                          : 'Tagesrätsel starten',
+                                      todayCompleted
+                                          ? 'View solved board'
+                                          : 'Start daily puzzle',
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1224,12 +1234,18 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          'Kalender der letzten $_archiveDays Tage',
+                          context.strings.text(
+                            'Kalender der letzten $_archiveDays Tage',
+                            'Calendar of the last $_archiveDays days',
+                          ),
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Vergangene Rätsel können nachgeholt werden. Das füllt den Kalender, repariert aber keinen verlorenen Spiel-Streak.',
+                          context.strings.text(
+                            'Vergangene Rätsel können nachgeholt werden. Das füllt den Kalender, repariert aber keinen verlorenen Spiel-Streak.',
+                            'Past puzzles can be completed later. This fills the calendar, but does not restore a lost play streak.',
+                          ),
                           style: TextStyle(
                             color:
                                 Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1269,21 +1285,21 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
-                        const Wrap(
+                        Wrap(
                           spacing: 16,
                           runSpacing: 8,
                           children: [
                             _CalendarLegend(
                               icon: Icons.check_circle_rounded,
-                              label: 'Gelöst',
+                              label: context.strings.known('Gelöst'),
                             ),
                             _CalendarLegend(
                               icon: Icons.radio_button_unchecked_rounded,
-                              label: 'Offen',
+                              label: context.strings.known('Offen'),
                             ),
                             _CalendarLegend(
                               icon: Icons.today_rounded,
-                              label: 'Heute',
+                              label: context.strings.known('Heute'),
                             ),
                           ],
                         ),
@@ -1685,19 +1701,21 @@ class _HomeAction extends StatelessWidget {
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                  Text(title,
+                  Text(context.strings.known(title),
                       style: Theme.of(context)
                           .textTheme
                           .titleMedium
                           ?.copyWith(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 3),
-                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+                  Text(context.strings.known(subtitle),
+                      style: Theme.of(context).textTheme.bodySmall),
                 ])),
             if (enabled)
               const Icon(Icons.arrow_forward_ios_rounded, size: 17)
             else
-              const Text('BALD',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+              Text(context.strings.text('BALD', 'SOON'),
+                  style: const TextStyle(
+                      fontSize: 11, fontWeight: FontWeight.bold)),
           ]),
         ),
       ),
@@ -1806,9 +1824,9 @@ class DifficultyScreen extends StatelessWidget {
               children: [
                 PuzzleHubHeader(
                   icon: Icons.tune_rounded,
-                  title: 'Deine Rätselsammlung',
-                  description:
-                      'Wähle die Schwierigkeit, die heute zu dir passt.',
+                  title: context.strings.known('Deine Rätselsammlung'),
+                  description: context.strings.known(
+                      'Wähle die Schwierigkeit, die heute zu dir passt.'),
                   accent: AppTheme.gameColors['binairo']!,
                 ),
                 const SizedBox(height: 24),
@@ -1820,9 +1838,9 @@ class DifficultyScreen extends StatelessWidget {
                       PuzzleDifficulty.hard =>
                         Icons.local_fire_department_outlined,
                     },
-                    title: difficulty.label,
+                    title: context.strings.known(difficulty.label),
                     subtitle:
-                        '${difficulty.description} · ${puzzlesFor(difficulty).length} Rätsel',
+                        '${context.strings.known(difficulty.description)} · ${puzzlesFor(difficulty).length} ${context.strings.text('Rätsel', 'puzzles')}',
                     accent: AppTheme.gameColors['binairo']!,
                     onTap: () =>
                         Navigator.of(context).push(MaterialPageRoute<void>(
@@ -1890,7 +1908,8 @@ class _PuzzleSelectionScreenState extends State<PuzzleSelectionScreen> {
                     _CollectionProgressCard(
                       completed: completed,
                       total: puzzles.length,
-                      label: '${widget.difficulty.label} · Rätselsammlung',
+                      label:
+                          '${context.strings.known(widget.difficulty.label)} · ${context.strings.known('Rätselsammlung')}',
                     ),
                     const SizedBox(height: 16),
                     for (final chapter in chapters) ...[
@@ -1990,11 +2009,11 @@ class _BinaryChapterCard extends StatelessWidget {
         initiallyExpanded: initiallyExpanded,
         leading: CircleAvatar(child: Text('${chapter.index}')),
         title: Text(
-          chapter.title,
+          context.strings.known(chapter.title),
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         subtitle: Text(
-          '${chapter.description}\n$completed von ${chapter.puzzles.length} gelöst',
+          '${context.strings.known(chapter.description)}\n${context.strings.isEnglish ? '$completed of ${chapter.puzzles.length} solved' : '$completed von ${chapter.puzzles.length} gelöst'}',
         ),
         children: [
           const Divider(height: 1),
@@ -2030,13 +2049,19 @@ class _BinaryPuzzleListTile extends StatelessWidget {
               : const Icon(Icons.check_rounded),
         ),
         title: Text(
-          definition.displayName,
+          context.strings.known(definition.displayName),
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         subtitle: Text(
           result == null
-              ? '${definition.size} × ${definition.size} · ${definition.clueCount} Vorgaben'
-              : 'Bestzeit ${_formatHomeTime(result!.bestSeconds)} · ${definition.size} × ${definition.size}',
+              ? context.strings.text(
+                  '${definition.size} × ${definition.size} · ${definition.clueCount} Vorgaben',
+                  '${definition.size} × ${definition.size} · ${definition.clueCount} clues',
+                )
+              : context.strings.text(
+                  'Bestzeit ${_formatHomeTime(result!.bestSeconds)} · ${definition.size} × ${definition.size}',
+                  'Best time ${_formatHomeTime(result!.bestSeconds)} · ${definition.size} × ${definition.size}',
+                ),
         ),
         trailing: Icon(
           result == null ? Icons.play_arrow_rounded : Icons.replay_rounded,
@@ -2871,9 +2896,11 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                   Chip(
                     avatar: const Icon(Icons.science_outlined),
                     label: Text(
-                      widget.source == PuzzleSource.daily
-                          ? 'Testabschluss · im Kalender gewertet'
-                          : 'Testabschluss · keine Statistik',
+                      context.strings.known(
+                        widget.source == PuzzleSource.daily
+                            ? 'Testabschluss · im Kalender gewertet'
+                            : 'Testabschluss · keine Statistik',
+                      ),
                     ),
                   ),
                 if (earnedXp != null) ...[
@@ -6076,7 +6103,7 @@ class _GeneratedSizeStatistic extends StatelessWidget {
                         ),
                   ),
                 ),
-                Text('$total gesamt'),
+                Text(context.strings.text('$total gesamt', '$total total')),
               ],
             ),
             const Divider(height: 24),
@@ -6084,14 +6111,14 @@ class _GeneratedSizeStatistic extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Schwierigkeit',
+                    context.strings.text('Schwierigkeit', 'Difficulty'),
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ),
                 SizedBox(
                   width: 72,
                   child: Text(
-                    'Gelöst',
+                    context.strings.text('Gelöst', 'Solved'),
                     textAlign: TextAlign.end,
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
@@ -6099,7 +6126,7 @@ class _GeneratedSizeStatistic extends StatelessWidget {
                 SizedBox(
                   width: 82,
                   child: Text(
-                    'Bestzeit',
+                    context.strings.text('Bestzeit', 'Best time'),
                     textAlign: TextAlign.end,
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
@@ -6111,7 +6138,8 @@ class _GeneratedSizeStatistic extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 3),
                 child: Row(
                   children: [
-                    Expanded(child: Text(difficulty.label)),
+                    Expanded(
+                        child: Text(context.strings.known(difficulty.label))),
                     SizedBox(
                       width: 72,
                       child: Text(
