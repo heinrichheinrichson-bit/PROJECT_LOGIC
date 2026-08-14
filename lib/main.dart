@@ -18,6 +18,7 @@ import 'core/presentation/personal_records_section.dart';
 import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/reminder_notifications.dart';
+import 'core/presentation/rewarded_hint_dialog.dart';
 import 'core/presentation/streak_calendar.dart';
 import 'core/presentation/xp_award_badge.dart';
 import 'core/statistics/game_statistics.dart';
@@ -629,7 +630,8 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
   Widget build(BuildContext context) {
     final savedDefinition = _savedDefinition;
     return Scaffold(
-      appBar: AppBar(title: const Text('Binärpuzzle')),
+      appBar:
+          AppBar(title: Text(context.strings.text('Binärpuzzle', 'Binairo'))),
       body: Align(
         alignment: Alignment.topCenter,
         child: SingleChildScrollView(
@@ -768,7 +770,8 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                       ),
                     )),
                     icon: const Icon(Icons.menu_book_rounded),
-                    label: const Text('Regeln ansehen'),
+                    label: Text(
+                        context.strings.text('Regeln ansehen', 'View rules')),
                   ),
                 ],
               ],
@@ -970,15 +973,18 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         content: Row(
           children: [
-            SizedBox.square(
+            const SizedBox.square(
               dimension: 24,
               child: CircularProgressIndicator(strokeWidth: 2.5),
             ),
-            SizedBox(width: 18),
-            Expanded(child: Text('Tagesrätsel wird vorbereitet …')),
+            const SizedBox(width: 18),
+            Expanded(
+                child: Text(dialogContext.strings.text(
+                    'Tagesrätsel wird vorbereitet …',
+                    'Preparing daily puzzle…'))),
           ],
         ),
       ),
@@ -1002,8 +1008,10 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Das Tagesrätsel konnte nicht vorbereitet werden.'),
+        SnackBar(
+          content: Text(context.strings.text(
+              'Das Tagesrätsel konnte nicht vorbereitet werden.',
+              'The daily puzzle could not be prepared.')),
         ),
       );
     } finally {
@@ -1145,7 +1153,10 @@ class _DailyArchiveScreenState extends State<DailyArchiveScreen> {
     final todayCompleted = _results.containsKey(_resultKey(today));
     final gameName = widget.gameType.label;
     return Scaffold(
-      appBar: AppBar(title: Text('$gameName-Tagesrätsel')),
+      appBar: AppBar(
+          title: Text(context.strings.isEnglish
+              ? '${context.strings.known(gameName)} daily puzzle'
+              : '$gameName-Tagesrätsel')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : Center(
@@ -1457,10 +1468,11 @@ class _HomeSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
+          Text(context.strings.known(title),
+              style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 3),
           Text(
-            subtitle,
+            context.strings.known(subtitle),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -1699,7 +1711,9 @@ class GameSelectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Spiel auswählen')),
+      appBar: AppBar(
+          title:
+              Text(context.strings.text('Spiel auswählen', 'Choose a game'))),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -1708,7 +1722,7 @@ class GameSelectionScreen extends StatelessWidget {
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Welches Spiel?',
+                  Text(context.strings.text('Welches Spiel?', 'Which game?'),
                       style: Theme.of(context)
                           .textTheme
                           .headlineSmall
@@ -1779,7 +1793,8 @@ class DifficultyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Binärpuzzle')),
+      appBar:
+          AppBar(title: Text(context.strings.text('Binärpuzzle', 'Binairo'))),
       body: Align(
         alignment: Alignment.topCenter,
         child: SingleChildScrollView(
@@ -1859,7 +1874,8 @@ class _PuzzleSelectionScreenState extends State<PuzzleSelectionScreen> {
         .length;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Binärpuzzle · ${widget.difficulty.label}'),
+        title: Text(
+            '${context.strings.text('Binärpuzzle', 'Binairo')} · ${context.strings.known(widget.difficulty.label)}'),
       ),
       body: Center(
         child: ListView(
@@ -1935,7 +1951,7 @@ class _CollectionProgressCard extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 4),
-          Text('$completed von $total Rätseln gelöst'),
+          Text(context.strings.known('$completed von $total Rätseln gelöst')),
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(99),
@@ -2092,7 +2108,8 @@ class _GeneratedPuzzleSetupScreenState
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Zufallsrätsel')),
+      appBar: AppBar(
+          title: Text(context.strings.text('Zufallsrätsel', 'Random puzzle'))),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -2102,7 +2119,8 @@ class _GeneratedPuzzleSetupScreenState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Stell dein Rätsel zusammen',
+                  context.strings
+                      .text('Stell dein Rätsel zusammen', 'Build your puzzle'),
                   style: Theme.of(context)
                       .textTheme
                       .headlineSmall
@@ -2110,11 +2128,13 @@ class _GeneratedPuzzleSetupScreenState
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Wähle Größe und Schwierigkeit. Das Rätsel wird direkt auf deinem Gerät erstellt und auf eine eindeutige Lösung geprüft.',
+                  context.strings.text(
+                      'Wähle Größe und Schwierigkeit. Das Rätsel wird direkt auf deinem Gerät erstellt und auf eine eindeutige Lösung geprüft.',
+                      'Choose a size and difficulty. The puzzle is created directly on your device and checked for a unique solution.'),
                   style: TextStyle(color: colors.onSurfaceVariant),
                 ),
                 const SizedBox(height: 24),
-                Text('Rastergröße',
+                Text(context.strings.text('Rastergröße', 'Grid size'),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         )),
@@ -2124,7 +2144,7 @@ class _GeneratedPuzzleSetupScreenState
                     for (final size in BinaryPuzzleSize.values)
                       ButtonSegment<BinaryPuzzleSize>(
                         value: size,
-                        label: Text(size.label),
+                        label: Text(context.strings.known(size.label)),
                       ),
                   ],
                   selected: {_size},
@@ -2133,7 +2153,7 @@ class _GeneratedPuzzleSetupScreenState
                       : (selection) => setState(() => _size = selection.first),
                 ),
                 const SizedBox(height: 24),
-                Text('Schwierigkeit',
+                Text(context.strings.text('Schwierigkeit', 'Difficulty'),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         )),
@@ -2143,8 +2163,8 @@ class _GeneratedPuzzleSetupScreenState
                     for (final difficulty in PuzzleDifficulty.values)
                       ButtonSegment<PuzzleDifficulty>(
                         value: difficulty,
-                        label: Text(difficulty.label),
-                        tooltip: difficulty.description,
+                        label: Text(context.strings.known(difficulty.label)),
+                        tooltip: context.strings.known(difficulty.description),
                       ),
                   ],
                   selected: {_difficulty},
@@ -2155,7 +2175,7 @@ class _GeneratedPuzzleSetupScreenState
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _difficulty.description,
+                  context.strings.known(_difficulty.description),
                   style: TextStyle(color: colors.onSurfaceVariant),
                 ),
                 if (_errorMessage != null) ...[
@@ -2182,12 +2202,18 @@ class _GeneratedPuzzleSetupScreenState
                         )
                       : const Icon(Icons.auto_awesome_rounded),
                   label: Text(
-                    _isGenerating ? 'Rätsel wird erzeugt …' : 'Rätsel starten',
+                    _isGenerating
+                        ? context.strings
+                            .text('Rätsel wird erzeugt …', 'Generating puzzle…')
+                        : context.strings
+                            .text('Rätsel starten', 'Start puzzle'),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Generierte Rätsel werden automatisch gespeichert und können im Binärpuzzle-Hub über „Spiel fortsetzen“ wieder geöffnet werden.',
+                  context.strings.text(
+                      'Generierte Rätsel werden automatisch gespeichert und können im Binärpuzzle-Hub über „Spiel fortsetzen“ wieder geöffnet werden.',
+                      'Generated puzzles are saved automatically and can be reopened from the Binairo hub via “Continue puzzle”.'),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
@@ -2321,18 +2347,21 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.save_outlined),
-        title: const Text('Offenes Binairo-Rätsel'),
-        content: const Text(
+        title: Text(dialogContext.strings
+            .text('Offenes Binairo-Rätsel', 'Open Binairo puzzle')),
+        content: Text(dialogContext.strings.text(
           'Du hast bereits ein begonnenes Binairo-Rätsel. Möchtest du es fortsetzen oder mit dem neuen Rätsel beginnen?',
-        ),
+          'You already have a Binairo puzzle in progress. Would you like to continue it or start the new puzzle?',
+        )),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Neu beginnen'),
+            child:
+                Text(dialogContext.strings.text('Neu beginnen', 'Start new')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Fortsetzen'),
+            child: Text(dialogContext.strings.text('Fortsetzen', 'Continue')),
           ),
         ],
       ),
@@ -2390,7 +2419,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                           FilledButton.icon(
                             onPressed: _startNextGeneratedPuzzle,
                             icon: const Icon(Icons.auto_awesome_rounded),
-                            label: const Text('Noch eins'),
+                            label: Text(context.strings
+                                .text('Noch eins', 'Another one')),
                           )
                         else if (widget.source == PuzzleSource.catalog &&
                             _hasNextPuzzle)
@@ -2404,18 +2434,21 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                               ),
                             ),
                             icon: const Icon(Icons.arrow_forward_rounded),
-                            label: const Text('Nächstes Rätsel'),
+                            label: Text(context.strings
+                                .text('Nächstes Rätsel', 'Next puzzle')),
                           ),
                         if (widget.source == PuzzleSource.daily)
                           FilledButton.icon(
                             onPressed: () => Navigator.of(context).pop(),
                             icon: const Icon(Icons.calendar_month_outlined),
-                            label: const Text('Zum Kalender'),
+                            label: Text(context.strings
+                                .text('Zum Kalender', 'To calendar')),
                           ),
                         OutlinedButton.icon(
                           onPressed: _reset,
                           icon: const Icon(Icons.replay_rounded),
-                          label: const Text('Noch einmal'),
+                          label: Text(context.strings
+                              .text('Noch einmal', 'Play again')),
                         ),
                       ],
                     ),
@@ -2425,59 +2458,66 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
             : null,
         appBar: AppBar(
           title: Text(
-            widget.titleOverride ??
-                '${widget.definition.difficulty.label} · ${widget.definition.displayName}',
+            context.strings.known(widget.titleOverride ??
+                '${widget.definition.difficulty.label} · ${widget.definition.displayName}'),
           ),
           actions: [
             if (kDebugMode)
               PopupMenuButton<_DeveloperAction>(
-                tooltip: 'Testwerkzeuge',
+                tooltip: context.strings.text('Testwerkzeuge', 'Test tools'),
                 icon: const Icon(Icons.bug_report_outlined),
                 onSelected: _runDeveloperAction,
-                itemBuilder: (context) => const [
+                itemBuilder: (context) => [
                   PopupMenuItem(
                     value: _DeveloperAction.almostSolved,
-                    child: Text('Bis auf 1 Feld lösen'),
+                    child: Text(context.strings.text(
+                        'Bis auf 1 Feld lösen', 'Solve except for 1 cell')),
                   ),
                   PopupMenuItem(
                     value: _DeveloperAction.solve,
-                    child: Text('Sofort lösen'),
+                    child: Text(context.strings
+                        .text('Sofort lösen', 'Solve instantly')),
                   ),
                   PopupMenuItem(
                     value: _DeveloperAction.error,
-                    child: Text('Regelfehler erzeugen'),
+                    child: Text(context.strings
+                        .text('Regelfehler erzeugen', 'Create rule error')),
                   ),
                   PopupMenuItem(
                     value: _DeveloperAction.reset,
-                    child: Text('Testzustand löschen'),
+                    child: Text(context.strings
+                        .text('Testzustand löschen', 'Clear test state')),
                   ),
                 ],
               ),
             IconButton(
-              tooltip: 'Rückgängig',
+              tooltip: context.strings.text('Rückgängig', 'Undo'),
               onPressed: puzzle.canUndo ? _undo : null,
               icon: const Icon(Icons.undo_rounded),
             ),
             IconButton(
-              tooltip: 'Wiederholen',
+              tooltip: context.strings.text('Wiederholen', 'Redo'),
               onPressed: puzzle.canRedo ? _redo : null,
               icon: const Icon(Icons.redo_rounded),
             ),
             IconButton(
-              tooltip: 'Zurücksetzen',
+              tooltip: context.strings.text('Zurücksetzen', 'Reset'),
               onPressed: _reset,
               icon: const Icon(Icons.restart_alt),
             ),
             IconButton(
-              tooltip: 'Spielhilfen',
+              tooltip: context.strings.text('Spielhilfen', 'Game assists'),
               onPressed: () => showPuzzleGameOptions(
                 context,
                 children: [
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Regelfehler markieren'),
-                    subtitle: const Text(
-                      'Markiert direkte Widersprüche, ohne die Lösung zu verraten.',
+                    title: Text(context.strings.text(
+                        'Regelfehler markieren', 'Highlight rule errors')),
+                    subtitle: Text(
+                      context.strings.text(
+                          'Markiert direkte Widersprüche, ohne die Lösung zu verraten.',
+                          'Highlights direct contradictions without revealing the solution.'),
                     ),
                     value: showIssues,
                     onChanged: (value) {
@@ -2508,7 +2548,9 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                       progress: puzzle.progress,
                       hintLabel: premium
                           ? 'Premium'
-                          : '${_hintBudget.remainingHints} Tipps',
+                          : context.strings.isEnglish
+                              ? '${_hintBudget.remainingHints} hints'
+                              : '${_hintBudget.remainingHints} Tipps',
                       onHint: puzzle.isSolved ? null : _showHint,
                     ),
                     const SizedBox(height: 12),
@@ -2582,14 +2624,17 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
         context: context,
         builder: (context) => AlertDialog(
           icon: const Icon(Icons.psychology_alt_outlined),
-          title: const Text('Hier hilft nur dein nächster Schritt'),
-          content: const Text(
+          title: Text(context.strings.text(
+              'Hier hilft nur dein nächster Schritt',
+              'Your next step is needed here')),
+          content: Text(context.strings.text(
             'Aus dem aktuellen Spielstand lässt sich kein garantiert richtiger Wert ableiten. Prüfe mögliche Fehler oder löse zunächst einen anderen Bereich.',
-          ),
+            'No guaranteed correct value can be deduced from the current state. Check for possible errors or solve another area first.',
+          )),
           actions: [
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Okay'),
+              child: Text(context.strings.text('Okay', 'OK')),
             ),
           ],
         ),
@@ -2618,37 +2663,38 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       context: context,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.lightbulb_outline_rounded),
-        title: Text(hint.title),
+        title: Text(context.strings.known(hint.title)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              hint.badge,
+              context.strings.known(hint.badge),
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w700,
                   ),
             ),
             const SizedBox(height: 8),
-            Text(hint.reason),
+            Text(context.strings.known(hint.reason)),
             const SizedBox(height: 16),
             Text(
               hint.coordinate,
               style: const TextStyle(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
-            Text(hint.action),
+            Text(context.strings.known(hint.action)),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Nur markieren'),
+            child:
+                Text(context.strings.text('Nur markieren', 'Highlight only')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Hinweis anwenden'),
+            child: Text(context.strings.text('Hinweis anwenden', 'Apply hint')),
           ),
         ],
       ),
@@ -2672,51 +2718,13 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   }
 
   Future<void> _showHintRewardDialog() async {
-    final simulateAd = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        icon: const Icon(Icons.ondemand_video_outlined),
-        title: const Text('Keine Hinweise mehr'),
-        content: const Text(
-          'In der kostenlosen Version kannst du eine kurze Werbung ansehen und dafür einen weiteren Hinweis erhalten.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Später'),
-          ),
-          FilledButton.icon(
-            onPressed: () => Navigator.of(context).pop(true),
-            icon: const Icon(Icons.play_arrow_rounded),
-            label: const Text('Werbung simulieren'),
-          ),
-        ],
-      ),
-    );
-    if (simulateAd != true || !mounted) return;
-
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        icon: const Icon(Icons.smart_display_outlined),
-        title: const Text('Simulierte Werbung'),
-        content: const Text(
-          'Hier wird später ein freiwilliges Rewarded-Ad eingeblendet. Für den Prototyp wird die Belohnung sofort vergeben.',
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Werbung abschließen'),
-          ),
-        ],
-      ),
-    );
-    if (!mounted) return;
+    if (!await showRewardedHintSimulation(context) || !mounted) return;
     setState(() => _hintBudget = _hintBudget.earnRewardedHint());
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('Ein zusätzlicher Hinweis wurde freigeschaltet.')),
+      SnackBar(
+          content: Text(context.strings.text(
+              'Ein zusätzlicher Hinweis wurde freigeschaltet.',
+              'An additional hint has been unlocked.'))),
     );
   }
 
@@ -2840,19 +2848,24 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
               child: const Icon(Icons.emoji_events_outlined, size: 42),
             ),
             title: Text(widget.source == PuzzleSource.daily
-                ? 'Tagesrätsel geschafft!'
-                : 'Gelöst!'),
+                ? context.strings
+                    .text('Tagesrätsel geschafft!', 'Daily puzzle complete!')
+                : context.strings.text('Gelöst!', 'Solved!')),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(widget.source == PuzzleSource.daily
-                    ? 'Die Spielserie ist für heute gesichert.'
-                    : 'Alle Regeln sind erfüllt.'),
+                    ? context.strings.text(
+                        'Die Spielserie ist für heute gesichert.',
+                        'Your streak is safe for today.')
+                    : context.strings.text('Alle Regeln sind erfüllt.',
+                        'All rules are satisfied.')),
                 const SizedBox(height: 16),
                 if (isNewRecord && !_developerCompletion)
-                  const Chip(
-                    avatar: Icon(Icons.workspace_premium_outlined),
-                    label: Text('Neue Bestzeit'),
+                  Chip(
+                    avatar: const Icon(Icons.workspace_premium_outlined),
+                    label: Text(
+                        context.strings.text('Neue Bestzeit', 'New best time')),
                   ),
                 if (_developerCompletion)
                   Chip(
@@ -2872,17 +2885,17 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                   children: [
                     _CompactStatistic(
                       value: _formatTime(elapsedSeconds),
-                      label: 'Zeit',
+                      label: context.strings.text('Zeit', 'Time'),
                     ),
                     _CompactStatistic(
                       value: '$_hintsUsed',
-                      label: 'Hinweise',
+                      label: context.strings.text('Hinweise', 'Hints'),
                     ),
                     _CompactStatistic(
                       value: previousBestSeconds == null
                           ? '–'
                           : _formatTime(previousBestSeconds),
-                      label: 'Bisher',
+                      label: context.strings.text('Bisher', 'Previous'),
                     ),
                   ],
                 ),
@@ -2899,7 +2912,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Brett ansehen'),
+                child:
+                    Text(context.strings.text('Brett ansehen', 'View board')),
               ),
               if (widget.source == PuzzleSource.generated)
                 FilledButton.tonalIcon(
@@ -2908,7 +2922,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                     _startNextGeneratedPuzzle();
                   },
                   icon: const Icon(Icons.auto_awesome_rounded),
-                  label: const Text('Noch eins'),
+                  label: Text(context.strings.text('Noch eins', 'Another one')),
                 )
               else if (widget.source == PuzzleSource.catalog)
                 if (_hasNextPuzzle)
@@ -2923,7 +2937,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                         ),
                       );
                     },
-                    child: const Text('Nächstes Rätsel'),
+                    child: Text(
+                        context.strings.text('Nächstes Rätsel', 'Next puzzle')),
                   )
                 else
                   FilledButton.tonal(
@@ -2931,7 +2946,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                       Navigator.of(context).pop();
                       Navigator.of(this.context).pop();
                     },
-                    child: const Text('Zur Sammlung'),
+                    child: Text(context.strings
+                        .text('Zur Sammlung', 'Back to collection')),
                   ),
               if (widget.source == PuzzleSource.daily)
                 FilledButton.tonalIcon(
@@ -2940,14 +2956,16 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                     Navigator.of(this.context).pop();
                   },
                   icon: const Icon(Icons.calendar_month_outlined),
-                  label: const Text('Zum Kalender'),
+                  label:
+                      Text(context.strings.text('Zum Kalender', 'To calendar')),
                 ),
               FilledButton(
                 onPressed: () {
                   Navigator.of(context).pop();
                   _reset();
                 },
-                child: const Text('Noch einmal spielen'),
+                child: Text(
+                    context.strings.text('Noch einmal spielen', 'Play again')),
               ),
             ],
           );
@@ -2964,15 +2982,18 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         content: Row(
           children: [
-            SizedBox.square(
+            const SizedBox.square(
               dimension: 24,
               child: CircularProgressIndicator(strokeWidth: 2.5),
             ),
-            SizedBox(width: 18),
-            Expanded(child: Text('Dein Rätsel wird vorbereitet …')),
+            const SizedBox(width: 18),
+            Expanded(
+                child: Text(dialogContext.strings.text(
+                    'Dein Rätsel wird vorbereitet …',
+                    'Preparing your puzzle…'))),
           ],
         ),
       ),
@@ -3006,8 +3027,9 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content:
-              Text('Das Rätsel konnte gerade nicht erstellt werden: $error'),
+          content: Text(context.strings.isEnglish
+              ? 'The puzzle could not be created: $error'
+              : 'Das Rätsel konnte gerade nicht erstellt werden: $error'),
         ),
       );
     }
@@ -3467,18 +3489,20 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         icon: const Icon(Icons.warning_amber_rounded),
-        title: const Text('Wirklich alles löschen?'),
-        content: const Text(
+        title: Text(context.strings
+            .text('Wirklich alles löschen?', 'Really delete everything?')),
+        content: Text(context.strings.text(
           'Aktives Spiel, Bestzeiten und die gesamte Statistik werden dauerhaft gelöscht. Die Einstellungen bleiben erhalten.',
-        ),
+          'The active game, best times and all statistics will be permanently deleted. Settings will be preserved.',
+        )),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Abbrechen'),
+            child: Text(context.strings.text('Abbrechen', 'Cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Löschen'),
+            child: Text(context.strings.text('Löschen', 'Delete')),
           ),
         ],
       ),
@@ -3488,8 +3512,10 @@ class SettingsScreen extends StatelessWidget {
     await GameStorage().clearAllProgress();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('Deine gespeicherten Daten wurden gelöscht.')),
+      SnackBar(
+          content: Text(context.strings.text(
+              'Deine gespeicherten Daten wurden gelöscht.',
+              'Your saved data has been deleted.'))),
     );
   }
 
@@ -3500,15 +3526,19 @@ class SettingsScreen extends StatelessWidget {
       await Clipboard.setData(ClipboardData(text: backup));
       if (!context.mounted) return;
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Vollständige Sicherung wurde kopiert.'),
+        SnackBar(
+          content: Text(context.strings.text(
+              'Vollständige Sicherung wurde kopiert.',
+              'Complete backup copied.')),
         ),
       );
     } on Object {
       if (!context.mounted) return;
       messenger.showSnackBar(
-        const SnackBar(
-            content: Text('Sicherung konnte nicht erstellt werden.')),
+        SnackBar(
+            content: Text(context.strings.text(
+                'Sicherung konnte nicht erstellt werden.',
+                'Backup could not be created.'))),
       );
     }
   }
@@ -3519,24 +3549,27 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.settings_backup_restore),
-        title: const Text('Sicherung einfügen'),
+        title: Text(
+            dialogContext.strings.text('Sicherung einfügen', 'Paste backup')),
         content: TextField(
           controller: controller,
           minLines: 5,
           maxLines: 10,
-          decoration: const InputDecoration(
-            hintText: 'Project-Logic-Sicherung hier einfügen',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            hintText: dialogContext.strings.text(
+                'Project-Logic-Sicherung hier einfügen',
+                'Paste Project Logic backup here'),
+            border: const OutlineInputBorder(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Abbrechen'),
+            child: Text(dialogContext.strings.text('Abbrechen', 'Cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: const Text('Prüfen'),
+            child: Text(dialogContext.strings.text('Prüfen', 'Check')),
           ),
         ],
       ),
@@ -3552,18 +3585,20 @@ class SettingsScreen extends StatelessWidget {
         context: context,
         builder: (dialogContext) => AlertDialog(
           icon: const Icon(Icons.verified_outlined),
-          title: const Text('Gültige Sicherung gefunden'),
+          title: Text(dialogContext.strings
+              .text('Gültige Sicherung gefunden', 'Valid backup found')),
           content: Text(
             '${summary.entryCount} Datenbereiche vom ${_backupDate(summary.createdAt)} wiederherstellen? Der aktuelle Stand wird vorher lokal gesichert.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Abbrechen'),
+              child: Text(dialogContext.strings.text('Abbrechen', 'Cancel')),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Wiederherstellen'),
+              child: Text(
+                  dialogContext.strings.text('Wiederherstellen', 'Restore')),
             ),
           ],
         ),
@@ -3572,8 +3607,10 @@ class SettingsScreen extends StatelessWidget {
       await service.restoreBackup(backup.trim());
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sicherung wiederhergestellt. App bitte neu öffnen.'),
+        SnackBar(
+          content: Text(context.strings.text(
+              'Sicherung wiederhergestellt. App bitte neu öffnen.',
+              'Backup restored. Please reopen the app.')),
         ),
       );
     } on BackupValidationException catch (error) {
@@ -3598,18 +3635,21 @@ class SettingsScreen extends StatelessWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.undo_rounded),
-        title: const Text('Import rückgängig machen?'),
-        content: const Text(
+        title: Text(dialogContext.strings
+            .text('Import rückgängig machen?', 'Undo import?')),
+        content: Text(dialogContext.strings.text(
           'Der lokale Stand vor dem letzten Import wird wiederhergestellt.',
-        ),
+          'The local state from before the last import will be restored.',
+        )),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Abbrechen'),
+            child: Text(dialogContext.strings.text('Abbrechen', 'Cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Wiederherstellen'),
+            child:
+                Text(dialogContext.strings.text('Wiederherstellen', 'Restore')),
           ),
         ],
       ),
@@ -3618,9 +3658,10 @@ class SettingsScreen extends StatelessWidget {
     await service.restoreRecoveryBackup();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content:
-            Text('Vorheriger Stand wiederhergestellt. App bitte neu öffnen.'),
+      SnackBar(
+        content: Text(context.strings.text(
+            'Vorheriger Stand wiederhergestellt. App bitte neu öffnen.',
+            'Previous state restored. Please reopen the app.')),
       ),
     );
   }
@@ -6137,7 +6178,8 @@ class _DifficultyStatistic extends StatelessWidget {
           PuzzleDifficulty.hard => Icons.local_fire_department_outlined,
         }),
         title: Text(difficulty.label),
-        subtitle: Text('$completed von ${puzzles.length} gelöst'),
+        subtitle: Text(
+            context.strings.known('$completed von ${puzzles.length} gelöst')),
         trailing: Text('${((completed / puzzles.length) * 100).round()} %'),
       ),
     );

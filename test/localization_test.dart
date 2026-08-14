@@ -62,4 +62,16 @@ void main() {
     expect(strings.known('30 feste Expeditionen entdecken'),
         'Explore 30 fixed expeditions');
   });
+
+  test('all puzzle families expose English gameplay terminology', () {
+    const strings = AppLocalizations(Locale('en'));
+    expect(strings.known('Zelte & Bäume'), 'Tents & Trees');
+    expect(
+        strings.known('Doppelte Zahlen entfernen'), 'Remove duplicate numbers');
+    expect(strings.known('Alle freien Seiten werden gebraucht'),
+        'All free sides are needed');
+    expect(strings.known('Ein gemeinsames Netz'), 'One connected network');
+    expect(strings.known('Binärpuzzle'), 'Binairo');
+    expect(strings.known('7 von 20 Rätseln gelöst'), '7 of 20 puzzles solved');
+  });
 }

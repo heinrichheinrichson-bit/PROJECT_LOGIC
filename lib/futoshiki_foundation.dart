@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_preferences.dart';
+import 'app_localizations.dart';
 import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
@@ -270,19 +271,20 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
         context: context,
         builder: (dialogContext) => AlertDialog(
           icon: const Icon(Icons.save_outlined),
-          title: const Text('Offenes Futoshiki-Rätsel'),
-          content: const Text(
-            'Du hast bereits ein begonnenes Rätsel. Möchtest du es '
-            'fortsetzen oder wirklich ein neues beginnen?',
-          ),
+          title: Text(dialogContext.strings
+              .text('Offenes Futoshiki-Rätsel', 'Open Futoshiki puzzle')),
+          content: Text(dialogContext.strings.text(
+              'Du hast bereits ein begonnenes Rätsel. Möchtest du es fortsetzen oder wirklich ein neues beginnen?',
+              'You already have a puzzle in progress. Would you like to continue it or start a new one?')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Fortsetzen'),
+              child: Text(dialogContext.strings.text('Fortsetzen', 'Continue')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Neu beginnen'),
+              child:
+                  Text(dialogContext.strings.text('Neu beginnen', 'Start new')),
             ),
           ],
         ),
@@ -402,7 +404,7 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
               ),
             )),
             icon: const Icon(Icons.menu_book_rounded),
-            label: const Text('Regeln ansehen'),
+            label: Text(context.strings.text('Regeln ansehen', 'View rules')),
           ),
         ],
       ),
@@ -417,7 +419,9 @@ class _FutoshikiRandomScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Futoshiki-Zufallsrätsel')),
+        appBar: AppBar(
+            title: Text(context.strings
+                .text('Futoshiki-Zufallsrätsel', 'Futoshiki random puzzle'))),
         body: ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -470,19 +474,20 @@ class _FutoshikiCollectionScreenState extends State<FutoshikiCollectionScreen> {
         context: context,
         builder: (dialogContext) => AlertDialog(
           icon: const Icon(Icons.save_outlined),
-          title: const Text('Offenes Futoshiki-Rätsel'),
-          content: const Text(
-            'Dein begonnenes Rätsel bleibt gespeichert. Möchtest du es '
-            'fortsetzen oder mit dem ausgewählten Rätsel neu beginnen?',
-          ),
+          title: Text(dialogContext.strings
+              .text('Offenes Futoshiki-Rätsel', 'Open Futoshiki puzzle')),
+          content: Text(dialogContext.strings.text(
+              'Dein begonnenes Rätsel bleibt gespeichert. Möchtest du es fortsetzen oder mit dem ausgewählten Rätsel neu beginnen?',
+              'Your current puzzle remains saved. Would you like to continue it or start over with the selected puzzle?')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, 'resume'),
-              child: const Text('Fortsetzen'),
+              child: Text(dialogContext.strings.text('Fortsetzen', 'Continue')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, 'replace'),
-              child: const Text('Neu beginnen'),
+              child:
+                  Text(dialogContext.strings.text('Neu beginnen', 'Start new')),
             ),
           ],
         ),
@@ -518,7 +523,9 @@ class _FutoshikiCollectionScreenState extends State<FutoshikiCollectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Futoshiki-Sammlung')),
+      appBar: AppBar(
+          title: Text(context.strings
+              .text('Futoshiki-Sammlung', 'Futoshiki collection'))),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -559,8 +566,9 @@ class _FutoshikiCollectionScreenState extends State<FutoshikiCollectionScreen> {
                 child: ExpansionTile(
                   initiallyExpanded: chapter.size == 4,
                   leading: CircleAvatar(child: Text('${chapter.size}')),
-                  title: Text(chapter.title),
-                  subtitle: Text('$solved von ${puzzles.length} gelöst'),
+                  title: Text(context.strings.known(chapter.title)),
+                  subtitle: Text(context.strings
+                      .known('$solved von ${puzzles.length} gelöst')),
                   children: [
                     for (var index = 0; index < puzzles.length; index++)
                       ListTile(
@@ -571,7 +579,8 @@ class _FutoshikiCollectionScreenState extends State<FutoshikiCollectionScreen> {
                               ? const Icon(Icons.check_rounded)
                               : Text('${index + 1}'),
                         ),
-                        title: Text(puzzles[index].title),
+                        title:
+                            Text(context.strings.known(puzzles[index].title)),
                         subtitle: Text(
                           '${puzzles[index].size} × ${puzzles[index].size}',
                         ),
@@ -618,9 +627,9 @@ class _DifficultyCard extends StatelessWidget {
       child: ListTile(
         minTileHeight: 86,
         leading: CircleAvatar(child: Text('$size')),
-        title: Text(title ?? difficulty.label),
-        subtitle:
-            Text('${description ?? difficulty.description} · $size × $size'),
+        title: Text(context.strings.known(title ?? difficulty.label)),
+        subtitle: Text(
+            '${context.strings.known(description ?? difficulty.description)} · $size × $size'),
         trailing: const Icon(Icons.play_arrow_rounded),
         onTap: () {
           final seed = DateTime.now().microsecondsSinceEpoch;
@@ -791,20 +800,24 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.compare_arrows_rounded),
-        title: const Text('So liest du die Zeichen'),
+        title: Text(dialogContext.strings
+            .text('So liest du die Zeichen', 'How to read the signs')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const _InequalityExample(),
             const SizedBox(height: 18),
-            const Text(
-              'Die offene Seite zeigt immer zur größeren Zahl. '
-              'Die Spitze zeigt zur kleineren Zahl.',
+            Text(
+              dialogContext.strings.text(
+                  'Die offene Seite zeigt immer zur größeren Zahl. Die Spitze zeigt zur kleineren Zahl.',
+                  'The open side always points to the larger number. The tip points to the smaller number.'),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              'Horizontal und vertikal gilt genau dieselbe Regel.',
+              dialogContext.strings.text(
+                  'Horizontal und vertikal gilt genau dieselbe Regel.',
+                  'The exact same rule applies horizontally and vertically.'),
               textAlign: TextAlign.center,
               style: Theme.of(dialogContext).textTheme.bodySmall,
             ),
@@ -813,7 +826,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Verstanden'),
+            child: Text(dialogContext.strings.text('Verstanden', 'Got it')),
           ),
         ],
       ),
@@ -919,7 +932,10 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
       });
       unawaited(_saveGame());
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ein zusätzlicher Tipp ist verfügbar.')),
+        SnackBar(
+            content: Text(context.strings.text(
+                'Ein zusätzlicher Tipp ist verfügbar.',
+                'An additional hint is available.'))),
       );
       return;
     }
@@ -939,20 +955,23 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
       context: context,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.lightbulb_outline_rounded),
-        title: const Text('Logischer Hinweis'),
+        title: Text(
+            dialogContext.strings.text('Logischer Hinweis', 'Logical hint')),
         content: Text(
-          'Betrachte Zeile ${target.$1 + 1}, Spalte ${target.$2 + 1}. '
-          'Dort bleibt unter Beachtung der Zeile, Spalte und angrenzenden '
-          'Ungleichheiten nur eine passende Zahl.',
+          dialogContext.strings.isEnglish
+              ? 'Look at row ${target.$1 + 1}, column ${target.$2 + 1}. Considering the row, column and adjacent inequalities, only one number fits.'
+              : 'Betrachte Zeile ${target.$1 + 1}, Spalte ${target.$2 + 1}. Dort bleibt unter Beachtung der Zeile, Spalte und angrenzenden Ungleichheiten nur eine passende Zahl.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Auf dem Brett zeigen'),
+            child: Text(dialogContext.strings
+                .text('Auf dem Brett zeigen', 'Show on board')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Hinweis anwenden'),
+            child: Text(
+                dialogContext.strings.text('Hinweis anwenden', 'Apply hint')),
           ),
         ],
       ),
@@ -1013,13 +1032,18 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.emoji_events_outlined),
-        title: const Text('Ungleichungen gelöst!'),
+        title: Text(dialogContext.strings
+            .text('Ungleichungen gelöst!', 'Inequalities solved!')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Alle Zahlen und Ungleichheiten stimmen.'),
+            Text(dialogContext.strings.text(
+                'Alle Zahlen und Ungleichheiten stimmen.',
+                'All numbers and inequalities are correct.')),
             const SizedBox(height: 16),
-            Text('${_formatTime(_elapsedSeconds)} · $_moves Züge'),
+            Text(dialogContext.strings.isEnglish
+                ? '${_formatTime(_elapsedSeconds)} · $_moves moves'
+                : '${_formatTime(_elapsedSeconds)} · $_moves Züge'),
             if (earnedXp != null) ...[
               const SizedBox(height: 12),
               XpAwardBadge(points: earnedXp),
@@ -1045,7 +1069,10 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
                   }
                 },
                 child: Text(
-                  widget.mode == GameMode.daily ? 'Zum Kalender' : 'Noch eins',
+                  widget.mode == GameMode.daily
+                      ? dialogContext.strings
+                          .text('Zum Kalender', 'To calendar')
+                      : dialogContext.strings.text('Noch eins', 'Another one'),
                 ),
               ),
             ),
@@ -1056,14 +1083,16 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Brett ansehen'),
+                  child: Text(dialogContext.strings
+                      .text('Brett ansehen', 'View board')),
                 ),
                 TextButton(
                   onPressed: () {
                     Navigator.pop(dialogContext);
                     Navigator.pop(context);
                   },
-                  child: const Text('Futoshiki verlassen'),
+                  child: Text(dialogContext.strings
+                      .text('Futoshiki verlassen', 'Leave Futoshiki')),
                 ),
               ],
             ),
@@ -1129,44 +1158,53 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
         PreferencesScope.maybeOf(context)?.premiumSimulationEnabled ?? false;
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.puzzle.difficulty.label} · Futoshiki'),
+        title: Text(
+            '${context.strings.known(widget.puzzle.difficulty.label)} · Futoshiki'),
         actions: [
           if (kDebugMode)
             PopupMenuButton<String>(
-              tooltip: 'Testwerkzeuge',
+              tooltip: context.strings.text('Testwerkzeuge', 'Test tools'),
               icon: const Icon(Icons.bug_report_outlined),
               onSelected: (value) {
                 if (value == 'almost') _debugSolve(almost: true);
                 if (value == 'solve') _debugSolve(almost: false);
               },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'almost', child: Text('Fast lösen')),
-                PopupMenuItem(value: 'solve', child: Text('Sofort lösen')),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                    value: 'almost',
+                    child: Text(
+                        context.strings.text('Fast lösen', 'Almost solve'))),
+                PopupMenuItem(
+                    value: 'solve',
+                    child: Text(context.strings
+                        .text('Sofort lösen', 'Solve instantly'))),
               ],
             ),
           IconButton(
-            tooltip: 'Rückgängig',
+            tooltip: context.strings.text('Rückgängig', 'Undo'),
             onPressed: _history.isEmpty ? null : _undo,
             icon: const Icon(Icons.undo_rounded),
           ),
           IconButton(
-            tooltip: 'Wiederholen',
+            tooltip: context.strings.text('Wiederholen', 'Redo'),
             onPressed: _redo.isEmpty ? null : _redoMove,
             icon: const Icon(Icons.redo_rounded),
           ),
           IconButton(
-            tooltip: 'Neu starten',
+            tooltip: context.strings.text('Neu starten', 'Restart'),
             onPressed: _restart,
             icon: const Icon(Icons.restart_alt_rounded),
           ),
           IconButton(
-            tooltip: 'Spielhilfen',
+            tooltip: context.strings.text('Spielhilfen', 'Game assists'),
             onPressed: () => showPuzzleGameOptions(context, children: [
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Regelfehler markieren'),
-                subtitle: const Text(
-                    'Zeigt doppelte Zahlen und falsche Ungleichheiten.'),
+                title: Text(context.strings
+                    .text('Regelfehler markieren', 'Highlight rule errors')),
+                subtitle: Text(context.strings.text(
+                    'Zeigt doppelte Zahlen und falsche Ungleichheiten.',
+                    'Shows duplicate numbers and incorrect inequalities.')),
                 value: _showConflicts,
                 onChanged: (value) {
                   setState(() => _showConflicts = value);
@@ -1175,9 +1213,11 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Automatisch weiter'),
-                subtitle: const Text(
-                    'Wählt nach einer Zahl das nächste freie Feld aus.'),
+                title: Text(context.strings
+                    .text('Automatisch weiter', 'Advance automatically')),
+                subtitle: Text(context.strings.text(
+                    'Wählt nach einer Zahl das nächste freie Feld aus.',
+                    'Selects the next empty cell after entering a number.')),
                 value: _autoAdvance,
                 onChanged: (value) {
                   setState(() => _autoAdvance = value);
@@ -1207,16 +1247,25 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
                           icon: Icons.timer_outlined,
                           text: _formatTime(_elapsedSeconds)),
                       _Status(
-                          icon: Icons.touch_app_outlined, text: '$_moves Züge'),
+                          icon: Icons.touch_app_outlined,
+                          text: context.strings.isEnglish
+                              ? '$_moves moves'
+                              : '$_moves Züge'),
                       PuzzleGameStatusChip(
                         icon: Icons.lightbulb_outline,
-                        label: premium ? 'Premium' : '$_hintsRemaining Tipps',
+                        label: premium
+                            ? 'Premium'
+                            : context.strings.isEnglish
+                                ? '$_hintsRemaining hints'
+                                : '$_hintsRemaining Tipps',
                         onTap: _hint,
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text('Jede Zahl genau einmal pro Zeile und Spalte.'),
+                  Text(context.strings.text(
+                      'Jede Zahl genau einmal pro Zeile und Spalte.',
+                      'Use every number exactly once per row and column.')),
                   const SizedBox(height: 20),
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 560),
@@ -1265,7 +1314,8 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
                           ),
                         ),
                       IconButton.outlined(
-                        tooltip: 'Feld leeren',
+                        tooltip:
+                            context.strings.text('Feld leeren', 'Clear cell'),
                         onPressed: () => _setValue(null),
                         icon: const Icon(Icons.backspace_outlined),
                       ),
@@ -1273,16 +1323,16 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
                   ),
                   const SizedBox(height: 8),
                   SegmentedButton<bool>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: false,
-                        icon: Icon(Icons.edit_rounded),
-                        label: Text('Zahl'),
+                        icon: const Icon(Icons.edit_rounded),
+                        label: Text(context.strings.text('Zahl', 'Number')),
                       ),
                       ButtonSegment(
                         value: true,
-                        icon: Icon(Icons.edit_note_rounded),
-                        label: Text('Notizen'),
+                        icon: const Icon(Icons.edit_note_rounded),
+                        label: Text(context.strings.text('Notizen', 'Notes')),
                       ),
                     ],
                     selected: {_candidateMode},
@@ -1304,8 +1354,10 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
                         ),
                         label: Text(
                           widget.mode == GameMode.daily
-                              ? 'Zum Kalender'
-                              : 'Noch ein Futoshiki',
+                              ? context.strings
+                                  .text('Zum Kalender', 'To calendar')
+                              : context.strings.text(
+                                  'Noch ein Futoshiki', 'Another Futoshiki'),
                         ),
                       ),
                     ),

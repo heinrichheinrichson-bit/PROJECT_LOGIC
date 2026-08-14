@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'app_localizations.dart';
 import 'app_theme.dart';
 import 'features/futoshiki/domain/futoshiki_puzzle.dart';
 import 'futoshiki_foundation.dart';
@@ -20,7 +21,9 @@ class DailySnapshotViewerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Gelöstes Tagesrätsel')),
+      appBar: AppBar(
+          title: Text(context.strings
+              .text('Gelöstes Tagesrätsel', 'Solved daily puzzle'))),
       body: SafeArea(
         child: Center(
           child: ListView(
@@ -44,7 +47,7 @@ class DailySnapshotViewerScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '${snapshot.gameType.label} · ${snapshot.difficulty.label}',
+                                    '${context.strings.known(snapshot.gameType.label)} · ${context.strings.known(snapshot.difficulty.label)}',
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleMedium
@@ -57,7 +60,9 @@ class DailySnapshotViewerScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            const Chip(label: Text('Archiv')),
+                            Chip(
+                                label: Text(
+                                    context.strings.text('Archiv', 'Archive'))),
                           ],
                         ),
                       ),
@@ -66,7 +71,9 @@ class DailySnapshotViewerScreen extends StatelessWidget {
                     _SnapshotBoard(snapshot: snapshot),
                     const SizedBox(height: 16),
                     Text(
-                      'Dieses gelöste Brett ist schreibgeschützt und bleibt auch nach späteren App-Updates erhalten.',
+                      context.strings.text(
+                          'Dieses gelöste Brett ist schreibgeschützt und bleibt auch nach späteren App-Updates erhalten.',
+                          'This solved board is read-only and remains available after future app updates.'),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -76,7 +83,8 @@ class DailySnapshotViewerScreen extends StatelessWidget {
                     FilledButton.icon(
                       onPressed: onReplay,
                       icon: const Icon(Icons.replay_rounded),
-                      label: const Text('Rätsel erneut spielen'),
+                      label: Text(context.strings
+                          .text('Rätsel erneut spielen', 'Play puzzle again')),
                     ),
                   ],
                 ),

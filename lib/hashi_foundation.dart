@@ -7,11 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_theme.dart';
+import 'app_localizations.dart';
 import 'core/domain/game_identity.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
+import 'core/presentation/rewarded_hint_dialog.dart';
 import 'core/presentation/xp_award_badge.dart';
 import 'core/statistics/game_statistics.dart';
 import 'app_preferences.dart';
@@ -863,7 +865,8 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                     ),
                   ),
                   icon: const Icon(Icons.menu_book_rounded),
-                  label: const Text('Regeln ansehen'),
+                  label: Text(
+                      context.strings.text('Regeln ansehen', 'View rules')),
                 ),
               ],
             ),
@@ -942,7 +945,9 @@ class _HashiRandomSetupScreenState extends State<HashiRandomSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Hashi-Zufallsrätsel')),
+      appBar: AppBar(
+          title: Text(context.strings
+              .text('Hashi-Zufallsrätsel', 'Hashi random puzzle'))),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -958,23 +963,29 @@ class _HashiRandomSetupScreenState extends State<HashiRandomSetupScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Ein neues Brückennetz',
+                  context.strings
+                      .text('Ein neues Brückennetz', 'A new bridge network'),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Jedes Board wird neu erzeugt und auf eine eindeutige Lösung geprüft.',
+                Text(
+                  context.strings.text(
+                      'Jedes Board wird neu erzeugt und auf eine eindeutige Lösung geprüft.',
+                      'Every board is newly generated and checked for a unique solution.'),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
                 SegmentedButton<int>(
-                  segments: const [
-                    ButtonSegment(value: 1, label: Text('Leicht')),
-                    ButtonSegment(value: 2, label: Text('Mittel')),
-                    ButtonSegment(value: 3, label: Text('Schwer')),
+                  segments: [
+                    ButtonSegment(
+                        value: 1, label: Text(context.strings.known('Leicht'))),
+                    ButtonSegment(
+                        value: 2, label: Text(context.strings.known('Mittel'))),
+                    ButtonSegment(
+                        value: 3, label: Text(context.strings.known('Schwer'))),
                   ],
                   selected: {_difficulty},
                   onSelectionChanged: _generating
@@ -1002,7 +1013,11 @@ class _HashiRandomSetupScreenState extends State<HashiRandomSetupScreen> {
                         )
                       : const Icon(Icons.casino_outlined),
                   label: Text(
-                    _generating ? 'Rätsel wird geprüft …' : 'Rätsel erstellen',
+                    _generating
+                        ? context.strings
+                            .text('Rätsel wird geprüft …', 'Checking puzzle…')
+                        : context.strings
+                            .text('Rätsel erstellen', 'Create puzzle'),
                   ),
                 ),
               ],
@@ -1082,7 +1097,8 @@ class _HashiCatalogScreenState extends State<HashiCatalogScreen> {
     final colors = Theme.of(context).colorScheme;
     final chapters = hashiChaptersFor(difficulty: _difficultyFilter);
     return Scaffold(
-      appBar: AppBar(title: const Text('Hashi-Rätsel')),
+      appBar: AppBar(
+          title: Text(context.strings.text('Hashi-Rätsel', 'Hashi puzzles'))),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 680),
@@ -1105,7 +1121,8 @@ class _HashiCatalogScreenState extends State<HashiCatalogScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
-                            '${_completed.length} von ${hashiPuzzleCatalog.length} geschafft',
+                            context.strings.known(
+                                '${_completed.length} von ${hashiPuzzleCatalog.length} geschafft'),
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
@@ -1135,7 +1152,8 @@ class _HashiCatalogScreenState extends State<HashiCatalogScreen> {
                               onSelected: (_) => setState(
                                 () => _difficultyFilter = difficulty,
                               ),
-                              label: Text(_difficultyName(difficulty)),
+                              label: Text(context.strings
+                                  .known(_difficultyName(difficulty))),
                             ),
                           );
                         }),
@@ -1158,11 +1176,11 @@ class _HashiCatalogScreenState extends State<HashiCatalogScreen> {
                     child: Text('$index'),
                   ),
                   title: Text(
-                    chapter.title,
+                    context.strings.known(chapter.title),
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   subtitle: Text(
-                    '${chapter.description}\n$completed von ${chapter.puzzles.length} gelöst',
+                    '${context.strings.known(chapter.description)}\n${context.strings.known('$completed von ${chapter.puzzles.length} gelöst')}',
                   ),
                   children: [
                     const Divider(height: 1),
@@ -1210,11 +1228,13 @@ class _HashiCatalogPuzzleTile extends StatelessWidget {
             : Text('${catalogIndex + 1}'),
       ),
       title: Text(
-        puzzle.title,
+        context.strings.known(puzzle.title),
         style: const TextStyle(fontWeight: FontWeight.w700),
       ),
       subtitle: Text(
-        '${puzzle.size} × ${puzzle.size} · ${puzzle.islands.length} Inseln',
+        context.strings.isEnglish
+            ? '${puzzle.size} × ${puzzle.size} · ${puzzle.islands.length} islands'
+            : '${puzzle.size} × ${puzzle.size} · ${puzzle.islands.length} Inseln',
       ),
       trailing: const Icon(Icons.chevron_right_rounded),
     );
@@ -1353,22 +1373,25 @@ class _HashiGameScreenState extends State<HashiGameScreen>
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.save_outlined),
-        title: const Text('Offene Hashi-Partie'),
-        content: const Text(
+        title: Text(dialogContext.strings
+            .text('Offene Hashi-Partie', 'Open Hashi game')),
+        content: Text(dialogContext.strings.text(
           'Du hast bereits ein begonnenes Hashi-Rätsel. Möchtest du es fortsetzen oder mit dem neuen Rätsel beginnen?',
-        ),
+          'You already have a Hashi puzzle in progress. Would you like to continue it or start the new puzzle?',
+        )),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(
               _ExistingHashiChoice.startNew,
             ),
-            child: const Text('Neu beginnen'),
+            child:
+                Text(dialogContext.strings.text('Neu beginnen', 'Start new')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(
               _ExistingHashiChoice.resume,
             ),
-            child: const Text('Fortsetzen'),
+            child: Text(dialogContext.strings.text('Fortsetzen', 'Continue')),
           ),
         ],
       ),
@@ -1538,19 +1561,23 @@ class _HashiGameScreenState extends State<HashiGameScreen>
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.celebration_rounded),
-        title: const Text('Brückennetz vollendet!'),
+        title: Text(dialogContext.strings
+            .text('Brückennetz vollendet!', 'Bridge network complete!')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Alle Zahlen stimmen und jede Insel gehört zum selben Netz.',
+            Text(
+              dialogContext.strings.text(
+                  'Alle Zahlen stimmen und jede Insel gehört zum selben Netz.',
+                  'All numbers are correct and every island belongs to the same network.'),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 18),
             if (isNewRecord && !_developerCompletion) ...[
-              const Chip(
-                avatar: Icon(Icons.workspace_premium_outlined),
-                label: Text('Neue Bestzeit'),
+              Chip(
+                avatar: const Icon(Icons.workspace_premium_outlined),
+                label: Text(dialogContext.strings
+                    .text('Neue Bestzeit', 'New best time')),
               ),
               const SizedBox(height: 10),
             ],
@@ -1575,14 +1602,17 @@ class _HashiGameScreenState extends State<HashiGameScreen>
                 _ResultValue(icon: Icons.timer_outlined, value: _timeLabel),
                 _ResultValue(
                   icon: Icons.touch_app_outlined,
-                  value: '$_moves Züge',
+                  value: dialogContext.strings.isEnglish
+                      ? '$_moves moves'
+                      : '$_moves Züge',
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
-              '$_hintsUsed Hinweise · Bisherige Bestzeit: '
-              '${previousBestSeconds == null ? '–' : _formatHashiTime(previousBestSeconds)}',
+              dialogContext.strings.isEnglish
+                  ? '$_hintsUsed hints · Previous best: ${previousBestSeconds == null ? '–' : _formatHashiTime(previousBestSeconds)}'
+                  : '$_hintsUsed Hinweise · Bisherige Bestzeit: ${previousBestSeconds == null ? '–' : _formatHashiTime(previousBestSeconds)}',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),
@@ -1599,18 +1629,19 @@ class _HashiGameScreenState extends State<HashiGameScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Brett ansehen'),
+            child:
+                Text(dialogContext.strings.text('Brett ansehen', 'View board')),
           ),
           TextButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
               Navigator.of(context).pop();
             },
-            child: Text(switch (widget.mode) {
+            child: Text(dialogContext.strings.known(switch (widget.mode) {
               GameMode.generated => 'Hashi verlassen',
               GameMode.daily => 'Zum Kalender',
               _ => 'Zur Sammlung',
-            }),
+            })),
           ),
           if (widget.mode == GameMode.generated)
             FilledButton(
@@ -1618,7 +1649,8 @@ class _HashiGameScreenState extends State<HashiGameScreen>
                 Navigator.of(dialogContext).pop();
                 _startNextRandomPuzzle();
               },
-              child: const Text('Noch eins'),
+              child:
+                  Text(dialogContext.strings.text('Noch eins', 'Another one')),
             )
           else if (_nextPuzzle != null)
             FilledButton(
@@ -1630,12 +1662,13 @@ class _HashiGameScreenState extends State<HashiGameScreen>
                   ),
                 );
               },
-              child: const Text('Nächstes Rätsel'),
+              child: Text(
+                  dialogContext.strings.text('Nächstes Rätsel', 'Next puzzle')),
             )
           else if (widget.mode != GameMode.daily)
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Geschafft'),
+              child: Text(dialogContext.strings.text('Geschafft', 'Done')),
             ),
         ],
       ),
@@ -1758,15 +1791,18 @@ class _HashiGameScreenState extends State<HashiGameScreen>
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         content: Row(
           children: [
-            SizedBox.square(
+            const SizedBox.square(
               dimension: 24,
               child: CircularProgressIndicator(strokeWidth: 2.5),
             ),
-            SizedBox(width: 18),
-            Expanded(child: Text('Neues Brückennetz wird geprüft …')),
+            const SizedBox(width: 18),
+            Expanded(
+                child: Text(dialogContext.strings.text(
+                    'Neues Brückennetz wird geprüft …',
+                    'Checking new bridge network…'))),
           ],
         ),
       ),
@@ -1793,8 +1829,10 @@ class _HashiGameScreenState extends State<HashiGameScreen>
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Das nächste Rätsel konnte nicht erstellt werden.'),
+        SnackBar(
+          content: Text(context.strings.text(
+              'Das nächste Rätsel konnte nicht erstellt werden.',
+              'The next puzzle could not be created.')),
         ),
       );
     }
@@ -1875,51 +1913,14 @@ class _HashiGameScreenState extends State<HashiGameScreen>
   }
 
   Future<void> _showHashiHintRewardDialog() async {
-    final simulateAd = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        icon: const Icon(Icons.ondemand_video_outlined),
-        title: const Text('Keine Tipps mehr'),
-        content: const Text(
-          'Sieh dir in der kostenlosen Version freiwillig eine kurze Werbung an, um einen weiteren Tipp zu erhalten.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Später'),
-          ),
-          FilledButton.icon(
-            onPressed: () => Navigator.of(context).pop(true),
-            icon: const Icon(Icons.play_arrow_rounded),
-            label: const Text('Werbung simulieren'),
-          ),
-        ],
-      ),
-    );
-    if (simulateAd != true || !mounted) return;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        icon: const Icon(Icons.smart_display_outlined),
-        title: const Text('Simulierte Werbung'),
-        content: const Text(
-          'Die echte Werbeintegration folgt erst später. Im Prototyp wird der zusätzliche Tipp sofort vergeben.',
-        ),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Werbung abschließen'),
-          ),
-        ],
-      ),
-    );
-    if (!mounted) return;
+    if (!await showRewardedHintSimulation(context) || !mounted) return;
     setState(() => _hintBudget = _hintBudget.earnRewardedHint());
     unawaited(_saveGame());
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text('Ein zusätzlicher Tipp wurde freigeschaltet.')),
+      SnackBar(
+          content: Text(context.strings.text(
+              'Ein zusätzlicher Tipp wurde freigeschaltet.',
+              'An additional hint has been unlocked.'))),
     );
   }
 
@@ -1981,7 +1982,8 @@ class _HashiGameScreenState extends State<HashiGameScreen>
                         FilledButton.icon(
                           onPressed: _startNextRandomPuzzle,
                           icon: const Icon(Icons.auto_awesome_rounded),
-                          label: const Text('Noch eins'),
+                          label: Text(
+                              context.strings.text('Noch eins', 'Another one')),
                         )
                       else if (_nextPuzzle != null)
                         FilledButton.icon(
@@ -1997,18 +1999,21 @@ class _HashiGameScreenState extends State<HashiGameScreen>
                             );
                           },
                           icon: const Icon(Icons.arrow_forward_rounded),
-                          label: const Text('Nächstes Rätsel'),
+                          label: Text(context.strings
+                              .text('Nächstes Rätsel', 'Next puzzle')),
                         ),
                       if (widget.mode == GameMode.daily)
                         FilledButton.icon(
                           onPressed: () => Navigator.of(context).pop(),
                           icon: const Icon(Icons.calendar_month_outlined),
-                          label: const Text('Zum Kalender'),
+                          label: Text(context.strings
+                              .text('Zum Kalender', 'To calendar')),
                         ),
                       OutlinedButton.icon(
                         onPressed: _restart,
                         icon: const Icon(Icons.replay_rounded),
-                        label: const Text('Noch einmal'),
+                        label: Text(
+                            context.strings.text('Noch einmal', 'Play again')),
                       ),
                     ],
                   ),
@@ -2018,56 +2023,62 @@ class _HashiGameScreenState extends State<HashiGameScreen>
           : null,
       appBar: AppBar(
         title: Text(widget.mode == GameMode.generated
-            ? '${widget.puzzle.sharedDifficulty.label} · Zufallsrätsel'
-            : widget.puzzle.title),
+            ? '${context.strings.known(widget.puzzle.sharedDifficulty.label)} · ${context.strings.known('Zufallsrätsel')}'
+            : context.strings.known(widget.puzzle.title)),
         actions: [
           if (kDebugMode)
             PopupMenuButton<_HashiDeveloperAction>(
-              tooltip: 'Testwerkzeuge',
+              tooltip: context.strings.text('Testwerkzeuge', 'Test tools'),
               icon: const Icon(Icons.bug_report_outlined),
               onSelected: _runDeveloperAction,
-              itemBuilder: (context) => const [
+              itemBuilder: (context) => [
                 PopupMenuItem(
                   value: _HashiDeveloperAction.almostSolved,
-                  child: Text('Bis auf 1 Brücke lösen'),
+                  child: Text(context.strings.text(
+                      'Bis auf 1 Brücke lösen', 'Solve except for 1 bridge')),
                 ),
                 PopupMenuItem(
                   value: _HashiDeveloperAction.solve,
-                  child: Text('Sofort lösen'),
+                  child: Text(
+                      context.strings.text('Sofort lösen', 'Solve instantly')),
                 ),
                 PopupMenuItem(
                   value: _HashiDeveloperAction.error,
-                  child: Text('Fehlerzustand erzeugen'),
+                  child: Text(context.strings
+                      .text('Fehlerzustand erzeugen', 'Create error state')),
                 ),
                 PopupMenuItem(
                   value: _HashiDeveloperAction.reset,
-                  child: Text('Testzustand löschen'),
+                  child: Text(context.strings
+                      .text('Testzustand löschen', 'Clear test state')),
                 ),
               ],
             ),
           IconButton(
-            tooltip: 'Rückgängig',
+            tooltip: context.strings.text('Rückgängig', 'Undo'),
             onPressed: _completionShown || _history.isEmpty ? null : _undo,
             icon: const Icon(Icons.undo_rounded),
           ),
           IconButton(
-            tooltip: 'Wiederholen',
+            tooltip: context.strings.text('Wiederholen', 'Redo'),
             onPressed: _completionShown || _redoHistory.isEmpty ? null : _redo,
             icon: const Icon(Icons.redo_rounded),
           ),
           IconButton(
-            tooltip: 'Neu starten',
+            tooltip: context.strings.text('Neu starten', 'Restart'),
             onPressed: _restart,
             icon: const Icon(Icons.refresh_rounded),
           ),
           IconButton(
-            tooltip: 'Spielhilfen',
+            tooltip: context.strings.text('Spielhilfen', 'Game assists'),
             onPressed: () => showPuzzleGameOptions(context, children: [
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Regelfehler markieren'),
-                subtitle: const Text(
-                    'Zeigt unzulässige Brücken und Zahlenkonflikte.'),
+                title: Text(context.strings
+                    .text('Regelfehler markieren', 'Highlight rule errors')),
+                subtitle: Text(context.strings.text(
+                    'Zeigt unzulässige Brücken und Zahlenkonflikte.',
+                    'Shows invalid bridges and number conflicts.')),
                 value: _showMistakes,
                 onChanged: (value) {
                   setState(() => _showMistakes = value);
@@ -2098,18 +2109,24 @@ class _HashiGameScreenState extends State<HashiGameScreen>
                       ),
                       _StatusChip(
                         icon: Icons.touch_app_outlined,
-                        label: '$_moves Züge',
+                        label: context.strings.isEnglish
+                            ? '$_moves moves'
+                            : '$_moves Züge',
                       ),
                       _StatusChip(
                         icon: Icons.hub_outlined,
-                        label:
-                            '$fulfilledIslands/${_game.puzzle.islands.length} Inseln',
+                        label: context.strings.isEnglish
+                            ? '$fulfilledIslands/${_game.puzzle.islands.length} islands'
+                            : '$fulfilledIslands/${_game.puzzle.islands.length} Inseln',
                       ),
                       _StatusChip(
                         icon: Icons.lightbulb_outline_rounded,
                         label: premium
-                            ? 'Tipps · Premium'
-                            : '${_hintBudget.remainingHints} Tipps',
+                            ? context.strings
+                                .text('Tipps · Premium', 'Hints · Premium')
+                            : context.strings.isEnglish
+                                ? '${_hintBudget.remainingHints} hints'
+                                : '${_hintBudget.remainingHints} Tipps',
                         onTap: _completionShown ? null : _useHint,
                       ),
                     ],
@@ -2140,7 +2157,7 @@ class _HashiGameScreenState extends State<HashiGameScreen>
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        instruction,
+                        context.strings.known(instruction),
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               color: _actionMessage == null
@@ -2249,7 +2266,9 @@ class HashiRulesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('So funktioniert Hashi')),
+      appBar: AppBar(
+          title: Text(context.strings
+              .text('So funktioniert Hashi', 'How Hashi works'))),
       body: Center(
         child: ListView(
           padding: const EdgeInsets.all(24),
@@ -2804,14 +2823,14 @@ class _RuleSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    context.strings.known(title),
                     style: Theme.of(context)
                         .textTheme
                         .titleMedium
                         ?.copyWith(fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 5),
-                  Text(text),
+                  Text(context.strings.known(text)),
                 ],
               ),
             ),

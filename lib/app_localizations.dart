@@ -72,6 +72,10 @@ class AppLocalizations {
       'Erste Herausforderung': 'First challenge',
       'Noch einmal spielen': 'Play again',
       'Nächstes ungelöstes Rätsel': 'Next unsolved puzzle',
+      'Noch eins': 'Another one',
+      'Zur Sammlung': 'Back to collection',
+      'Nächstes Rätsel': 'Next puzzle',
+      'Nächstes Kapitel': 'Next chapter',
       'Heute spielen oder vergangene Tage nachholen':
           'Play today or catch up on previous days',
       'Heute lösen oder verpasste Tage nachholen':
@@ -143,6 +147,93 @@ class AppLocalizations {
           'The edge numbers give the exact number of tents in each row and column.',
       'Tippen wechselt ein freies Feld von leer zu Zelt, zu Gras und wieder zu leer.':
           'Tap a free cell to cycle from empty to tent, grass, and back to empty.',
+      'Doppelte Zahlen entfernen': 'Remove duplicate numbers',
+      'In jeder Zeile und Spalte darf jede Zahl nur einmal hell bleiben.':
+          'In each row and column, each number may remain light only once.',
+      'Schwarze Felder trennen': 'Keep shaded cells apart',
+      'Zwei schwarze Felder dürfen sich niemals oben, unten, links oder rechts berühren.':
+          'Two shaded cells may never touch above, below, left or right.',
+      'Helle Fläche verbinden': 'Connect the light area',
+      'Alle hell gebliebenen Felder müssen einen einzigen zusammenhängenden Bereich bilden.':
+          'All remaining light cells must form one connected area.',
+      'Experte': 'Expert',
+      'Große Raster für erfahrene Futoshiki-Fans':
+          'Large grids for experienced Futoshiki fans',
+      'Grundlagen': 'Fundamentals',
+      'Sichere Vergleiche': 'Reliable comparisons',
+      'Komplexe Beziehungen': 'Complex relationships',
+      'Expertenraster': 'Expert grids',
+      'Feld auswählen und unten eine Zahl setzen. Im Notizmodus kannst du Kandidaten vormerken.':
+          'Select a cell and enter a number below. In notes mode, you can mark candidates.',
+      'Jede Zahl kommt in jeder Zeile genau einmal vor.':
+          'Every number appears exactly once in each row.',
+      'Jede Zahl kommt in jeder Spalte genau einmal vor.':
+          'Every number appears exactly once in each column.',
+      'Das Ungleichheitszeichen zeigt stets zur kleineren Zahl.':
+          'The inequality sign always points to the smaller number.',
+      'Fülle das Raster mit Zahlen und beachte alle Ungleichheiten.':
+          'Fill the grid with numbers and observe all inequalities.',
+      'Wähle ein Feld und danach eine Zahl. Im Notizmodus kannst du mehrere Kandidaten eintragen.':
+          'Select a cell and then a number. In notes mode, you can enter multiple candidates.',
+      'Sicherer nächster Schritt': 'Safe next step',
+      'Aus der aktuellen Stellung lässt sich hier ein sicherer Schritt ableiten.':
+          'A safe step can be deduced here from the current position.',
+      'Zahl bereits erfüllt': 'Number already satisfied',
+      'Alle freien Seiten werden gebraucht': 'All free sides are needed',
+      'Hashi verlassen': 'Leave Hashi',
+      'Brücke entfernt': 'Bridge removed',
+      'Doppelte Brücke': 'Double bridge',
+      'Brücke gesetzt': 'Bridge placed',
+      'Kein weiterer Tipp nötig': 'No further hint needed',
+      'Eine passende Brücke wurde ergänzt': 'A suitable bridge was added',
+      'Tippe eine Insel an oder ziehe direkt zur Zielinsel.':
+          'Tap an island or drag directly to the target island.',
+      'Wähle eine leuchtende Zielinsel.': 'Choose a highlighted target island.',
+      'Brücken bauen': 'Building bridges',
+      'Netze planen': 'Planning networks',
+      'Inselmeister': 'Island master',
+      'Klare Verbindungen und kleine Inselgruppen':
+          'Clear connections and small island groups',
+      'Mehrere Wege und größere zusammenhängende Netze':
+          'Multiple paths and larger connected networks',
+      'Komplexe Abhängigkeiten und anspruchsvolle Brückennetze':
+          'Complex dependencies and challenging bridge networks',
+      'Inseln verbinden': 'Connect islands',
+      'Verbinde Inseln, die sich in derselben Zeile oder Spalte direkt sehen können.':
+          'Connect islands that can see each other directly in the same row or column.',
+      'Zahlen erfüllen': 'Satisfy the numbers',
+      'Die Zahl einer Insel entspricht der Summe aller einfachen und doppelten Brücken an dieser Insel.':
+          'An island’s number equals the total of all single and double bridges connected to it.',
+      'Keine Kreuzungen': 'No crossings',
+      'Brücken verlaufen waagerecht oder senkrecht. Sie dürfen weder Inseln durchqueren noch andere Brücken kreuzen.':
+          'Bridges run horizontally or vertically. They may not pass through islands or cross other bridges.',
+      'Brücken korrigieren': 'Correct bridges',
+      'Wähle dieselben zwei Inseln erneut: eine, zwei, keine Brücke. Eine gesetzte Brücke kannst du außerdem direkt antippen, um sie zu entfernen.':
+          'Choose the same two islands again: one, two, no bridge. You can also tap a placed bridge directly to remove it.',
+      'Ein gemeinsames Netz': 'One connected network',
+      'Alle Inseln müssen miteinander verbunden sein. Mehrere getrennte Gruppen sind keine gültige Lösung.':
+          'All islands must be connected. Multiple separate groups are not a valid solution.',
+      'Binärpuzzle': 'Binairo',
+      'Wähle ein handverlesenes Rätsel': 'Choose a hand-picked puzzle',
+      'Erstelle ein neues Rätsel nach deinen Wünschen':
+          'Create a new puzzle to your preferences',
+      'Fülle das Raster ausschließlich mit 0 und 1.':
+          'Fill the grid using only 0 and 1.',
+      'In jeder Zeile und Spalte stehen gleich viele Nullen und Einsen.':
+          'Every row and column contains the same number of zeros and ones.',
+      'Nie dürfen drei gleiche Zahlen direkt nebeneinander oder untereinander stehen.':
+          'Three identical numbers may never appear directly beside or below one another.',
+      'Keine zwei vollständigen Zeilen oder Spalten dürfen identisch sein.':
+          'No two complete rows or columns may be identical.',
+      'Tippen wechselt ein freies Feld von leer zu 0, zu 1 und wieder zu leer.':
+          'Tap a free cell to cycle from empty to 0, 1, and back to empty.',
+      'Setze 0 und 1 nach drei klaren Regeln.':
+          'Place 0 and 1 according to three clear rules.',
+      'Nie dürfen drei gleiche Zahlen direkt nebeneinander stehen.':
+          'Three identical numbers may never appear directly next to one another.',
+      'Keine zwei Zeilen oder Spalten dürfen identisch sein.':
+          'No two rows or columns may be identical.',
+      'Tippe ein freies Feld: leer → 0 → 1.': 'Tap a free cell: empty → 0 → 1.',
       'Ereignisrätsel': 'Event puzzle',
       'Einführung': 'Introduction',
       'Einmaliger Erfolgsbonus': 'One-time achievement bonus',
@@ -153,6 +244,9 @@ class AppLocalizations {
       'Leicht': 'Easy',
       'Mittel': 'Medium',
       'Schwer': 'Hard',
+      'Ruhiger Einstieg': 'Gentle introduction',
+      'Mehrere Schritte vorausdenken': 'Think several steps ahead',
+      'Für erfahrene Rätselfans': 'For experienced puzzle fans',
       'Statistik': 'Statistics',
       'Rätsel': 'Puzzles',
       'Sammlung': 'Collection',
@@ -284,6 +378,24 @@ class AppLocalizations {
             (match) => '${match[1]} of ${match[2]} puzzles solved')
         .replaceAllMapped(RegExp(r'^(\d+) von (\d+) Expeditionen gelöst$'),
             (match) => '${match[1]} of ${match[2]} expeditions solved')
+        .replaceAllMapped(RegExp(r'^(\d+) von (\d+) geschafft$'),
+            (match) => '${match[1]} of ${match[2]} completed')
+        .replaceAllMapped(RegExp(r'^(.+) · Kapitel (\d+)$'),
+            (match) => '${known(match[1]!)} · Chapter ${match[2]}')
+        .replaceAllMapped(RegExp(r'^Sammlungsfortschritt: (\d+) von (\d+)$'),
+            (match) => 'Collection progress: ${match[1]} of ${match[2]}')
+        .replaceAllMapped(RegExp(r'^Tagesrätsel · (.+)$'),
+            (match) => 'Daily puzzle · ${known(match[1]!)}')
+        .replaceAllMapped(
+            RegExp(
+                r'^Das Feld in Zeile (\d+), Spalte (\d+) hat bereits (\d+) Linien\. Die übrigen Seiten können ausgeschlossen werden\.$'),
+            (match) =>
+                'The cell in row ${match[1]}, column ${match[2]} already has ${match[3]} lines. The remaining sides can be excluded.')
+        .replaceAllMapped(
+            RegExp(
+                r'^Beim Feld in Zeile (\d+), Spalte (\d+) müssen alle noch freien Seiten zur Schleife gehören\.$'),
+            (match) =>
+                'For the cell in row ${match[1]}, column ${match[2]}, all remaining free sides must belong to the loop.')
         .replaceAllMapped(
             RegExp(r'^(\d+) handverlesene Brückennetze entdecken$'),
             (match) => 'Explore ${match[1]} hand-picked bridge networks')

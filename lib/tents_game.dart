@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_preferences.dart';
+import 'app_localizations.dart';
 import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
@@ -169,19 +170,21 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
         context: context,
         builder: (dialog) => AlertDialog(
           icon: const Icon(Icons.save_outlined),
-          title: const Text('Offenes R\u00e4tsel'),
-          content: const Text(
-            'Du hast bereits ein begonnenes Lager. M\u00f6chtest du es '
-            'fortsetzen oder wirklich ein neues beginnen?',
+          title: Text(dialog.strings.text('Offenes Rätsel', 'Open puzzle')),
+          content: Text(
+            dialog.strings.text(
+              'Du hast bereits ein begonnenes Lager. Möchtest du es fortsetzen oder wirklich ein neues beginnen?',
+              'You already have a camp in progress. Would you like to continue it or start a new one?',
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialog, false),
-              child: const Text('Fortsetzen'),
+              child: Text(dialog.strings.text('Fortsetzen', 'Continue')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialog, true),
-              child: const Text('Neu beginnen'),
+              child: Text(dialog.strings.text('Neu beginnen', 'Start new')),
             ),
           ],
         ),
@@ -209,7 +212,7 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
   Widget build(BuildContext context) {
     final accent = AppTheme.gameColors['tents']!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Zelte & B\u00e4ume')),
+      appBar: AppBar(title: Text(context.strings.known('Zelte & Bäume'))),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child:
@@ -302,7 +305,7 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
               ),
             )),
             icon: const Icon(Icons.menu_book_rounded),
-            label: const Text('Regeln ansehen'),
+            label: Text(context.strings.text('Regeln ansehen', 'View rules')),
           ),
         ]),
       ),
@@ -318,7 +321,9 @@ class _TentsCollectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Zelte-&-Bäume-Sammlung')),
+        appBar: AppBar(
+            title: Text(context.strings
+                .text('Zelte-&-Bäume-Sammlung', 'Tents & Trees collection'))),
         body: ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -326,10 +331,13 @@ class _TentsCollectionScreen extends StatelessWidget {
               Card(
                 child: ExpansionTile(
                   leading: CircleAvatar(child: Text('${difficulty.index + 1}')),
-                  title: Text(tentsChapterTitles[difficulty]!),
+                  title: Text(
+                      context.strings.known(tentsChapterTitles[difficulty]!)),
                   subtitle: Text(
-                    '${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty && completedIds.contains(p.id)).length} von '
-                    '${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty).length} gelöst',
+                    context.strings.known(
+                      '${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty && completedIds.contains(p.id)).length} von '
+                      '${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty).length} gelöst',
+                    ),
                   ),
                   children: [
                     for (final puzzle in tentsPuzzleCatalog
@@ -338,7 +346,7 @@ class _TentsCollectionScreen extends StatelessWidget {
                         leading: Icon(completedIds.contains(puzzle.id)
                             ? Icons.check_circle_rounded
                             : Icons.radio_button_unchecked_rounded),
-                        title: Text(puzzle.title),
+                        title: Text(context.strings.known(puzzle.title)),
                         subtitle: Text('${puzzle.size} × ${puzzle.size}'),
                         trailing: const Icon(Icons.play_arrow_rounded),
                         onTap: () => onOpen(puzzle),
@@ -363,7 +371,9 @@ class _TentsRandomScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Zelte-&-Bäume-Zufallsrätsel')),
+        appBar: AppBar(
+            title: Text(context.strings.text(
+                'Zelte-&-Bäume-Zufallsrätsel', 'Tents & Trees random puzzle'))),
         body: ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -376,7 +386,7 @@ class _TentsRandomScreen extends StatelessWidget {
                     PuzzleDifficulty.medium => Icons.park_outlined,
                     PuzzleDifficulty.hard => Icons.forest_outlined,
                   }),
-                  title: Text(difficulty.label),
+                  title: Text(context.strings.known(difficulty.label)),
                   subtitle: Text('${_size(difficulty)} × ${_size(difficulty)}'),
                   trailing: const Icon(Icons.play_arrow_rounded),
                   onTap: () => onOpen(difficulty),
@@ -572,8 +582,10 @@ class _TentsGameScreenState extends State<TentsGameScreen>
       });
       unawaited(_save());
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Ein zus\u00e4tzlicher Tipp ist verf\u00fcgbar.')),
+        SnackBar(
+            content: Text(context.strings.text(
+                'Ein zusätzlicher Tipp ist verfügbar.',
+                'An additional hint is available.'))),
       );
       return;
     }
@@ -583,16 +595,17 @@ class _TentsGameScreenState extends State<TentsGameScreen>
       context: context,
       builder: (dialog) => AlertDialog(
         icon: const Icon(Icons.lightbulb_outline_rounded),
-        title: Text(hint.title),
-        content: Text(hint.explanation),
+        title: Text(context.strings.known(hint.title)),
+        content: Text(context.strings.known(hint.explanation)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialog, false),
-            child: const Text('Auf dem Brett zeigen'),
+            child: Text(
+                context.strings.text('Auf dem Brett zeigen', 'Show on board')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialog, true),
-            child: const Text('Hinweis anwenden'),
+            child: Text(context.strings.text('Hinweis anwenden', 'Apply hint')),
           ),
         ],
       ),
@@ -766,7 +779,8 @@ class _TentsGameScreenState extends State<TentsGameScreen>
         barrierDismissible: false,
         builder: (dialog) => AlertDialog(
                 icon: const Icon(Icons.emoji_events_outlined),
-                title: const Text('Lager vollst\u00e4ndig!'),
+                title: Text(dialog.strings
+                    .text('Lager vollständig!', 'Camp complete!')),
                 content: Column(mainAxisSize: MainAxisSize.min, children: [
                   Text(
                       '${_time(_elapsed)} \u00b7 $_moves Z\u00fcge${test ? countsForTesting ? '\nTestabschluss \u00b7 im Kalender gewertet' : '\nTestabschluss \u00b7 keine Statistik' : ''}'),
@@ -778,13 +792,14 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(dialog),
-                      child: const Text('Brett ansehen')),
+                      child: Text(
+                          dialog.strings.text('Brett ansehen', 'View board'))),
                   TextButton(
                       onPressed: () {
                         Navigator.pop(dialog);
                         Navigator.pop(context);
                       },
-                      child: const Text('Verlassen')),
+                      child: Text(dialog.strings.text('Verlassen', 'Leave'))),
                   FilledButton(
                       onPressed: () {
                         Navigator.pop(dialog);
@@ -795,8 +810,8 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                         }
                       },
                       child: Text(widget.mode == GameMode.daily
-                          ? 'Zum Kalender'
-                          : 'Noch eins'))
+                          ? dialog.strings.text('Zum Kalender', 'To calendar')
+                          : dialog.strings.text('Noch eins', 'Another one')))
                 ]));
   }
 
@@ -831,11 +846,12 @@ class _TentsGameScreenState extends State<TentsGameScreen>
     return Scaffold(
         appBar: AppBar(
             title: Text(
-                '${widget.puzzle.difficulty.label} \u00b7 Zelte & B\u00e4ume'),
+                '${context.strings.known(widget.puzzle.difficulty.label)} · ${context.strings.known('Zelte & Bäume')}'),
             actions: [
               if (kDebugMode)
                 PopupMenuButton<String>(
-                    tooltip: 'Testwerkzeuge',
+                    tooltip:
+                        context.strings.text('Testwerkzeuge', 'Test tools'),
                     icon: const Icon(Icons.bug_report_outlined),
                     onSelected: (v) => _debugSolve(v == 'almost'),
                     itemBuilder: (_) => const [
@@ -846,23 +862,26 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                         ]),
               IconButton(
                   onPressed: _history.isEmpty ? null : _undo,
-                  tooltip: 'Rückgängig',
+                  tooltip: context.strings.text('Rückgängig', 'Undo'),
                   icon: const Icon(Icons.undo_rounded)),
               IconButton(
                   onPressed: _redo.isEmpty ? null : _redoMove,
-                  tooltip: 'Wiederholen',
+                  tooltip: context.strings.text('Wiederholen', 'Redo'),
                   icon: const Icon(Icons.redo_rounded)),
               IconButton(
                   onPressed: _restart,
-                  tooltip: 'Neu starten',
+                  tooltip: context.strings.text('Neu starten', 'Restart'),
                   icon: const Icon(Icons.restart_alt_rounded)),
               IconButton(
                   onPressed: () => showPuzzleGameOptions(context, children: [
                         SwitchListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('Hilfsgras automatisch anzeigen'),
-                            subtitle: const Text(
-                                'Blendet sichere Ausschlussfelder dynamisch ein.'),
+                            title: Text(context.strings.text(
+                                'Hilfsgras automatisch anzeigen',
+                                'Show automatic helper grass')),
+                            subtitle: Text(context.strings.text(
+                                'Blendet sichere Ausschlussfelder dynamisch ein.',
+                                'Dynamically shows cells that can safely be excluded.')),
                             value: _autoGrass,
                             onChanged: (value) {
                               setState(() => _autoGrass = value);
@@ -871,16 +890,19 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                             }),
                         SwitchListTile(
                             contentPadding: EdgeInsets.zero,
-                            title: const Text('Regelfehler markieren'),
-                            subtitle: const Text(
-                                'Zeigt sich berührende Zelte und falsche Anzahlen.'),
+                            title: Text(context.strings.text(
+                                'Regelfehler markieren',
+                                'Highlight rule errors')),
+                            subtitle: Text(context.strings.text(
+                                'Zeigt sich berührende Zelte und falsche Anzahlen.',
+                                'Shows touching tents and incorrect counts.')),
                             value: _showConflicts,
                             onChanged: (value) {
                               setState(() => _showConflicts = value);
                               Navigator.pop(context);
                             })
                       ]),
-                  tooltip: 'Spielhilfen',
+                  tooltip: context.strings.text('Spielhilfen', 'Game assists'),
                   icon: const Icon(Icons.tune_rounded))
             ]),
         body: SafeArea(
@@ -895,22 +917,29 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                         Chip(
                             avatar:
                                 const Icon(Icons.touch_app_outlined, size: 18),
-                            label: Text('$_moves Z\u00fcge')),
+                            label: Text(context.strings.isEnglish
+                                ? '$_moves moves'
+                                : '$_moves Züge')),
                         PuzzleGameStatusChip(
                             icon: Icons.lightbulb_outline,
                             label: (PreferencesScope.maybeOf(context)
                                         ?.premiumSimulationEnabled ??
                                     false)
                                 ? 'Premium'
-                                : '$_hintsRemaining Tipps',
+                                : context.strings.isEnglish
+                                    ? '$_hintsRemaining hints'
+                                    : '$_hintsRemaining Tipps',
                             onTap: _hint)
                       ]),
                       const SizedBox(height: 12),
-                      const Text('Tippen: leer \u2192 Zelt \u2192 Gras'),
+                      Text(context.strings.text('Tippen: leer → Zelt → Gras',
+                          'Tap: empty → tent → grass')),
                       const SizedBox(height: 6),
-                      const Text(
-                        'Ziel: Bilde Paare aus genau 1 Baum und 1 Zelt.',
-                        style: TextStyle(fontWeight: FontWeight.w600),
+                      Text(
+                        context.strings.text(
+                            'Ziel: Bilde Paare aus genau 1 Baum und 1 Zelt.',
+                            'Goal: Form pairs of exactly 1 tree and 1 tent.'),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
@@ -928,7 +957,9 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                       if (_completed) ...[
                         const SizedBox(height: 8),
                         Text(
-                          'Feine Rahmen zeigen die g\u00fcltigen Baum-Zelt-Paare.',
+                          context.strings.text(
+                              'Feine Rahmen zeigen die gültigen Baum-Zelt-Paare.',
+                              'Fine outlines show the valid tree–tent pairs.'),
                           style: Theme.of(context).textTheme.bodySmall,
                           textAlign: TextAlign.center,
                         ),
@@ -946,8 +977,11 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                                         ? Icons.calendar_today_outlined
                                         : Icons.auto_awesome),
                                     label: Text(widget.mode == GameMode.daily
-                                        ? 'Zum Kalender'
-                                        : 'Noch ein R\u00e4tsel')))),
+                                        ? context.strings
+                                            .text('Zum Kalender', 'To calendar')
+                                        : context.strings.text(
+                                            'Noch ein Rätsel',
+                                            'Another puzzle'))))),
                       PuzzleGameRulesButton(
                           onPressed: () => Navigator.of(context).push(
                               MaterialPageRoute<void>(

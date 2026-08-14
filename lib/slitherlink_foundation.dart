@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_preferences.dart';
+import 'app_localizations.dart';
 import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/monetization/hint_economy.dart';
@@ -661,7 +662,8 @@ class SlitherlinkHubScreen extends StatelessWidget {
                       ),
                     )),
                     icon: const Icon(Icons.menu_book_rounded),
-                    label: const Text('Regeln ansehen'),
+                    label: Text(
+                        context.strings.text('Regeln ansehen', 'View rules')),
                   ),
                 ],
               ),
@@ -678,15 +680,20 @@ class _SlitherlinkCollectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Slitherlink-Rätselsammlung')),
+        appBar: AppBar(
+            title: Text(context.strings
+                .text('Slitherlink-Rätselsammlung', 'Slitherlink collection'))),
         body: ListView(
           padding: const EdgeInsets.all(20),
           children: [
             Card(
               child: ListTile(
                 leading: const CircleAvatar(child: Icon(Icons.school_outlined)),
-                title: const Text('Die erste Schleife'),
-                subtitle: const Text('Interaktiver Einstieg · 4 × 4'),
+                title: Text(context.strings
+                    .text('Die erste Schleife', 'The first loop')),
+                subtitle: Text(context.strings.text(
+                    'Interaktiver Einstieg · 4 × 4',
+                    'Interactive introduction · 4 × 4')),
                 trailing: const Icon(Icons.play_arrow_rounded),
                 onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
                   builder: (_) => const SlitherlinkGameScreen(
@@ -709,11 +716,14 @@ class _SlitherlinkRandomScreen extends StatelessWidget {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         content: Row(children: [
-          CircularProgressIndicator(),
-          SizedBox(width: 18),
-          Expanded(child: Text('Eindeutiges Rätsel wird erstellt …')),
+          const CircularProgressIndicator(),
+          const SizedBox(width: 18),
+          Expanded(
+              child: Text(dialogContext.strings.text(
+                  'Eindeutiges Rätsel wird erstellt …',
+                  'Creating a uniquely solvable puzzle…'))),
         ]),
       ),
     );
@@ -731,15 +741,19 @@ class _SlitherlinkRandomScreen extends StatelessWidget {
     } on Object {
       if (!context.mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Das Zufallsrätsel konnte nicht erstellt werden.'),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(context.strings.text(
+            'Das Zufallsrätsel konnte nicht erstellt werden.',
+            'The random puzzle could not be created.')),
       ));
     }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Slitherlink-Zufallsrätsel')),
+        appBar: AppBar(
+            title: Text(context.strings.text(
+                'Slitherlink-Zufallsrätsel', 'Slitherlink random puzzle'))),
         body: ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -753,8 +767,8 @@ class _SlitherlinkRandomScreen extends StatelessWidget {
                     PuzzleDifficulty.hard =>
                       Icons.local_fire_department_outlined,
                   }),
-                  title: Text(difficulty.label),
-                  subtitle: Text(difficulty.description),
+                  title: Text(context.strings.known(difficulty.label)),
+                  subtitle: Text(context.strings.known(difficulty.description)),
                   trailing: const Icon(Icons.play_arrow_rounded),
                   onTap: () => _start(context, difficulty),
                 ),
@@ -798,7 +812,8 @@ class _SlitherResumeCardState extends State<_SlitherResumeCard> {
         color: Theme.of(context).colorScheme.secondaryContainer,
         child: ListTile(
           leading: const CircleAvatar(child: Icon(Icons.play_arrow_rounded)),
-          title: const Text('Rätsel fortsetzen'),
+          title: Text(
+              context.strings.text('Rätsel fortsetzen', 'Continue puzzle')),
           subtitle: Text(
             '${saved.puzzle.difficulty.label} · '
             '${saved.puzzle.rows} × ${saved.puzzle.columns} · '
@@ -888,7 +903,8 @@ class _SlitherCollectionChapterState extends State<_SlitherCollectionChapter> {
           }),
         ),
         title: Text(widget.difficulty.label),
-        subtitle: Text('$solved von ${puzzles.length} Rätseln gelöst'),
+        subtitle: Text(context.strings
+            .known('$solved von ${puzzles.length} Rätseln gelöst')),
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -1066,18 +1082,21 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.save_outlined),
-        title: const Text('Offenes Slitherlink-Rätsel'),
-        content: const Text(
+        title: Text(dialogContext.strings
+            .text('Offenes Slitherlink-Rätsel', 'Open Slitherlink puzzle')),
+        content: Text(dialogContext.strings.text(
           'Du hast bereits ein begonnenes Slitherlink-Rätsel. Möchtest du es fortsetzen oder mit dem neuen Rätsel beginnen?',
-        ),
+          'You already have a Slitherlink puzzle in progress. Would you like to continue it or start the new puzzle?',
+        )),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Neu beginnen'),
+            child:
+                Text(dialogContext.strings.text('Neu beginnen', 'Start new')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Fortsetzen'),
+            child: Text(dialogContext.strings.text('Fortsetzen', 'Continue')),
           ),
         ],
       ),
@@ -1140,7 +1159,10 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
       setState(() => _hintBudget = _hintBudget.earnRewardedHint());
       unawaited(_saveGame());
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ein zusätzlicher Tipp ist verfügbar.')),
+        SnackBar(
+            content: Text(context.strings.text(
+                'Ein zusätzlicher Tipp ist verfügbar.',
+                'An additional hint is available.'))),
       );
       return;
     }
@@ -1161,19 +1183,21 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
       context: context,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.lightbulb_outline_rounded),
-        title: Text(logical?.title ?? 'Sicherer nächster Schritt'),
+        title: Text(context.strings
+            .known(logical?.title ?? 'Sicherer nächster Schritt')),
         content: Text(
-          logical?.explanation ??
-              'Aus der aktuellen Stellung lässt sich hier ein sicherer Schritt ableiten.',
+          context.strings.known(logical?.explanation ??
+              'Aus der aktuellen Stellung lässt sich hier ein sicherer Schritt ableiten.'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Abbrechen'),
+            child: Text(dialogContext.strings.text('Abbrechen', 'Cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Hinweis anwenden'),
+            child: Text(
+                dialogContext.strings.text('Hinweis anwenden', 'Apply hint')),
           ),
         ],
       ),
@@ -1292,12 +1316,15 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.celebration_rounded),
-        title: const Text('Schleife vollendet!'),
+        title: Text(dialogContext.strings
+            .text('Schleife vollendet!', 'Loop complete!')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Alle Zahlen stimmen und die Linie bildet genau eine geschlossene Schleife.',
+            Text(
+              dialogContext.strings.text(
+                  'Alle Zahlen stimmen und die Linie bildet genau eine geschlossene Schleife.',
+                  'All numbers are correct and the line forms exactly one closed loop.'),
               textAlign: TextAlign.center,
             ),
             if (_developerCompletion) ...[
@@ -1313,7 +1340,9 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
             ] else ...[
               const SizedBox(height: 16),
               Text(
-                '${_formatTime(_elapsedSeconds)} · $_moves Züge · $_hintsUsed Hinweise',
+                dialogContext.strings.isEnglish
+                    ? '${_formatTime(_elapsedSeconds)} · $_moves moves · $_hintsUsed hints'
+                    : '${_formatTime(_elapsedSeconds)} · $_moves Züge · $_hintsUsed Hinweise',
                 textAlign: TextAlign.center,
               ),
             ],
@@ -1326,7 +1355,8 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Brett ansehen'),
+            child:
+                Text(dialogContext.strings.text('Brett ansehen', 'View board')),
           ),
           FilledButton(
             onPressed: () {
@@ -1335,8 +1365,9 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
             },
             child: Text(
               _gameMode == GameMode.daily
-                  ? 'Zum Kalender'
-                  : 'Slitherlink verlassen',
+                  ? dialogContext.strings.text('Zum Kalender', 'To calendar')
+                  : dialogContext.strings
+                      .text('Slitherlink verlassen', 'Leave Slitherlink'),
             ),
           ),
           if (_isGenerated)
@@ -1345,7 +1376,8 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                 Navigator.of(dialogContext).pop();
                 _startNextRandomPuzzle();
               },
-              child: const Text('Noch eins'),
+              child:
+                  Text(dialogContext.strings.text('Noch eins', 'Another one')),
             )
           else if (_nextCollectionPuzzle != null)
             FilledButton(
@@ -1353,7 +1385,8 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                 Navigator.of(dialogContext).pop();
                 await _openNextCollectionPuzzle();
               },
-              child: const Text('Nächstes Rätsel'),
+              child: Text(
+                  dialogContext.strings.text('Nächstes Rätsel', 'Next puzzle')),
             ),
         ],
       ),
@@ -1466,12 +1499,14 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         content: Row(
           children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 18),
-            Expanded(child: Text('Neues Rätsel wird geprüft …')),
+            const CircularProgressIndicator(),
+            const SizedBox(width: 18),
+            Expanded(
+                child: Text(dialogContext.strings.text(
+                    'Neues Rätsel wird geprüft …', 'Checking new puzzle…'))),
           ],
         ),
       ),
@@ -1493,8 +1528,10 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Neues Rätsel konnte nicht erstellt werden.')),
+        SnackBar(
+            content: Text(context.strings.text(
+                'Neues Rätsel konnte nicht erstellt werden.',
+                'The new puzzle could not be created.'))),
       );
     }
   }
@@ -1528,24 +1565,28 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                           FilledButton.icon(
                             onPressed: _startNextRandomPuzzle,
                             icon: const Icon(Icons.auto_awesome_rounded),
-                            label: const Text('Noch eins'),
+                            label: Text(context.strings
+                                .text('Noch eins', 'Another one')),
                           )
                         else if (_nextCollectionPuzzle != null)
                           FilledButton.icon(
                             onPressed: _openNextCollectionPuzzle,
                             icon: const Icon(Icons.arrow_forward_rounded),
-                            label: const Text('Nächstes Rätsel'),
+                            label: Text(context.strings
+                                .text('Nächstes Rätsel', 'Next puzzle')),
                           ),
                         if (_gameMode == GameMode.daily)
                           FilledButton.icon(
                             onPressed: () => Navigator.of(context).pop(),
                             icon: const Icon(Icons.calendar_month_outlined),
-                            label: const Text('Zum Kalender'),
+                            label: Text(context.strings
+                                .text('Zum Kalender', 'To calendar')),
                           ),
                         OutlinedButton.icon(
                           onPressed: _restart,
                           icon: const Icon(Icons.replay_rounded),
-                          label: const Text('Noch einmal'),
+                          label: Text(context.strings
+                              .text('Noch einmal', 'Play again')),
                         ),
                       ],
                     ),
@@ -1554,57 +1595,65 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
               )
             : null,
         appBar: AppBar(
-          title: Text(widget.puzzle.title),
+          title: Text(context.strings.known(widget.puzzle.title)),
           actions: [
             if (kDebugMode)
               PopupMenuButton<_SlitherDeveloperAction>(
-                tooltip: 'Testfunktionen',
+                tooltip:
+                    context.strings.text('Testfunktionen', 'Test functions'),
                 icon: const Icon(Icons.bug_report_outlined),
                 onSelected: _runDeveloperAction,
-                itemBuilder: (_) => const [
+                itemBuilder: (_) => [
                   PopupMenuItem(
                     value: _SlitherDeveloperAction.almostSolved,
-                    child: Text('Fast lösen'),
+                    child: Text(
+                        context.strings.text('Fast lösen', 'Almost solve')),
                   ),
                   PopupMenuItem(
                     value: _SlitherDeveloperAction.solve,
-                    child: Text('Sofort lösen'),
+                    child: Text(context.strings
+                        .text('Sofort lösen', 'Solve instantly')),
                   ),
                   PopupMenuItem(
                     value: _SlitherDeveloperAction.error,
-                    child: Text('Fehler erzeugen'),
+                    child: Text(context.strings
+                        .text('Fehler erzeugen', 'Create error')),
                   ),
                   PopupMenuItem(
                     value: _SlitherDeveloperAction.reset,
-                    child: Text('Testzustand leeren'),
+                    child: Text(context.strings
+                        .text('Testzustand leeren', 'Clear test state')),
                   ),
                 ],
               ),
             IconButton(
-              tooltip: 'Rückgängig',
+              tooltip: context.strings.text('Rückgängig', 'Undo'),
               onPressed: _history.isEmpty ? null : _undo,
               icon: const Icon(Icons.undo_rounded),
             ),
             IconButton(
-              tooltip: 'Wiederholen',
+              tooltip: context.strings.text('Wiederholen', 'Redo'),
               onPressed: _redo.isEmpty ? null : _redoMove,
               icon: const Icon(Icons.redo_rounded),
             ),
             IconButton(
-              tooltip: 'Neu starten',
+              tooltip: context.strings.text('Neu starten', 'Restart'),
               onPressed: _restart,
               icon: const Icon(Icons.restart_alt_rounded),
             ),
             IconButton(
-              tooltip: 'Spielhilfen',
+              tooltip: context.strings.text('Spielhilfen', 'Game assists'),
               onPressed: () {
                 final preferences = PreferencesScope.of(context);
                 showPuzzleGameOptions(context, children: [
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Regelfehler markieren'),
-                    subtitle: const Text(
-                      'Zeigt ungültige Abzweigungen und Zahlenkonflikte direkt am Brett.',
+                    title: Text(context.strings.text(
+                        'Regelfehler markieren', 'Highlight rule errors')),
+                    subtitle: Text(
+                      context.strings.text(
+                          'Zeigt ungültige Abzweigungen und Zahlenkonflikte direkt am Brett.',
+                          'Shows invalid branches and number conflicts directly on the board.'),
                     ),
                     value: preferences.showRuleIssues,
                     onChanged: (value) async {
@@ -1613,18 +1662,21 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                     },
                   ),
                   const Divider(height: 20),
-                  const ListTile(
+                  ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.palette_outlined),
-                    title: Text('Farben bei aktiver Hilfe'),
+                    leading: const Icon(Icons.palette_outlined),
+                    title: Text(context.strings.text('Farben bei aktiver Hilfe',
+                        'Colors with assists enabled')),
                     subtitle: Text(
-                      'Türkis = gesetzte Linie\n'
-                      'Lila = Zahl momentan genau erfüllt\n'
-                      'Rot = sicherer Regelkonflikt',
+                      context.strings.text(
+                          'Türkis = gesetzte Linie\nLila = Zahl momentan genau erfüllt\nRot = sicherer Regelkonflikt',
+                          'Turquoise = placed line\nPurple = number currently satisfied exactly\nRed = definite rule conflict'),
                     ),
                   ),
-                  const Text(
-                    'Offene Enden und getrennte Schleifen werden nicht sofort rot markiert.',
+                  Text(
+                    context.strings.text(
+                        'Offene Enden und getrennte Schleifen werden nicht sofort rot markiert.',
+                        'Open ends and separate loops are not marked red immediately.'),
                   ),
                 ]);
               },
@@ -1647,7 +1699,9 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                     const SizedBox(width: 8),
                     _SlitherStatus(
                       icon: Icons.touch_app_outlined,
-                      label: '$_moves Züge',
+                      label: context.strings.isEnglish
+                          ? '$_moves moves'
+                          : '$_moves Züge',
                     ),
                     const SizedBox(width: 8),
                     PuzzleGameStatusChip(
@@ -1655,7 +1709,9 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                       label:
                           PreferencesScope.of(context).premiumSimulationEnabled
                               ? 'Premium'
-                              : '${_hintBudget.remainingHints} Tipps',
+                              : context.strings.isEnglish
+                                  ? '${_hintBudget.remainingHints} hints'
+                                  : '${_hintBudget.remainingHints} Tipps',
                       onTap: _completionShown ? null : _hint,
                     ),
                   ],
@@ -1668,32 +1724,26 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                     context: context,
                     builder: (dialogContext) => AlertDialog(
                       icon: const Icon(Icons.menu_book_outlined),
-                      title: const Text('So funktioniert Slitherlink'),
-                      content: const Text(
-                        'Zeichne entlang der Punkte genau eine geschlossene '
-                        'Schleife – ohne Abzweigungen oder getrennte Ringe.\n\n'
-                        'Eine Zahl gibt an, wie viele ihrer vier Feldseiten '
-                        'zur Schleife gehören. Felder ohne Zahl liefern keine '
-                        'direkte Vorgabe.\n\n'
-                        'Tippe eine Kante: leer → Linie → ausgeschlossen.\n\n'
-                        'Nur wenn die Spielhilfe „Regelfehler markieren“ '
-                        'eingeschaltet ist, zeigen zusätzliche Farben den '
-                        'Stand: Lila bedeutet, dass eine Zahl momentan genau '
-                        'erfüllt ist. Rot zeigt einen sicheren Regelkonflikt '
-                        'wie zu viele Linien oder eine Abzweigung. Türkis '
-                        'bleibt deine normal gesetzte Linie. Offene Enden und '
-                        'getrennte Schleifen werden nicht sofort rot markiert.',
+                      title: Text(dialogContext.strings.text(
+                          'So funktioniert Slitherlink',
+                          'How Slitherlink works')),
+                      content: Text(
+                        dialogContext.strings.text(
+                            'Zeichne entlang der Punkte genau eine geschlossene Schleife – ohne Abzweigungen oder getrennte Ringe.\n\nEine Zahl gibt an, wie viele ihrer vier Feldseiten zur Schleife gehören. Felder ohne Zahl liefern keine direkte Vorgabe.\n\nTippe eine Kante: leer → Linie → ausgeschlossen.\n\nNur wenn die Spielhilfe „Regelfehler markieren“ eingeschaltet ist, zeigen zusätzliche Farben den Stand: Lila bedeutet, dass eine Zahl momentan genau erfüllt ist. Rot zeigt einen sicheren Regelkonflikt wie zu viele Linien oder eine Abzweigung. Türkis bleibt deine normal gesetzte Linie. Offene Enden und getrennte Schleifen werden nicht sofort rot markiert.',
+                            'Draw exactly one closed loop along the dots — without branches or separate rings.\n\nA number indicates how many of its four cell sides belong to the loop. Cells without a number provide no direct clue.\n\nTap an edge: empty → line → excluded.\n\nAdditional colors appear only when “Highlight rule errors” is enabled: purple means a number is currently satisfied exactly. Red indicates a definite rule conflict such as too many lines or a branch. Turquoise remains your normal placed line. Open ends and separate loops are not marked red immediately.'),
                       ),
                       actions: [
                         FilledButton(
                           onPressed: () => Navigator.pop(dialogContext),
-                          child: const Text('Verstanden'),
+                          child: Text(dialogContext.strings
+                              .text('Verstanden', 'Got it')),
                         ),
                       ],
                     ),
                   ),
                   icon: const Icon(Icons.menu_book_outlined, size: 19),
-                  label: const Text('Spielregeln & Bedienung'),
+                  label: Text(context.strings
+                      .text('Spielregeln & Bedienung', 'Rules & controls')),
                 ),
               ),
               Expanded(

@@ -1,3 +1,15 @@
+## v0.8.33 – Vollständige deutsche und englische Spieloberfläche
+
+- Alle sechs Spielarten durchgängig zweisprachig umgesetzt: Einstieg, Sammlung, Generator, Spielbrett, Regeln, Hilfen und Abschluss.
+- Offene-Partie-, Neustart-, Rewarded-Hinweis- und Sicherungsdialoge vereinheitlicht und übersetzt.
+- Dynamische Zug-, Hinweis-, Fortschritts-, Schwierigkeits- und Ergebnisangaben lokalisiert.
+- Slitherlink-Regelerklärung betont in beiden Sprachen ausdrücklich die einzige zusammenhängende Schleife.
+- Hashi-Regeln, Ziehbedienung, Brückenmeldungen und Netzbedingung vollständig übersetzt.
+- Tagesrätsel-Archiv, Wiederholung und vorbereitende Lade- sowie Fehlermeldungen lokalisiert.
+- Appweite Resttextprüfung für sichtbare Widgets, Dialoge, Tooltips und Debug-Werkzeuge durchgeführt.
+- Regressionstests für Begriffe und dynamische Fortschrittstexte aller Spielfamilien ergänzt.
+- Paketversion auf 0.8.33+62 erhöht.
+
 ## v0.8.32 – Spielbereiche und Regeln auf Englisch
 
 - Gemeinsame Spielbereich-Bausteine für alle sechs Spielarten zweisprachig umgesetzt.

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_preferences.dart';
+import 'app_localizations.dart';
 import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
@@ -186,18 +187,23 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
         context: context,
         builder: (dialogContext) => AlertDialog(
           icon: const Icon(Icons.save_outlined),
-          title: const Text('Offenes Hitori-Rätsel'),
-          content: const Text(
-            'Möchtest du dein begonnenes Rätsel fortsetzen oder ein neues beginnen?',
+          title: Text(dialogContext.strings
+              .text('Offenes Hitori-Rätsel', 'Open Hitori puzzle')),
+          content: Text(
+            dialogContext.strings.text(
+              'Möchtest du dein begonnenes Rätsel fortsetzen oder ein neues beginnen?',
+              'Would you like to continue your current puzzle or start a new one?',
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Fortsetzen'),
+              child: Text(dialogContext.strings.text('Fortsetzen', 'Continue')),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Neu beginnen'),
+              child:
+                  Text(dialogContext.strings.text('Neu beginnen', 'Start new')),
             ),
           ],
         ),
@@ -313,7 +319,7 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
                 builder: (_) => const HitoriRulesScreen(),
               )),
               icon: const Icon(Icons.menu_book_rounded),
-              label: const Text('Regeln ansehen'),
+              label: Text(context.strings.text('Regeln ansehen', 'View rules')),
             ),
           ],
         ),
@@ -329,7 +335,9 @@ class _HitoriCollectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Hitori-Rätselsammlung')),
+        appBar: AppBar(
+            title: Text(context.strings
+                .text('Hitori-Rätselsammlung', 'Hitori collection'))),
         body: ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -338,9 +346,11 @@ class _HitoriCollectionScreen extends StatelessWidget {
                 clipBehavior: Clip.antiAlias,
                 child: ExpansionTile(
                   leading: CircleAvatar(child: Text('${chapter.number}')),
-                  title: Text(chapter.title),
-                  subtitle: Text('${chapter.subtitle}\n'
-                      '${chapter.puzzles.where(isSolved).length} von ${chapter.puzzles.length} gelöst'),
+                  title: Text(context.strings.known(chapter.title)),
+                  subtitle: Text(
+                    '${context.strings.known(chapter.subtitle)}\n'
+                    '${context.strings.known('${chapter.puzzles.where(isSolved).length} von ${chapter.puzzles.length} gelöst')}',
+                  ),
                   children: [
                     for (var index = 0; index < chapter.puzzles.length; index++)
                       ListTile(
@@ -349,7 +359,8 @@ class _HitoriCollectionScreen extends StatelessWidget {
                               ? const Icon(Icons.check_rounded)
                               : Text('${index + 1}'),
                         ),
-                        title: Text(chapter.puzzles[index].title),
+                        title: Text(context.strings
+                            .known(chapter.puzzles[index].title)),
                         subtitle: Text(
                             '${chapter.puzzles[index].size} × ${chapter.puzzles[index].size}'),
                         trailing: const Icon(Icons.play_arrow_rounded),
@@ -369,7 +380,9 @@ class _HitoriRandomScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Hitori-Zufallsrätsel')),
+        appBar: AppBar(
+            title: Text(context.strings
+                .text('Hitori-Zufallsrätsel', 'Hitori random puzzle'))),
         body: ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -378,9 +391,9 @@ class _HitoriRandomScreen extends StatelessWidget {
                 child: ListTile(
                   minTileHeight: 82,
                   leading: CircleAvatar(child: Text('${5 + difficulty.index}')),
-                  title: Text(difficulty.label),
+                  title: Text(context.strings.known(difficulty.label)),
                   subtitle: Text(
-                      '${difficulty.description} · ${5 + difficulty.index} × ${5 + difficulty.index}'),
+                      '${context.strings.known(difficulty.description)} · ${5 + difficulty.index} × ${5 + difficulty.index}'),
                   trailing: const Icon(Icons.play_arrow_rounded),
                   onTap: () => onOpen(const HitoriGenerator().generate(
                     seed: DateTime.now().microsecondsSinceEpoch,
@@ -398,29 +411,32 @@ class HitoriRulesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Hitori-Regeln')),
+        appBar: AppBar(
+            title: Text(context.strings.text('Hitori-Regeln', 'Hitori rules'))),
         body: ListView(
           padding: const EdgeInsets.all(24),
-          children: const [
-            _HitoriRule(
+          children: [
+            const _HitoriRule(
                 number: '1',
                 title: 'Doppelte Zahlen entfernen',
                 text:
                     'In jeder Zeile und Spalte darf jede Zahl nur einmal hell bleiben.'),
-            SizedBox(height: 18),
-            _HitoriRule(
+            const SizedBox(height: 18),
+            const _HitoriRule(
                 number: '2',
                 title: 'Schwarze Felder trennen',
                 text:
                     'Zwei schwarze Felder dürfen sich niemals oben, unten, links oder rechts berühren.'),
-            SizedBox(height: 18),
-            _HitoriRule(
+            const SizedBox(height: 18),
+            const _HitoriRule(
                 number: '3',
                 title: 'Helle Fläche verbinden',
                 text:
                     'Alle hell gebliebenen Felder müssen einen einzigen zusammenhängenden Bereich bilden.'),
-            SizedBox(height: 24),
-            Text('Tippen: offen → schwärzen → als sicher markieren → offen'),
+            const SizedBox(height: 24),
+            Text(context.strings.text(
+                'Tippen: offen → schwärzen → als sicher markieren → offen',
+                'Tap: open → shade → mark as safe → open')),
           ],
         ),
       );
@@ -522,7 +538,8 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.school_outlined),
-        title: const Text('So funktioniert Hitori'),
+        title: Text(dialogContext.strings
+            .text('So funktioniert Hitori', 'How Hitori works')),
         content: const SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -558,7 +575,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Verstanden'),
+            child: Text(dialogContext.strings.text('Verstanden', 'Got it')),
           ),
         ],
       ),
@@ -635,7 +652,10 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
       });
       unawaited(_save());
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ein zusätzlicher Tipp ist verfügbar.')),
+        SnackBar(
+            content: Text(context.strings.text(
+                'Ein zusätzlicher Tipp ist verfügbar.',
+                'An additional hint is available.'))),
       );
       return;
     }
@@ -657,16 +677,17 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
       context: context,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.lightbulb_outline_rounded),
-        title: Text(hintText.title),
-        content: Text(hintText.explanation),
+        title: Text(context.strings.known(hintText.title)),
+        content: Text(context.strings.known(hintText.explanation)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Auf dem Brett zeigen'),
+            child: Text(
+                context.strings.text('Auf dem Brett zeigen', 'Show on board')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Hinweis anwenden'),
+            child: Text(context.strings.text('Hinweis anwenden', 'Apply hint')),
           ),
         ],
       ),
@@ -793,13 +814,18 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.emoji_events_outlined),
-        title: const Text('Hitori gelöst!'),
+        title: Text(
+            dialogContext.strings.text('Hitori gelöst!', 'Hitori solved!')),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Alle Zahlen und Flächenregeln stimmen.'),
+            Text(dialogContext.strings.text(
+                'Alle Zahlen und Flächenregeln stimmen.',
+                'All number and area rules are satisfied.')),
             const SizedBox(height: 12),
-            Text('${_formatTime(_elapsedSeconds)} · $_moves Züge'),
+            Text(dialogContext.strings.isEnglish
+                ? '${_formatTime(_elapsedSeconds)} · $_moves moves'
+                : '${_formatTime(_elapsedSeconds)} · $_moves Züge'),
             if (earnedXp != null) ...[
               const SizedBox(height: 10),
               XpAwardBadge(points: earnedXp),
@@ -817,7 +843,8 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Brett ansehen'),
+            child:
+                Text(dialogContext.strings.text('Brett ansehen', 'View board')),
           ),
           FilledButton(
             onPressed: () {
@@ -826,8 +853,9 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
             },
             child: Text(
               widget.mode == GameMode.daily
-                  ? 'Zum Kalender'
-                  : 'Hitori verlassen',
+                  ? dialogContext.strings.text('Zum Kalender', 'To calendar')
+                  : dialogContext.strings
+                      .text('Hitori verlassen', 'Leave Hitori'),
             ),
           ),
           if (widget.mode != GameMode.daily)
@@ -837,7 +865,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
                 _openNextPuzzle();
               },
               child: Text(
-                _nextActionLabel,
+                dialogContext.strings.known(_nextActionLabel),
               ),
             ),
         ],
@@ -896,41 +924,49 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
         _showConflicts ? _state.adjacentShadeConflicts : <HitoriCell>{};
     return Scaffold(
       appBar: AppBar(
-        title: Text(_screenTitle),
+        title: Text(context.strings.known(_screenTitle)),
         actions: [
           if (kDebugMode)
             PopupMenuButton<String>(
-              tooltip: 'Testwerkzeuge',
+              tooltip: context.strings.text('Testwerkzeuge', 'Test tools'),
               icon: const Icon(Icons.bug_report_outlined),
               onSelected: (value) => _debugSolve(almost: value == 'almost'),
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'almost', child: Text('Fast lösen')),
-                PopupMenuItem(value: 'solve', child: Text('Sofort lösen')),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                    value: 'almost',
+                    child: Text(
+                        context.strings.text('Fast lösen', 'Almost solve'))),
+                PopupMenuItem(
+                    value: 'solve',
+                    child: Text(context.strings
+                        .text('Sofort lösen', 'Solve instantly'))),
               ],
             ),
           IconButton(
-            tooltip: 'Rückgängig',
+            tooltip: context.strings.text('Rückgängig', 'Undo'),
             onPressed: _history.isEmpty ? null : _undo,
             icon: const Icon(Icons.undo_rounded),
           ),
           IconButton(
-            tooltip: 'Wiederholen',
+            tooltip: context.strings.text('Wiederholen', 'Redo'),
             onPressed: _redo.isEmpty ? null : _redoMove,
             icon: const Icon(Icons.redo_rounded),
           ),
           IconButton(
-            tooltip: 'Neu starten',
+            tooltip: context.strings.text('Neu starten', 'Restart'),
             onPressed: _restart,
             icon: const Icon(Icons.restart_alt_rounded),
           ),
           IconButton(
-            tooltip: 'Spielhilfen',
+            tooltip: context.strings.text('Spielhilfen', 'Game assists'),
             onPressed: () => showPuzzleGameOptions(context, children: [
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Regelfehler markieren'),
-                subtitle: const Text(
-                    'Markiert doppelte Zahlen und benachbarte schwarze Felder.'),
+                title: Text(context.strings
+                    .text('Regelfehler markieren', 'Highlight rule errors')),
+                subtitle: Text(context.strings.text(
+                    'Markiert doppelte Zahlen und benachbarte schwarze Felder.',
+                    'Highlights duplicate numbers and adjacent shaded cells.')),
                 value: _showConflicts,
                 onChanged: (value) {
                   setState(() => _showConflicts = value);
@@ -957,17 +993,25 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
                   ),
                   Chip(
                     avatar: const Icon(Icons.touch_app_outlined, size: 18),
-                    label: Text('$_moves Züge'),
+                    label: Text(context.strings.isEnglish
+                        ? '$_moves moves'
+                        : '$_moves Züge'),
                   ),
                   PuzzleGameStatusChip(
                     icon: Icons.lightbulb_outline,
-                    label: premium ? 'Premium' : '$_hintsRemaining Tipps',
+                    label: premium
+                        ? 'Premium'
+                        : context.strings.isEnglish
+                            ? '$_hintsRemaining hints'
+                            : '$_hintsRemaining Tipps',
                     onTap: _hint,
                   ),
                 ],
               ),
               const SizedBox(height: 12),
-              const Text('Tippen: offen → schwärzen → als sicher markieren'),
+              Text(context.strings.text(
+                  'Tippen: offen → schwärzen → als sicher markieren',
+                  'Tap: open → shade → mark as safe')),
               const SizedBox(height: 18),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 560),
@@ -1164,10 +1208,10 @@ class _HitoriRule extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
+                Text(context.strings.known(title),
                     style: const TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 3),
-                Text(text),
+                Text(context.strings.known(text)),
               ],
             ),
           ),
