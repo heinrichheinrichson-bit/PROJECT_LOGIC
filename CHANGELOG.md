@@ -1,3 +1,13 @@
+## v0.8.32 – Spielbereiche und Regeln auf Englisch
+
+- Gemeinsame Spielbereich-Bausteine für alle sechs Spielarten zweisprachig umgesetzt.
+- Titel, Beschreibungen, Aktionen und Fortschrittsangaben der Spieleinstiege auf Englisch erweitert.
+- Regelbildschirme einschließlich Slitherlink-Einzelschleifenregel und Bedienhinweisen lokalisiert.
+- Spielhilfen-Menü, Hinweis-Tooltip und zentraler Regeln-und-Bedienung-Schalter übersetzt.
+- Dynamische Sammlungs- und Fortschrittsangaben ohne Änderungen an Rätsel- oder Speicherlogik lokalisiert.
+- Regressionstests für Spielbereich-, Fortschritts- und Regeltexte ergänzt.
+- Paketversion auf 0.8.32+61 erhöht.
+
 ## v0.8.31 – Fortschritt und Statistiken auf Englisch
 
 - Fortschrittsseite mit Level, XP-Verlauf, Tages-, Wochen- und Langzeitzielen zweisprachig umgesetzt.

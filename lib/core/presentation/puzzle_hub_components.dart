@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../app_localizations.dart';
+
 class PuzzleHubHeader extends StatelessWidget {
   const PuzzleHubHeader({
     required this.icon,
@@ -45,10 +47,11 @@ class PuzzleHubHeader extends StatelessWidget {
             child: Icon(icon, color: accent, size: 30),
           ),
           const SizedBox(height: 18),
-          Text(title, style: Theme.of(context).textTheme.headlineSmall),
+          Text(context.strings.known(title),
+              style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 6),
           Text(
-            description,
+            context.strings.known(description),
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: colors.onSurfaceVariant,
                   height: 1.35,
@@ -60,7 +63,7 @@ class PuzzleHubHeader extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    progressLabel!,
+                    context.strings.known(progressLabel!),
                     style: Theme.of(context)
                         .textTheme
                         .labelLarge
@@ -131,10 +134,11 @@ class PuzzleHubAction extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: Theme.of(context).textTheme.titleMedium),
+                    Text(context.strings.known(title),
+                        style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 3),
                     Text(
-                      subtitle,
+                      context.strings.known(subtitle),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: colors.onSurfaceVariant,
                             height: 1.25,
@@ -169,11 +173,17 @@ class PuzzleRulesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text('$title-Regeln')),
+        appBar: AppBar(
+          title: Text(context.strings.text(
+            '$title-Regeln',
+            '${context.strings.known(title)} rules',
+          )),
+        ),
         body: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            Text(introduction, style: Theme.of(context).textTheme.titleLarge),
+            Text(context.strings.known(introduction),
+                style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 24),
             for (var index = 0; index < rules.length; index++) ...[
               Row(
@@ -181,7 +191,7 @@ class PuzzleRulesScreen extends StatelessWidget {
                 children: [
                   CircleAvatar(radius: 16, child: Text('${index + 1}')),
                   const SizedBox(width: 14),
-                  Expanded(child: Text(rules[index])),
+                  Expanded(child: Text(context.strings.known(rules[index]))),
                 ],
               ),
               const SizedBox(height: 18),
@@ -190,8 +200,8 @@ class PuzzleRulesScreen extends StatelessWidget {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.touch_app_outlined),
-              title: const Text('Bedienung'),
-              subtitle: Text(interaction),
+              title: Text(context.strings.text('Bedienung', 'Controls')),
+              subtitle: Text(context.strings.known(interaction)),
             ),
           ],
         ),
@@ -219,7 +229,7 @@ class PuzzleGameStatusChip extends StatelessWidget {
     );
     if (onTap == null) return chip;
     return Tooltip(
-      message: 'Hinweis',
+      message: context.strings.text('Hinweis', 'Hint'),
       child: Semantics(
         button: true,
         label: label,
@@ -242,7 +252,8 @@ class PuzzleGameRulesButton extends StatelessWidget {
   Widget build(BuildContext context) => TextButton.icon(
         onPressed: onPressed,
         icon: const Icon(Icons.menu_book_outlined),
-        label: const Text('Spielregeln & Bedienung'),
+        label: Text(context.strings
+            .text('Spielregeln & Bedienung', 'Rules & controls')),
       );
 }
 
@@ -262,7 +273,7 @@ Future<void> showPuzzleGameOptions(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Spielhilfen',
+                sheetContext.strings.text('Spielhilfen', 'Game assists'),
                 style: Theme.of(sheetContext).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),

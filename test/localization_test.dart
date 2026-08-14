@@ -47,4 +47,19 @@ void main() {
     expect(strings.known('Sammlung erkunden · Stufe 4'),
         'Explore the collection · Level 4');
   });
+
+  test('shared puzzle hubs and rules have English presentations', () {
+    const strings = AppLocalizations(Locale('en'));
+    expect(strings.known('Baue ein gemeinsames Brückennetz'),
+        'Build one connected bridge network');
+    expect(
+        strings.known('12 von 50 Rätseln gelöst'), '12 of 50 puzzles solved');
+    expect(
+      strings.known(
+          'Die Linie darf sich nicht verzweigen oder kreuzen und muss eine einzige Schleife bilden.'),
+      'The line may not branch or cross and must form one single loop.',
+    );
+    expect(strings.known('30 feste Expeditionen entdecken'),
+        'Explore 30 fixed expeditions');
+  });
 }

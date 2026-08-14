@@ -66,6 +66,83 @@ class AppLocalizations {
       'Rätselsammlung': 'Puzzle collection',
       'Zufallsrätsel': 'Random puzzle',
       'Tagesrätsel': 'Daily puzzle',
+      'Tagesrätsel & Kalender': 'Daily puzzle & calendar',
+      'Rätsel fortsetzen': 'Continue puzzle',
+      'Regeln ansehen': 'View rules',
+      'Erste Herausforderung': 'First challenge',
+      'Noch einmal spielen': 'Play again',
+      'Nächstes ungelöstes Rätsel': 'Next unsolved puzzle',
+      'Heute spielen oder vergangene Tage nachholen':
+          'Play today or catch up on previous days',
+      'Heute lösen oder verpasste Tage nachholen':
+          'Solve today or catch up on missed days',
+      'Größe und Schwierigkeit auswählen': 'Choose size and difficulty',
+      'Schwierigkeit auswählen und neu erzeugen':
+          'Choose a difficulty and generate a new puzzle',
+      'Direkt mit deiner Sammlung weitermachen':
+          'Continue straight from your collection',
+      'Bestzeiten, Spielzeit und Fortschritt':
+          'Best times, playtime and progress',
+      'Bestzeiten, Spielzeit und Lösungswege':
+          'Best times, playtime and solving paths',
+      'Bestzeiten, Spielzeit und Expeditionen':
+          'Best times, playtime and expeditions',
+      'Bestzeiten, Spielarten und Schwierigkeiten':
+          'Best times, game modes and difficulties',
+      'Baue ein gemeinsames Brückennetz': 'Build one connected bridge network',
+      'Verbinde alle Inseln zu einem einzigen Netz – ohne Kreuzungen.':
+          'Connect all islands into one network — without crossings.',
+      'Ein neues Brückennetz erzeugen lassen': 'Generate a new bridge network',
+      'Eine einzige Schleife': 'One single loop',
+      'Verbinde die Punkte zu einer geschlossenen Schleife. Die Zahlen zeigen, wie viele Feldseiten zur Linie gehören.':
+          'Connect the dots into one closed loop. Each number shows how many sides of its cell belong to the line.',
+      'Heute spielen oder vergangene Schleifen nachholen':
+          'Play today or catch up on previous loops',
+      'Finde die einzelnen Zahlen': 'Find the unique numbers',
+      'Schwärze doppelte Zahlen. Schwarze Felder dürfen sich nicht berühren und alle hellen Felder bleiben verbunden.':
+          'Shade duplicate numbers. Shaded cells may not touch, and all light cells must stay connected.',
+      'Ungleich, aber logisch': 'Unequal, but logical',
+      'Fülle jede Zeile und Spalte mit allen Zahlen. Jedes Ungleichheitszeichen muss stimmen.':
+          'Fill every row and column with all numbers. Every inequality sign must be correct.',
+      'Plane ein ruhiges Waldlager': 'Plan a peaceful forest camp',
+      'Ordne jedem Baum genau ein Zelt zu. Jeder Start erzeugt ein neues, eindeutig lösbares Brett.':
+          'Assign exactly one tent to every tree. Each start creates a new puzzle with a unique solution.',
+      'Zwei Zahlen, klare Regeln': 'Two numbers, clear rules',
+      'Setze 0 und 1 so, dass jede Reihe und Spalte aufgeht – ohne Dreiergruppen oder gleiche Reihen.':
+          'Place 0 and 1 so every row and column works — without triples or identical rows.',
+      'Deine Rätselsammlung': 'Your puzzle collection',
+      'Wähle die Schwierigkeit, die heute zu dir passt.':
+          'Choose the difficulty that suits you today.',
+      'Zeichne genau eine geschlossene Schleife.':
+          'Draw exactly one closed loop.',
+      'Die Linie verläuft nur waagerecht oder senkrecht zwischen den Punkten.':
+          'The line runs only horizontally or vertically between the dots.',
+      'Eine Zahl zeigt, wie viele ihrer vier Feldseiten Teil der Schleife sind.':
+          'A number shows how many of its four cell sides are part of the loop.',
+      'Die Linie darf sich nicht verzweigen oder kreuzen und muss eine einzige Schleife bilden.':
+          'The line may not branch or cross and must form one single loop.',
+      'Tippen wechselt eine Kante von leer zu Linie, zu ausgeschlossen und wieder zu leer.':
+          'Tap an edge to cycle from empty to line, excluded, and back to empty.',
+      'Fülle das Raster mit logisch passenden Zahlen.':
+          'Fill the grid with logically fitting numbers.',
+      'Jede Zahl von 1 bis zur Rastergröße kommt in jeder Zeile genau einmal vor.':
+          'Every number from 1 to the grid size appears exactly once in each row.',
+      'Auch in jeder Spalte darf jede Zahl nur einmal vorkommen.':
+          'Each number may also appear only once in every column.',
+      'Alle Ungleichheitszeichen zwischen benachbarten Feldern müssen stimmen.':
+          'All inequality signs between adjacent cells must be satisfied.',
+      'Tippe ein Feld und wähle eine Zahl. Notizen helfen beim Ausschließen.':
+          'Tap a cell and choose a number. Notes help with elimination.',
+      'Bilde eindeutige Paare aus jeweils einem Baum und einem Zelt.':
+          'Form unique pairs of one tree and one tent.',
+      'Jeder Baum erhält genau ein Zelt auf einem direkt waagerecht oder senkrecht benachbarten Feld.':
+          'Every tree gets exactly one tent in a directly adjacent horizontal or vertical cell.',
+      'Jedes Zelt gehört genau zu einem Baum. Zelte dürfen sich auch diagonal nicht berühren.':
+          'Every tent belongs to exactly one tree. Tents may not touch, even diagonally.',
+      'Die Zahlen am Rand geben die genaue Zahl der Zelte in jeder Zeile und Spalte an.':
+          'The edge numbers give the exact number of tents in each row and column.',
+      'Tippen wechselt ein freies Feld von leer zu Zelt, zu Gras und wieder zu leer.':
+          'Tap a free cell to cycle from empty to tent, grass, and back to empty.',
       'Ereignisrätsel': 'Event puzzle',
       'Einführung': 'Introduction',
       'Einmaliger Erfolgsbonus': 'One-time achievement bonus',
@@ -203,6 +280,21 @@ class AppLocalizations {
             (match) => '${match[1]} puzzles completed')
         .replaceAllMapped(RegExp(r'^(\d+) von (\d+) gelöst$'),
             (match) => '${match[1]} of ${match[2]} solved')
+        .replaceAllMapped(RegExp(r'^(\d+) von (\d+) Rätseln gelöst$'),
+            (match) => '${match[1]} of ${match[2]} puzzles solved')
+        .replaceAllMapped(RegExp(r'^(\d+) von (\d+) Expeditionen gelöst$'),
+            (match) => '${match[1]} of ${match[2]} expeditions solved')
+        .replaceAllMapped(
+            RegExp(r'^(\d+) handverlesene Brückennetze entdecken$'),
+            (match) => 'Explore ${match[1]} hand-picked bridge networks')
+        .replaceAllMapped(RegExp(r'^(\d+) handverlesene Hitori-Rätsel$'),
+            (match) => '${match[1]} hand-picked Hitori puzzles')
+        .replaceAllMapped(RegExp(r'^(\d+) eindeutig lösbare Schleifen$'),
+            (match) => '${match[1]} uniquely solvable loops')
+        .replaceAllMapped(RegExp(r'^(\d+) feste Expeditionen entdecken$'),
+            (match) => 'Explore ${match[1]} fixed expeditions')
+        .replaceAllMapped(RegExp(r'^(\d+) ausgewählte Lern- und Logikrätsel$'),
+            (match) => '${match[1]} selected learning and logic puzzles')
         .replaceAllMapped(RegExp(r'^(\d+) Tage Spielserie$'),
             (match) => '${match[1]} day streak')
         .replaceAllMapped(RegExp(r'^Heute gelöst · (\d+) insgesamt$'),
