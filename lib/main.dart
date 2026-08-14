@@ -4617,30 +4617,28 @@ class _ProgressGoalCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          strings.known(goal.title),
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
+                  Text(
+                    strings.known(goal.title),
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 3),
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: Text(
+                      completed
+                          ? strings.text('Geschafft', 'Complete')
+                          : formatProgressGoalCounter(
+                              goal,
+                              isGerman: !strings.isEnglish,
+                            ),
+                      style: TextStyle(
+                        color: colors.onSurfaceVariant,
+                        fontWeight: completed ? FontWeight.w700 : null,
                       ),
-                      if (completed)
-                        Text(
-                          strings.text('Geschafft', 'Complete'),
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        )
-                      else
-                        Text(
-                          formatProgressGoalCounter(
-                            goal,
-                            isGerman: !strings.isEnglish,
-                          ),
-                        ),
-                    ],
+                    ),
                   ),
                   const SizedBox(height: 3),
                   Text(strings.known(goal.description)),

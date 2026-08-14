@@ -6,7 +6,10 @@ String formatProgressGoalCounter(
   required bool isGerman,
 }) {
   final current = goal.current.clamp(0, goal.target);
-  if (!goal.id.startsWith('play-hours-')) {
+  final isPlaytimeGoal = goal.id == 'play-hour' ||
+      goal.id == 'play-ten-hours' ||
+      goal.id.startsWith('play-hours-');
+  if (!isPlaytimeGoal) {
     return '$current / ${goal.target}';
   }
 

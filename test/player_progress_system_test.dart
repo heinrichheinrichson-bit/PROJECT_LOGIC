@@ -413,6 +413,36 @@ void main() {
     expect(goal.description, 'Verbringe insgesamt 50 Stunden beim Rätseln.');
   });
 
+  test('daily puzzle milestones describe counts rather than elapsed years', () {
+    const snapshot = ProgressSnapshot(
+      results: {},
+      progress: PlayerProgress(
+        totalCompleted: 0,
+        totalPlaySeconds: 0,
+        completedDays: [],
+      ),
+      catalogPuzzleIds: {},
+    );
+
+    final dailyGoals = service
+        .achievements(snapshot)
+        .where((goal) => goal.id.startsWith('daily-'))
+        .toList();
+
+    expect(
+      dailyGoals.map((goal) => goal.title),
+      containsAll(<String>[
+        '365 Tagesrätsel',
+        '730 Tagesrätsel',
+        'Tausend Tagesrätsel',
+      ]),
+    );
+    expect(
+      dailyGoals.map((goal) => goal.title).join(' '),
+      isNot(contains('Jahr')),
+    );
+  });
+
   test('weekly active-day mission counts unique days in the current week', () {
     const snapshot = ProgressSnapshot(
       results: {},

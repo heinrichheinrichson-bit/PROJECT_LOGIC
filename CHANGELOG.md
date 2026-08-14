@@ -1,3 +1,11 @@
+## v0.8.38 – Tagesrätsel und Spielzeit eindeutig benannt
+
+- Auch die älteren Ein- und Zehn-Stunden-Erfolge auf lesbare Stunden- und Minutenwerte umgestellt.
+- Langfristige Tagesrätsel-Erfolge als Mengen-Meilensteine statt fälschlich als verstrichene Jahre benannt.
+- Lange Erfolgstitel und Fortschrittswerte untereinander angeordnet, damit sie auf schmalen Smartphones nicht kollidieren.
+- Regressionstests für alte Spielzeit-IDs und mengenbasierte Tagesrätsel-Meilensteine ergänzt.
+- Paketversion auf 0.8.38+67 erhöht.
+
 ## v0.8.37 – Erfolge lesbarer gegliedert
 
 - Spielzeit-Erfolge zeigen Fortschritt und Ziel jetzt als Stunden und Minuten statt als interne Sekundenwerte.

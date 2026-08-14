@@ -44,4 +44,20 @@ void main() {
       '21 / 100',
     );
   });
+
+  test('legacy one-hour and ten-hour goals use readable time too', () {
+    const tenHours = ProgressGoal(
+      id: 'play-ten-hours',
+      title: 'Zeit für klare Gedanken',
+      description: 'Verbringe insgesamt zehn Stunden beim Rätseln.',
+      iconName: 'timer',
+      current: 17564,
+      target: 36000,
+      kind: ProgressGoalKind.achievement,
+    );
+    expect(
+      formatProgressGoalCounter(tenHours, isGerman: false),
+      '4 h 52 min / 10 h',
+    );
+  });
 }

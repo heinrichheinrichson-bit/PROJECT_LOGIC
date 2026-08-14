@@ -475,11 +475,11 @@ class PlayerProgressService {
         ..._achievementChain(
           key: 'daily',
           titles: const [
-            'Hundert Tage Logik',
-            'Halbes Kalenderjahr',
-            'Ein Jahr Tagesrätsel',
-            'Zwei Jahre Tagesrätsel',
-            'Tausend Tage Logik',
+            'Hundert Tagesrätsel',
+            'Hundertachtzig Tagesrätsel',
+            '365 Tagesrätsel',
+            '730 Tagesrätsel',
+            'Tausend Tagesrätsel',
           ],
           description: (target) => 'Löse $target Tagesrätsel.',
           iconName: 'calendar_month',
