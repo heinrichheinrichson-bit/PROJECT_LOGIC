@@ -856,11 +856,15 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                         context.strings.text('Testwerkzeuge', 'Test tools'),
                     icon: const Icon(Icons.bug_report_outlined),
                     onSelected: (v) => _debugSolve(v == 'almost'),
-                    itemBuilder: (_) => const [
+                    itemBuilder: (context) => [
                           PopupMenuItem(
-                              value: 'almost', child: Text('Fast l\u00f6sen')),
+                              value: 'almost',
+                              child: Text(context.strings
+                                  .text('Fast lösen', 'Almost solve'))),
                           PopupMenuItem(
-                              value: 'solve', child: Text('Sofort l\u00f6sen'))
+                              value: 'solve',
+                              child: Text(context.strings
+                                  .text('Sofort lösen', 'Solve instantly')))
                         ]),
               IconButton(
                   onPressed: _history.isEmpty ? null : _undo,

@@ -851,7 +851,8 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                   const SizedBox(height: 12),
                   PuzzleHubAction(
                     icon: Icons.insights_outlined,
-                    title: 'Hashi-Statistik',
+                    title: context.strings
+                        .text('Hashi-Statistik', 'Hashi statistics'),
                     subtitle: 'Bestzeiten, Spielzeit und Fortschritt',
                     accent: accent,
                     onTap: widget.onOpenStatistics,

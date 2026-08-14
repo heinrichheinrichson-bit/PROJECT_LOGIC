@@ -1564,8 +1564,9 @@ class _HomeLevelCard extends StatelessWidget {
     final remaining = rank.nextLevelXp - rank.currentXp;
     return Semantics(
       button: true,
-      label: 'Level ${rank.level}, ${rank.title}',
-      hint: 'Deinen Fortschritt öffnen',
+      label: 'Level ${rank.level}, ${context.strings.known(rank.title)}',
+      hint: context.strings
+          .text('Deinen Fortschritt öffnen', 'Open your progress'),
       child: Card(
         color: colors.primaryContainer.withValues(alpha: .55),
         child: InkWell(
@@ -1600,7 +1601,7 @@ class _HomeLevelCard extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Text(
-                              'Level ${rank.level} · ${rank.title}',
+                              'Level ${rank.level} · ${context.strings.known(rank.title)}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: Theme.of(context)
@@ -1628,7 +1629,10 @@ class _HomeLevelCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 5),
                       Text(
-                        'Noch $remaining XP bis Level ${rank.level + 1}',
+                        context.strings.text(
+                          'Noch $remaining XP bis Level ${rank.level + 1}',
+                          '$remaining XP to level ${rank.level + 1}',
+                        ),
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: colors.onSurfaceVariant,
                             ),
@@ -3161,7 +3165,8 @@ class _GameInfoBar extends StatelessWidget {
                 const SizedBox(width: 7),
                 Text('$minutes:${seconds.toString().padLeft(2, '0')}'),
                 const Spacer(),
-                Text('$filled/$total Felder'),
+                Text(context.strings
+                    .text('$filled/$total Felder', '$filled/$total cells')),
                 const SizedBox(width: 10),
                 PuzzleGameStatusChip(
                   icon: Icons.lightbulb_outline_rounded,
@@ -5302,8 +5307,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       icon: Icons.local_fire_department_outlined,
                       title: '${progress.currentStreak} Tage Spielserie',
                       subtitle: progress.completedToday
-                          ? 'Heute gesichert · Beste Serie: ${progress.bestStreak} Tage'
-                          : 'Heute noch ein Rätsel lösen · Beste Serie: ${progress.bestStreak} Tage',
+                          ? strings.text(
+                              'Heute gesichert · Beste Serie: ${progress.bestStreak} Tage',
+                              'Safe today · Best streak: ${progress.bestStreak} days')
+                          : strings.text(
+                              'Heute noch ein Rätsel lösen · Beste Serie: ${progress.bestStreak} Tage',
+                              'Solve one puzzle today · Best streak: ${progress.bestStreak} days'),
                     ),
                     const SizedBox(height: 12),
                     _StatisticListCard(
@@ -6205,7 +6214,7 @@ class _DifficultyStatistic extends StatelessWidget {
           PuzzleDifficulty.medium => Icons.psychology_alt_outlined,
           PuzzleDifficulty.hard => Icons.local_fire_department_outlined,
         }),
-        title: Text(difficulty.label),
+        title: Text(context.strings.known(difficulty.label)),
         subtitle: Text(
             context.strings.known('$completed von ${puzzles.length} gelöst')),
         trailing: Text('${((completed / puzzles.length) * 100).round()} %'),
@@ -6406,26 +6415,31 @@ class _StatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.strings;
     final (icon, title, text) = switch ((isSolved, isComplete, issueCount)) {
       (true, _, _) => (
           Icons.check_circle_outline,
-          'Rätsel gelöst',
-          'Alle Regeln sind erfüllt.',
+          strings.text('Rätsel gelöst', 'Puzzle solved'),
+          strings.text('Alle Regeln sind erfüllt.', 'All rules are satisfied.'),
         ),
       (false, true, 0) => (
           Icons.hourglass_bottom,
-          'Fast geschafft',
-          'Das Raster ist vollständig und wird geprüft.',
+          strings.text('Fast geschafft', 'Almost there'),
+          strings.text('Das Raster ist vollständig und wird geprüft.',
+              'The grid is complete and is being checked.'),
         ),
       (false, _, > 0) => (
           Icons.info_outline,
-          '$issueCount Regelhinweis${issueCount == 1 ? '' : 'e'}',
-          'Korrigiere die markierten Felder.',
+          strings.text('$issueCount Regelhinweis${issueCount == 1 ? '' : 'e'}',
+              '$issueCount rule ${issueCount == 1 ? 'issue' : 'issues'}'),
+          strings.text(
+              'Korrigiere die markierten Felder.', 'Correct the marked cells.'),
         ),
       _ => (
           Icons.touch_app_outlined,
-          'Tippen: leer → 0 → 1',
-          'Vorgaben sind stärker hervorgehoben.',
+          strings.text('Tippen: leer → 0 → 1', 'Tap: empty → 0 → 1'),
+          strings.text('Vorgaben sind stärker hervorgehoben.',
+              'Given cells are highlighted more strongly.'),
         ),
     };
 

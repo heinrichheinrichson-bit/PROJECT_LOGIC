@@ -93,4 +93,17 @@ void main() {
     expect(strings.known('Mittel · 30 Grundwert + 10 ohne Hinweis'),
         'Medium · 30 base value + 10 without hints');
   });
+
+  test('remaining level, statistics and Hitori catalog terms are English', () {
+    const strings = AppLocalizations(Locale('en'));
+
+    expect(strings.known('Logiktalent'), 'Logic talent');
+    expect(strings.known('Hashi-Statistik'), 'Hashi statistics');
+    expect(strings.known('Schwarze Felder und helle Wege gemeinsam planen'),
+        'Plan shaded cells and open paths together');
+    expect(strings.known('Erste Schatten'), 'First shadows');
+    expect(strings.known('Neue Verbindungen'), 'New connections');
+    expect(strings.known('Heller Korridor'), 'Open corridor');
+    expect(strings.known('Verbundene Wege'), 'Connected paths');
+  });
 }

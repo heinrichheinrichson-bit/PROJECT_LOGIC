@@ -1,3 +1,11 @@
+## v0.8.35 – Weitere dynamische Sprachmischungen beseitigt
+
+- Levelkarte, Streak-Statistik und dynamische Binairo-Spielinformationen vollständig lokalisiert.
+- Hitori-Kapiteldaten und sämtliche Katalognamen beim englischen Anzeigen übersetzt.
+- Hashi-Statistiktitel und Tents-&-Trees-Testwerkzeuge korrigiert.
+- Regressionstests für zuvor übersehene dynamische und katalogbasierte Texte ergänzt.
+- Paketversion auf 0.8.35+64 erhöht.
+
 ## v0.8.34 – Sprachmischungen in Kalendern und Katalogen beseitigt
 
 - Gemeinsamen Tagesrätselkalender einschließlich Statuskarte, Erklärung, Aktionen und Legende vollständig lokalisiert.
