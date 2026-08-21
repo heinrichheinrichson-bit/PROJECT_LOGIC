@@ -87,6 +87,35 @@ class _StreakCalendarCardState extends State<StreakCalendarCard> {
                 ),
               ),
             ],
+            if (widget.progress.wasFreezeRefilledTodayAt(DateTime.now())) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colors.primaryContainer,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.ac_unit_rounded,
+                        color: colors.onPrimaryContainer),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        strings.text(
+                          '10 von 10 aktiven Tagen geschafft: Dein Eiszapfen ist wieder aufgefüllt.',
+                          '10 of 10 active days complete: your streak freeze has been refilled.',
+                        ),
+                        style: TextStyle(
+                          color: colors.onPrimaryContainer,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 14),
             Row(
               children: [
@@ -192,10 +221,9 @@ class _FreezeBadge extends StatelessWidget {
       child: Chip(
         avatar: const Icon(Icons.ac_unit_rounded, size: 18),
         label: Text(available
-            ? strings.text('1 verfügbar', '1 available')
-            : strings.text(
-                'Noch ${progress.streakFreezeRefillDaysRemaining} Tage',
-                '${progress.streakFreezeRefillDaysRemaining} days left')),
+            ? strings.text('1 von 1 verfügbar', '1 of 1 available')
+            : strings.text('${progress.streakFreezeRefillDays} von 10 aktiv',
+                '${progress.streakFreezeRefillDays} of 10 active')),
       ),
     );
   }

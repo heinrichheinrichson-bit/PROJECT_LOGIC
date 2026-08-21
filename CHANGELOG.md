@@ -748,3 +748,11 @@
 - Deutsche und englische Darstellung einschließlich XP-Verlauf ergänzt.
 - Regressionstests für Monatsgrenzen, Fortschritt und einmalige XP-Gutschriften ergänzt.
 - Paketversion auf 0.8.40+69 erhöht.
+## v0.8.43 – Streak-Freeze vervollständigt
+
+- Der kostenlose Eiszapfen schützt weiterhin automatisch genau einen verpassten Tag und wird nach zehn unterschiedlichen aktiven Tagen neu aufgefüllt.
+- Die Wiederauffüllung wird nun als dauerhaft gespeichertes Ereignis erkannt und am betreffenden Tag verständlich gemeldet.
+- Der Bestand zeigt eindeutig `1 von 1 verfügbar`; während des Aufladens wird der Fortschritt als aktive Tage von zehn dargestellt.
+- Der gespeicherte Wiederauffüllstatus bleibt in lokalen Spielständen und portablen Sicherungen erhalten.
+- Regressionstests für Verbrauch, Wiederauffüllung, Tagesgrenzen, Persistenz und Kalenderanzeige erweitert.
+- Paketversion auf 0.8.43+72 erhöht.

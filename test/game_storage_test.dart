@@ -788,6 +788,15 @@ void main() {
     );
     expect(progress.streakFreezeAvailable, isTrue);
     expect(progress.streakFreezeRefillDays, 0);
+    expect(progress.lastFreezeRefilledOn, '2026-08-12');
+    expect(
+      progress.wasFreezeRefilledTodayAt(DateTime(2026, 8, 12, 23, 30)),
+      isTrue,
+    );
+    expect(
+      progress.wasFreezeRefilledTodayAt(DateTime(2026, 8, 13)),
+      isFalse,
+    );
   });
 
   test('streak calculation follows calendar days across daylight saving time',
@@ -838,6 +847,7 @@ void main() {
       streakFreezeRefillDays: 4,
       streakProtectionStartedOn: '2026-08-10',
       lastRefillCountedDay: '2026-08-12',
+      lastFreezeRefilledOn: '2026-08-12',
     );
 
     final restored = PlayerProgress.fromJson(progress.toJson());
@@ -847,5 +857,6 @@ void main() {
     expect(restored.streakFreezeRefillDays, 4);
     expect(restored.streakProtectionStartedOn, '2026-08-10');
     expect(restored.lastRefillCountedDay, '2026-08-12');
+    expect(restored.lastFreezeRefilledOn, '2026-08-12');
   });
 }

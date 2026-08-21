@@ -419,6 +419,7 @@ class PlayerProgress {
     this.streakFreezeRefillDays = 0,
     this.streakProtectionStartedOn,
     this.lastRefillCountedDay,
+    this.lastFreezeRefilledOn,
   });
 
   const PlayerProgress.empty()
@@ -429,7 +430,8 @@ class PlayerProgress {
         streakFreezeAvailable = true,
         streakFreezeRefillDays = 0,
         streakProtectionStartedOn = null,
-        lastRefillCountedDay = null;
+        lastRefillCountedDay = null,
+        lastFreezeRefilledOn = null;
 
   final int totalCompleted;
   final int totalPlaySeconds;
@@ -439,6 +441,7 @@ class PlayerProgress {
   final int streakFreezeRefillDays;
   final String? streakProtectionStartedOn;
   final String? lastRefillCountedDay;
+  final String? lastFreezeRefilledOn;
 
   bool get completedToday => completedDays.contains(_dayKey(DateTime.now()));
 
@@ -499,6 +502,9 @@ class PlayerProgress {
   bool wasProtectedYesterdayAt(DateTime now) =>
       isFrozenOn(_dateOnly(now).subtract(const Duration(days: 1)));
 
+  bool wasFreezeRefilledTodayAt(DateTime now) =>
+      lastFreezeRefilledOn == _dayKey(now);
+
   PlayerProgress reconcileStreak({required DateTime now}) {
     final today = _dateOnly(now);
     final started = DateTime.tryParse(streakProtectionStartedOn ?? '');
@@ -520,6 +526,7 @@ class PlayerProgress {
       streakFreezeAvailable: false,
       streakFreezeRefillDays: 0,
       clearLastRefillCountedDay: true,
+      clearLastFreezeRefilledOn: true,
     );
   }
 
@@ -533,6 +540,7 @@ class PlayerProgress {
     var refillDays = streakFreezeRefillDays;
     var freezeAvailable = streakFreezeAvailable;
     var countedDay = lastRefillCountedDay;
+    var refilledOn = lastFreezeRefilledOn;
     if (isNewDay && !freezeAvailable && countedDay != dayKey) {
       refillDays++;
       countedDay = dayKey;
@@ -540,6 +548,7 @@ class PlayerProgress {
         freezeAvailable = true;
         refillDays = 0;
         countedDay = null;
+        refilledOn = dayKey;
       }
     }
     return PlayerProgress(
@@ -552,6 +561,7 @@ class PlayerProgress {
       streakProtectionStartedOn:
           streakProtectionStartedOn ?? _dayKey(completedAt),
       lastRefillCountedDay: countedDay,
+      lastFreezeRefilledOn: refilledOn,
     );
   }
 
@@ -561,7 +571,9 @@ class PlayerProgress {
     int? streakFreezeRefillDays,
     String? streakProtectionStartedOn,
     String? lastRefillCountedDay,
+    String? lastFreezeRefilledOn,
     bool clearLastRefillCountedDay = false,
+    bool clearLastFreezeRefilledOn = false,
   }) =>
       PlayerProgress(
         totalCompleted: totalCompleted,
@@ -577,6 +589,9 @@ class PlayerProgress {
         lastRefillCountedDay: clearLastRefillCountedDay
             ? null
             : lastRefillCountedDay ?? this.lastRefillCountedDay,
+        lastFreezeRefilledOn: clearLastFreezeRefilledOn
+            ? null
+            : lastFreezeRefilledOn ?? this.lastFreezeRefilledOn,
       );
 
   Map<String, Object?> toJson() => {
@@ -590,6 +605,8 @@ class PlayerProgress {
           'streakProtectionStartedOn': streakProtectionStartedOn,
         if (lastRefillCountedDay != null)
           'lastRefillCountedDay': lastRefillCountedDay,
+        if (lastFreezeRefilledOn != null)
+          'lastFreezeRefilledOn': lastFreezeRefilledOn,
       };
 
   factory PlayerProgress.fromJson(Map<String, Object?> json) {
@@ -611,6 +628,7 @@ class PlayerProgress {
               .toInt(),
       streakProtectionStartedOn: json['streakProtectionStartedOn'] as String?,
       lastRefillCountedDay: json['lastRefillCountedDay'] as String?,
+      lastFreezeRefilledOn: json['lastFreezeRefilledOn'] as String?,
     );
   }
 
