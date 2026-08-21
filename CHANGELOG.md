@@ -1,3 +1,12 @@
+## v0.8.42 – Monatsfortschritt und Rückblick
+
+- Der Fortschrittsbereich erklärt nun transparent, dass drei Monatsziele je 100 XP und der Komplettbonus weitere 150 XP bringen.
+- Ein Monatsüberblick zeigt auf einen Blick, wie viele der drei Ziele bereits geschafft sind und welche Gesamtbelohnung möglich ist.
+- Vergangene Monate werden mit Zielstand und tatsächlich gutgeschriebenem Komplettbonus nachvollziehbar archiviert.
+- Der Monatsverlauf wird ausschließlich aus vorhandenen Versuchen und unveränderlichen XP-Ereignissen aufgebaut, sodass keine Belohnung doppelt vergeben wird.
+- Regressionstest für Monatsarchiv, aktuellen Monat und einmalig gutgeschriebenen Bonus ergänzt.
+- Paketversion auf 0.8.42+71 erhöht.
+
 ## v0.8.41 – Monatsziele und einheitliche Spielekarten
 
 - Die Binary-Karte auf der Startseite zeigt nun wie alle anderen Spielarten eine kurze Spielbeschreibung statt eines Katalogzählers.

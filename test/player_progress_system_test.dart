@@ -585,6 +585,50 @@ void main() {
     );
   });
 
+  test('monthly history excludes current month and recognizes awarded bonus',
+      () {
+    final snapshot = ProgressSnapshot(
+      results: const {},
+      progress: const PlayerProgress.empty(),
+      catalogPuzzleIds: const {},
+      attempts: [
+        for (var index = 0; index < 20; index++)
+          _attempt(
+            id: 'july-history-$index',
+            puzzleId: 'july-history-$index',
+            gameType: GameType.values[index % GameType.values.length],
+            mode: GameMode.catalog,
+            date: DateTime(2026, 7, 1 + (index % 8)),
+          ),
+        _attempt(
+          id: 'august-current',
+          puzzleId: 'august-current',
+          gameType: GameType.binairo,
+          mode: GameMode.catalog,
+          date: DateTime(2026, 8, 2),
+        ),
+      ],
+    );
+    final history = service.monthlyHistory(
+      snapshot,
+      [
+        ExperienceEvent(
+          id: 'mission:month-2026-07-monthly-complete',
+          kind: ExperienceEventKind.missionCompleted,
+          points: 150,
+          occurredAt: DateTime(2026, 7, 20),
+          referenceId: 'month-2026-07-monthly-complete',
+        ),
+      ],
+      now: DateTime(2026, 8, 15),
+    );
+
+    expect(history, hasLength(1));
+    expect(history.single.month, DateTime(2026, 7));
+    expect(history.single.completedGoals, 3);
+    expect(history.single.completionBonusAwarded, isTrue);
+  });
+
   test('mission XP is complete, idempotent, and date-specific', () {
     final day = DateTime(2026, 8, 8, 12);
     const dailyService = DailyChallengeService();

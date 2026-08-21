@@ -4221,6 +4221,10 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     final dailyMissions = service.dailyMissions(snapshot);
     final weeklyMissions = service.weeklyMissions(snapshot);
     final monthlyMissions = service.monthlyMissions(snapshot);
+    final monthlyHistory = service.monthlyHistory(
+      snapshot,
+      _experienceEvents,
+    );
     final longTermMissions = service.longTermMissions(snapshot);
     final achievements = service.achievements(snapshot);
     final unlockedCount = achievements.where((goal) => goal.isCompleted).length;
@@ -4440,6 +4444,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
+                  _MonthlyGoalOverviewCard(goals: monthlyMissions),
                   for (final mission in monthlyMissions)
                     _ProgressGoalCard(goal: mission),
                   if (monthlyMissions.every((mission) => mission.isCompleted))
@@ -4448,6 +4453,8 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                           'All monthly goals complete'),
                       points: 150,
                     ),
+                  if (monthlyHistory.isNotEmpty)
+                    _MonthlyHistoryCard(history: monthlyHistory),
                   const SizedBox(height: 20),
                   Text(
                     strings.text('Langzeitziele', 'Long-term goals'),
@@ -4949,6 +4956,112 @@ class _MissionSetBonusCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _MonthlyGoalOverviewCard extends StatelessWidget {
+  const _MonthlyGoalOverviewCard({required this.goals});
+
+  final List<ProgressGoal> goals;
+
+  @override
+  Widget build(BuildContext context) {
+    final completed = goals.where((goal) => goal.isCompleted).length;
+    final colors = Theme.of(context).colorScheme;
+    return Card(
+      color: colors.secondaryContainer,
+      child: ListTile(
+        leading: Icon(
+          Icons.calendar_month_rounded,
+          color: colors.onSecondaryContainer,
+        ),
+        title: Text(
+          context.strings.text(
+            'Monatsziele: $completed von ${goals.length}',
+            'Monthly goals: $completed of ${goals.length}',
+          ),
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+        subtitle: Text(context.strings.text(
+          'Drei Ziele bringen je 100 XP, der Komplettbonus weitere 150 XP. Insgesamt sind 450 XP möglich.',
+          'Each of the three goals awards 100 XP, plus a 150 XP completion bonus. That is 450 XP in total.',
+        )),
+      ),
+    );
+  }
+}
+
+class _MonthlyHistoryCard extends StatelessWidget {
+  const _MonthlyHistoryCard({required this.history});
+
+  final List<MonthlyProgressSummary> history;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.strings;
+    return Card(
+      child: ExpansionTile(
+        leading: const Icon(Icons.history_rounded),
+        title: Text(strings.text('Vergangene Monate', 'Past months')),
+        subtitle: Text(strings.text(
+          'Frühere Monatsziele und Komplettboni',
+          'Previous monthly goals and completion bonuses',
+        )),
+        children: [
+          for (final summary in history.take(12))
+            ListTile(
+              leading: Icon(
+                summary.isCompleted
+                    ? Icons.workspace_premium_rounded
+                    : Icons.calendar_month_outlined,
+              ),
+              title: Text(_monthLabel(summary.month, strings.isEnglish)),
+              subtitle: Text(strings.text(
+                '${summary.completedGoals} von ${summary.totalGoals} Zielen geschafft',
+                '${summary.completedGoals} of ${summary.totalGoals} goals complete',
+              )),
+              trailing: summary.completionBonusAwarded
+                  ? const Text(
+                      '+150 XP',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    )
+                  : null,
+            ),
+        ],
+      ),
+    );
+  }
+
+  static String _monthLabel(DateTime month, bool isEnglish) {
+    const de = [
+      'Januar',
+      'Februar',
+      'März',
+      'April',
+      'Mai',
+      'Juni',
+      'Juli',
+      'August',
+      'September',
+      'Oktober',
+      'November',
+      'Dezember',
+    ];
+    const en = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return '${(isEnglish ? en : de)[month.month - 1]} ${month.year}';
   }
 }
 

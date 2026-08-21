@@ -195,6 +195,22 @@ class ProgressGoal {
   int get remaining => (target - current).clamp(0, target).toInt();
 }
 
+class MonthlyProgressSummary {
+  const MonthlyProgressSummary({
+    required this.month,
+    required this.completedGoals,
+    required this.totalGoals,
+    required this.completionBonusAwarded,
+  });
+
+  final DateTime month;
+  final int completedGoals;
+  final int totalGoals;
+  final bool completionBonusAwarded;
+
+  bool get isCompleted => completedGoals == totalGoals;
+}
+
 class PlayerRank {
   const PlayerRank({
     required this.level,
@@ -800,6 +816,52 @@ class PlayerProgressService {
       optional[rotation],
       optional[(rotation + 1) % optional.length],
     ];
+  }
+
+  List<MonthlyProgressSummary> monthlyHistory(
+    ProgressSnapshot snapshot,
+    Iterable<ExperienceEvent> experienceEvents, {
+    DateTime? now,
+  }) {
+    final current = now ?? DateTime.now();
+    final currentMonth = DateTime(current.year, current.month);
+    final months = <DateTime>{
+      for (final attempt in snapshot.attempts)
+        DateTime(attempt.completedAt.year, attempt.completedAt.month),
+    }..remove(currentMonth);
+    final bonusMonths = <String>{};
+    final monthPattern = RegExp(r'^month-(\d{4})-(\d{2})-monthly-complete$');
+    for (final event in experienceEvents) {
+      final match = monthPattern.firstMatch(event.referenceId ?? '');
+      if (match == null) continue;
+      final month = DateTime(
+        int.parse(match.group(1)!),
+        int.parse(match.group(2)!),
+      );
+      months.add(month);
+      bonusMonths.add(
+        '${match.group(1)}-${match.group(2)}',
+      );
+    }
+    final summaries = <MonthlyProgressSummary>[];
+    for (final month in months) {
+      final goals = monthlyMissions(snapshot, date: month);
+      final monthId = '${month.year.toString().padLeft(4, '0')}-'
+          '${month.month.toString().padLeft(2, '0')}';
+      final completionBonusAwarded = bonusMonths.contains(monthId);
+      summaries.add(MonthlyProgressSummary(
+        month: month,
+        // The immutable XP event is authoritative if older attempt details
+        // were pruned or migrated after the completion bonus was awarded.
+        completedGoals: completionBonusAwarded
+            ? goals.length
+            : goals.where((goal) => goal.isCompleted).length,
+        totalGoals: goals.length,
+        completionBonusAwarded: completionBonusAwarded,
+      ));
+    }
+    summaries.sort((a, b) => b.month.compareTo(a.month));
+    return summaries;
   }
 
   List<ProgressGoal> longTermMissions(ProgressSnapshot snapshot) {

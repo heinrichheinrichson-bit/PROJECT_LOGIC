@@ -34,6 +34,8 @@ void main() {
     expect(find.text('Your records'), findsWidgets);
     expect(find.text('Played'), findsOneWidget);
     expect(find.text('Frozen'), findsOneWidget);
+    expect(find.text('Monthly goals: 0 of 3'), findsOneWidget);
+    expect(find.textContaining('That is 450 XP in total.'), findsOneWidget);
   });
 
   test('system language falls back to German for unsupported locales', () {
