@@ -66,6 +66,14 @@ class AppLocalizations {
       'Die ganze Rätselwelt': 'The whole puzzle world',
       'Löse diesen Monat jede der sechs Spielarten.':
           'Solve all six puzzle types this month.',
+      'Löse diesen Monat acht Rätsel ohne Hinweis.':
+          'Solve eight puzzles without hints this month.',
+      'Anspruchsvoller Monat': 'A challenging month',
+      'Löse diesen Monat vier schwere Rätsel.':
+          'Solve four hard puzzles this month.',
+      'Tagesrätsel im Blick': 'Daily puzzles in focus',
+      'Löse diesen Monat fünf Tagesrätsel.':
+          'Solve five daily puzzles this month.',
       'Alle Monatsziele geschafft': 'All monthly goals complete',
       'Monatsziel': 'Monthly goal',
       'Monats-Komplettbonus': 'Monthly completion bonus',

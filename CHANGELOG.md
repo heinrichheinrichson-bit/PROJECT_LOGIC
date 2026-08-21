@@ -1,3 +1,12 @@
+## v0.8.41 – Monatsziele und einheitliche Spielekarten
+
+- Die Binary-Karte auf der Startseite zeigt nun wie alle anderen Spielarten eine kurze Spielbeschreibung statt eines Katalogzählers.
+- Ein kompakter Monatsziel-Status auf der Startseite führt direkt zum Fortschrittsbereich.
+- Monatsziele wechseln nun kalenderbasiert zwischen Abwechslung, aktiven Tagen, Spielen ohne Hinweis, schweren Rätseln und Tagesrätseln.
+- Die Monatsauswahl bleibt für jeden Kalendermonat dauerhaft stabil, damit vergangener Fortschritt reproduzierbar bleibt.
+- Regressionstests für Startseitentext und Monatsrotation ergänzt.
+- Paketversion auf 0.8.41+70 erhöht.
+
 ## v0.8.39 – Offene Spiele und Katalogfortschritt korrigiert
 
 - Angefangene Partien aller sechs Spielarten erscheinen nun auf der Startseite und lassen sich dort einzeln entfernen, ohne Erfolge oder Statistiken zu löschen.

@@ -124,6 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
   SavedHitoriGame? _savedHitoriGame;
   SavedTentsGame? _savedTentsGame;
   PlayerRank? _rank;
+  List<ProgressGoal> _monthlyMissions = const [];
   bool _loading = true;
 
   @override
@@ -170,6 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
       snapshot,
       experienceEvents: synchronized,
     );
+    final monthlyMissions = progressService.monthlyMissions(snapshot);
     if (!mounted) return;
     setState(() {
       _results = results;
@@ -181,6 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _savedHitoriGame = savedHitoriGame;
       _savedTentsGame = savedTentsGame;
       _rank = rank;
+      _monthlyMissions = monthlyMissions;
       _loading = false;
     });
   }
@@ -391,6 +394,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 12),
                     ],
                     _StreakCard(progress: _progress),
+                    const SizedBox(height: 12),
+                    _HomeAction(
+                      icon: Icons.calendar_month_rounded,
+                      title: strings.text('Monatsziele', 'Monthly goals'),
+                      subtitle: strings.text(
+                        '${_monthlyMissions.where((goal) => goal.isCompleted).length} von ${_monthlyMissions.length} geschafft',
+                        '${_monthlyMissions.where((goal) => goal.isCompleted).length} of ${_monthlyMissions.length} complete',
+                      ),
+                      enabled: true,
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => PlayerProfileScreen(
+                              results: _results,
+                              progress: _progress,
+                            ),
+                          ),
+                        );
+                        await _refresh();
+                      },
+                    ),
                     const SizedBox(height: 28),
                     _HomeSectionHeader(
                       title: strings.text('Deine Spiele', 'Your games'),
@@ -403,8 +427,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     _HomeAction(
                       icon: Icons.grid_4x4_rounded,
                       title: strings.text('Binärpuzzle', 'Binary puzzle'),
-                      subtitle:
-                          '${_catalogCompletedCount(_results)} ${strings.text('von', 'of')} ${binaryPuzzleCatalog.length} ${strings.text('Rätseln gelöst', 'puzzles solved')}',
+                      subtitle: strings.text(
+                        'Ordne Nullen und Einsen durch klare Logik',
+                        'Arrange zeros and ones through clear logic',
+                      ),
                       enabled: true,
                       accent: AppTheme.gameColors['binairo'],
                       onTap: () async {

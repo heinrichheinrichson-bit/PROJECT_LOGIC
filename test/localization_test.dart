@@ -19,6 +19,12 @@ void main() {
 
     expect(find.text('Your games'), findsOneWidget);
     expect(find.text('Your space'), findsOneWidget);
+    expect(find.text('Monthly goals'), findsOneWidget);
+    expect(
+      find.text('Arrange zeros and ones through clear logic'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('of 80 puzzles solved'), findsNothing);
     expect(find.byTooltip('Settings'), findsOneWidget);
 
     await tester.tap(find.textContaining('Level 1 ·'));
@@ -46,6 +52,12 @@ void main() {
     expect(strings.known('Löse 250 Rätsel.'), 'Solve 250 puzzles.');
     expect(strings.known('Sammlung erkunden · Stufe 4'),
         'Explore the collection · Level 4');
+    expect(strings.known('Anspruchsvoller Monat'), 'A challenging month');
+    expect(strings.known('Tagesrätsel im Blick'), 'Daily puzzles in focus');
+    expect(
+      strings.known('Löse diesen Monat acht Rätsel ohne Hinweis.'),
+      'Solve eight puzzles without hints this month.',
+    );
   });
 
   test('shared puzzle hubs and rules have English presentations', () {

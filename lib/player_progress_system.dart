@@ -738,15 +738,15 @@ class PlayerProgressService {
             .map((attempt) => _dateKey(attempt.completedAt))
             .toSet()
             .length;
-    return [
-      _mission(
-        id: 'month-$monthId-puzzles',
-        title: 'Zwanzig klare Momente',
-        description: 'Löse diesen Monat 20 Rätsel.',
-        iconName: 'extension',
-        current: attempts.length,
-        target: 20,
-      ),
+    final puzzles = _mission(
+      id: 'month-$monthId-puzzles',
+      title: 'Zwanzig klare Momente',
+      description: 'Löse diesen Monat 20 Rätsel.',
+      iconName: 'extension',
+      current: attempts.length,
+      target: 20,
+    );
+    final optional = [
       _mission(
         id: 'month-$monthId-active-days',
         title: 'Regelmäßig im Monat',
@@ -764,6 +764,41 @@ class PlayerProgressService {
         current: attempts.map((attempt) => attempt.gameType).toSet().length,
         target: _supportedGameTypes.length,
       ),
+      _mission(
+        id: 'month-$monthId-no-hint',
+        title: 'Aus eigener Kraft',
+        description: 'Löse diesen Monat acht Rätsel ohne Hinweis.',
+        iconName: 'psychology',
+        current: attempts.where((attempt) => attempt.hintsUsed == 0).length,
+        target: 8,
+      ),
+      _mission(
+        id: 'month-$monthId-hard',
+        title: 'Anspruchsvoller Monat',
+        description: 'Löse diesen Monat vier schwere Rätsel.',
+        iconName: 'local_fire_department',
+        current: attempts
+            .where((attempt) => attempt.difficulty == PuzzleDifficulty.hard)
+            .length,
+        target: 4,
+      ),
+      _mission(
+        id: 'month-$monthId-daily',
+        title: 'Tagesrätsel im Blick',
+        description: 'Löse diesen Monat fünf Tagesrätsel.',
+        iconName: 'today',
+        current:
+            attempts.where((attempt) => attempt.mode == GameMode.daily).length,
+        target: 5,
+      ),
+    ];
+    // The selection is deterministic: revisiting a past month always shows
+    // the same goals. August 2026 starts with the two familiar goals.
+    final rotation = (month.year * 12 + month.month) % optional.length;
+    return [
+      puzzles,
+      optional[rotation],
+      optional[(rotation + 1) % optional.length],
     ];
   }
 

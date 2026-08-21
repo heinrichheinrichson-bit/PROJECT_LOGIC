@@ -551,6 +551,40 @@ void main() {
     expect(second, hasLength(first.length));
   });
 
+  test('monthly goal rotation is stable and changes between months', () {
+    const snapshot = ProgressSnapshot(
+      results: {},
+      progress: PlayerProgress.empty(),
+      catalogPuzzleIds: {},
+    );
+
+    final augustFirst = service.monthlyMissions(
+      snapshot,
+      date: DateTime(2026, 8, 1),
+    );
+    final augustAgain = service.monthlyMissions(
+      snapshot,
+      date: DateTime(2026, 8, 31),
+    );
+    final september = service.monthlyMissions(
+      snapshot,
+      date: DateTime(2026, 9, 1),
+    );
+
+    expect(
+      augustAgain.map((goal) => goal.id),
+      orderedEquals(augustFirst.map((goal) => goal.id)),
+    );
+    expect(augustFirst.first.id, 'month-2026-08-puzzles');
+    expect(september.first.id, 'month-2026-09-puzzles');
+    expect(
+      september.skip(1).map((goal) => goal.id.split('-').last),
+      isNot(orderedEquals(
+        augustFirst.skip(1).map((goal) => goal.id.split('-').last),
+      )),
+    );
+  });
+
   test('mission XP is complete, idempotent, and date-specific', () {
     final day = DateTime(2026, 8, 8, 12);
     const dailyService = DailyChallengeService();

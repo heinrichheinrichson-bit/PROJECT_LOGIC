@@ -50,6 +50,7 @@ void main() {
     expect(find.text('Rätsel generieren'), findsNothing);
     expect(find.text('Spiel fortsetzen'), findsNothing);
 
+    await tester.ensureVisible(find.text('Binärpuzzle'));
     await tester.tap(find.text('Binärpuzzle'));
     await tester.pumpAndSettle();
 
