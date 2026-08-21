@@ -4194,6 +4194,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     final rank = _persistedRank ?? service.rank(snapshot);
     final dailyMissions = service.dailyMissions(snapshot);
     final weeklyMissions = service.weeklyMissions(snapshot);
+    final monthlyMissions = service.monthlyMissions(snapshot);
     final longTermMissions = service.longTermMissions(snapshot);
     final achievements = service.achievements(snapshot);
     final unlockedCount = achievements.where((goal) => goal.isCompleted).length;
@@ -4396,6 +4397,30 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                       title: strings.text('Alle Wochenziele geschafft',
                           'All weekly goals complete'),
                       points: 30,
+                    ),
+                  const SizedBox(height: 20),
+                  Text(
+                    strings.text('Dieser Monat', 'This month'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    strings.text(
+                      'Drei größere Ziele für beständigen Fortschritt.',
+                      'Three bigger goals for steady progress.',
+                    ),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  for (final mission in monthlyMissions)
+                    _ProgressGoalCard(goal: mission),
+                  if (monthlyMissions.every((mission) => mission.isCompleted))
+                    _MissionSetBonusCard(
+                      title: strings.text('Alle Monatsziele geschafft',
+                          'All monthly goals complete'),
+                      points: 150,
                     ),
                   const SizedBox(height: 20),
                   Text(

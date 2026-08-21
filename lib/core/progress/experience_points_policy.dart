@@ -83,8 +83,10 @@ class ExperiencePointsPolicy {
   static int mission(String id) {
     if (id.endsWith('-daily-complete')) return 15;
     if (id.endsWith('-weekly-complete')) return 30;
+    if (id.endsWith('-monthly-complete')) return 150;
     if (id.startsWith('daily-')) return 5;
     if (id.startsWith('week-')) return 40;
+    if (id.startsWith('month-')) return 100;
     if (id.startsWith('longterm-')) {
       final target = int.tryParse(id.split('-').last) ?? 0;
       if (target >= 1000) return 750;

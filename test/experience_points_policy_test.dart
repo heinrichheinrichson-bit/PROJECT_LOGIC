@@ -86,6 +86,11 @@ void main() {
         ),
         30,
       );
+      expect(ExperiencePointsPolicy.mission('month-2026-08-puzzles'), 100);
+      expect(
+        ExperiencePointsPolicy.mission('month-2026-08-monthly-complete'),
+        150,
+      );
     });
   });
 

@@ -40,5 +40,14 @@ void main() {
       missionEventDetail('longterm-active-days-30'),
       'Langzeitziel erreicht',
     );
+    expect(
+      missionEventTitle('month-2026-08-variety'),
+      'Die ganze Rätselwelt',
+    );
+    expect(missionEventDetail('month-2026-08-puzzles'), 'Monatsziel');
+    expect(
+      missionEventDetail('month-2026-08-monthly-complete'),
+      'Monats-Komplettbonus',
+    );
   });
 }

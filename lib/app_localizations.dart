@@ -58,6 +58,17 @@ class AppLocalizations {
       'Fünf klare Momente': 'Five clear moments',
       'Aus eigener Kraft': 'On your own',
       'Schwere Kost': 'A tough challenge',
+      'Zwanzig klare Momente': 'Twenty clear moments',
+      'Löse diesen Monat 20 Rätsel.': 'Solve 20 puzzles this month.',
+      'Regelmäßig im Monat': 'A steady month',
+      'Löse an acht verschiedenen Tagen dieses Monats ein Rätsel.':
+          'Solve a puzzle on eight different days this month.',
+      'Die ganze Rätselwelt': 'The whole puzzle world',
+      'Löse diesen Monat jede der sechs Spielarten.':
+          'Solve all six puzzle types this month.',
+      'Alle Monatsziele geschafft': 'All monthly goals complete',
+      'Monatsziel': 'Monthly goal',
+      'Monats-Komplettbonus': 'Monthly completion bonus',
       'Sammlung erkunden': 'Explore the collection',
       'Eigene Auswahl': 'Your own choice',
       'Regelmäßig dabei': 'A regular habit',

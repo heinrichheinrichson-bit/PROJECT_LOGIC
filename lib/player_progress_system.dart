@@ -116,6 +116,19 @@ class ProgressSnapshot {
     }).toList(growable: false);
   }
 
+  List<PuzzleAttempt> attemptsInMonth(DateTime date) {
+    final start = DateTime(date.year, date.month);
+    final end = DateTime(date.year, date.month + 1);
+    return attempts.where((attempt) {
+      final completed = DateTime(
+        attempt.completedAt.year,
+        attempt.completedAt.month,
+        attempt.completedAt.day,
+      );
+      return !completed.isBefore(start) && completed.isBefore(end);
+    }).toList(growable: false);
+  }
+
   static bool _isSameDay(DateTime first, DateTime second) =>
       first.year == second.year &&
       first.month == second.month &&
@@ -143,6 +156,12 @@ class ProgressSnapshot {
       },
     ).length;
   }
+
+  int activeDaysInMonth(DateTime date) => progress.completedDays
+      .map(DateTime.tryParse)
+      .whereType<DateTime>()
+      .where((value) => value.year == date.year && value.month == date.month)
+      .length;
 
   int get distinctGamesCompleted => GameType.values
       .where((gameType) => completedForGame(gameType) > 0)
@@ -705,6 +724,49 @@ class PlayerProgressService {
     return [optional[rotation], optional[(rotation + 1) % optional.length]];
   }
 
+  List<ProgressGoal> monthlyMissions(
+    ProgressSnapshot snapshot, {
+    DateTime? date,
+  }) {
+    final month = date ?? DateTime.now();
+    final monthId = '${month.year.toString().padLeft(4, '0')}-'
+        '${month.month.toString().padLeft(2, '0')}';
+    final attempts = snapshot.attemptsInMonth(month);
+    final activeDays = attempts.isEmpty
+        ? snapshot.activeDaysInMonth(month)
+        : attempts
+            .map((attempt) => _dateKey(attempt.completedAt))
+            .toSet()
+            .length;
+    return [
+      _mission(
+        id: 'month-$monthId-puzzles',
+        title: 'Zwanzig klare Momente',
+        description: 'Löse diesen Monat 20 Rätsel.',
+        iconName: 'extension',
+        current: attempts.length,
+        target: 20,
+      ),
+      _mission(
+        id: 'month-$monthId-active-days',
+        title: 'Regelmäßig im Monat',
+        description:
+            'Löse an acht verschiedenen Tagen dieses Monats ein Rätsel.',
+        iconName: 'calendar_month',
+        current: activeDays,
+        target: 8,
+      ),
+      _mission(
+        id: 'month-$monthId-variety',
+        title: 'Die ganze Rätselwelt',
+        description: 'Löse diesen Monat jede der sechs Spielarten.',
+        iconName: 'category',
+        current: attempts.map((attempt) => attempt.gameType).toSet().length,
+        target: _supportedGameTypes.length,
+      ),
+    ];
+  }
+
   List<ProgressGoal> longTermMissions(ProgressSnapshot snapshot) {
     final chains = _longTermMissionChains(snapshot);
     return [
@@ -853,6 +915,29 @@ class PlayerProgressService {
         _addMissionEvent(
           events,
           'week-${_dateKey(week)}-weekly-complete',
+          occurredAt,
+        );
+      }
+    }
+
+    final months = <String, DateTime>{};
+    for (final day in dates.values) {
+      final start = DateTime(day.year, day.month);
+      months['${start.year}-${start.month}'] = start;
+    }
+    for (final month in months.values) {
+      final goals = monthlyMissions(snapshot, date: month);
+      final occurredAt =
+          _latestAttemptAt(snapshot.attemptsInMonth(month), current);
+      for (final goal in goals.where((goal) => goal.isCompleted)) {
+        _addMissionEvent(events, goal.id, occurredAt);
+      }
+      if (goals.every((goal) => goal.isCompleted)) {
+        final monthId = '${month.year.toString().padLeft(4, '0')}-'
+            '${month.month.toString().padLeft(2, '0')}';
+        _addMissionEvent(
+          events,
+          'month-$monthId-monthly-complete',
           occurredAt,
         );
       }

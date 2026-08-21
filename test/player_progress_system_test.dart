@@ -462,6 +462,95 @@ void main() {
     expect(weekly.first.id, contains('2026-08-03'));
   });
 
+  test('monthly missions use only attempts from the selected month', () {
+    final snapshot = ProgressSnapshot(
+      results: const {},
+      progress: const PlayerProgress.empty(),
+      catalogPuzzleIds: const {},
+      attempts: [
+        _attempt(
+          id: 'july',
+          puzzleId: 'july',
+          gameType: GameType.binairo,
+          mode: GameMode.catalog,
+          date: DateTime(2026, 7, 31),
+        ),
+        _attempt(
+          id: 'august-a',
+          puzzleId: 'august-a',
+          gameType: GameType.hashi,
+          mode: GameMode.catalog,
+          date: DateTime(2026, 8, 1),
+        ),
+        _attempt(
+          id: 'august-b',
+          puzzleId: 'august-b',
+          gameType: GameType.slitherlink,
+          mode: GameMode.generated,
+          date: DateTime(2026, 8, 31, 23, 59),
+        ),
+        _attempt(
+          id: 'september',
+          puzzleId: 'september',
+          gameType: GameType.tents,
+          mode: GameMode.daily,
+          date: DateTime(2026, 9, 1),
+        ),
+      ],
+    );
+
+    final goals = service.monthlyMissions(
+      snapshot,
+      date: DateTime(2026, 8, 15),
+    );
+
+    expect(goals, hasLength(3));
+    expect(goals.first.id, 'month-2026-08-puzzles');
+    expect(goals.first.current, 2);
+    expect(goals[1].current, 2);
+    expect(goals[2].current, 2);
+  });
+
+  test('completed monthly goals and bonus award XP only once', () {
+    final attempts = <PuzzleAttempt>[
+      for (var index = 0; index < 20; index++)
+        _attempt(
+          id: 'monthly-$index',
+          puzzleId: 'monthly-$index',
+          gameType: GameType.values[index % 6],
+          mode: GameMode.catalog,
+          date: DateTime(2026, 8, 1 + (index % 8), 12),
+        ),
+    ];
+    final snapshot = ProgressSnapshot(
+      results: const {},
+      progress: const PlayerProgress.empty(),
+      catalogPuzzleIds: const {},
+      attempts: attempts,
+    );
+
+    final goals = service.monthlyMissions(snapshot, date: DateTime(2026, 8));
+    final first = service.synchronizeMissionXp(
+      snapshot,
+      const [],
+      now: DateTime(2026, 8, 20),
+    );
+    final second = service.synchronizeMissionXp(
+      snapshot,
+      first,
+      now: DateTime(2026, 8, 21),
+    );
+
+    expect(goals.every((goal) => goal.isCompleted), isTrue);
+    expect(
+      first.where(
+        (event) => event.referenceId == 'month-2026-08-monthly-complete',
+      ),
+      hasLength(1),
+    );
+    expect(second, hasLength(first.length));
+  });
+
   test('mission XP is complete, idempotent, and date-specific', () {
     final day = DateTime(2026, 8, 8, 12);
     const dailyService = DailyChallengeService();

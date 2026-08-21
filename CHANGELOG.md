@@ -722,3 +722,11 @@
 - Warntext berücksichtigt, ob noch ein schützender Eiszapfen vorhanden ist.
 - Android-Benachrichtigungsberechtigung wird erst beim Einschalten angefragt; Alarme werden nach Neustart sowie Zeit- oder Zeitzonenwechsel wiederhergestellt.
 - Paketversion auf 0.8.29+58 erhöht.
+## v0.8.40 – Monatliche Herausforderungen
+
+- Drei appweite Monatsziele für Rätselmenge, aktive Tage und Spielartenvielfalt ergänzt.
+- Monatsziele erhalten eigene XP-Belohnungen und einen einmaligen Komplettbonus.
+- Monatsfortschritt bleibt sauber von Tages-, Wochen- und Langzeitzielen getrennt.
+- Deutsche und englische Darstellung einschließlich XP-Verlauf ergänzt.
+- Regressionstests für Monatsgrenzen, Fortschritt und einmalige XP-Gutschriften ergänzt.
+- Paketversion auf 0.8.40+69 erhöht.
