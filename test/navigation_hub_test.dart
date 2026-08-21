@@ -1,11 +1,44 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
 import 'package:project_logic_prototype/app_preferences.dart';
+import 'package:project_logic_prototype/core/domain/game_identity.dart';
 import 'package:project_logic_prototype/game_storage.dart';
 import 'package:project_logic_prototype/main.dart';
+import 'package:project_logic_prototype/features/tents/domain/tents_generator.dart';
+import 'package:project_logic_prototype/tents_game.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  testWidgets('home shows and can dismiss an unfinished Tents game',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final puzzle = const TentsGenerator().generate(
+      seed: 20260821,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    await TentsGameStore().save(SavedTentsGame(
+      puzzle: puzzle,
+      marks: const {},
+      elapsedSeconds: 42,
+      moves: 3,
+      hintsRemaining: 3,
+    ));
+    final preferences = await AppPreferences.load();
+
+    await tester.pumpWidget(ProjectLogicApp(preferences: preferences));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Zelte & Bäume fortsetzen'), findsOneWidget);
+    await tester.tap(find.byTooltip('Von der Startseite entfernen'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Statistiken bleiben erhalten'), findsOneWidget);
+    await tester.tap(find.text('Entfernen'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Zelte & Bäume fortsetzen'), findsNothing);
+    expect(await TentsGameStore().load(), isNull);
+  });
+
   testWidgets('home opens the dedicated binary puzzle hub', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final preferences = await AppPreferences.load();

@@ -1,3 +1,12 @@
+## v0.8.39 – Offene Spiele und Katalogfortschritt korrigiert
+
+- Angefangene Partien aller sechs Spielarten erscheinen nun auf der Startseite und lassen sich dort einzeln entfernen, ohne Erfolge oder Statistiken zu löschen.
+- Katalogfortschritt zählt nur noch verschiedene echte Katalogrätsel; Tages-, Zufalls- und Wiederholungsabschlüsse können den Katalogumfang nicht mehr überschreiten.
+- Statistikansichten unterscheiden bei Sammlungen zwischen verschiedenen Rätseln und der Gesamtzahl aller Abschlüsse.
+- Zelte-&-Bäume-Hinweise bevorzugen konkrete, hilfreiche Zeltsetzungen statt belangloser Grasfelder fernab eines Baums.
+- Regressionstests für Startseiten-Spielstände, Katalogabgrenzung und hilfreiche Zelte-Hinweise ergänzt.
+- Paketversion auf 0.8.39+68 erhöht.
+
 ## v0.8.38 – Tagesrätsel und Spielzeit eindeutig benannt
 
 - Auch die älteren Ein- und Zehn-Stunden-Erfolge auf lesbare Stunden- und Minutenwerte umgestellt.

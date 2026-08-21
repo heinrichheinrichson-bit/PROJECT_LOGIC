@@ -193,6 +193,48 @@ void main() {
     expect(preferences.containsKey('active_tents_game_v1'), isFalse);
   });
 
+  test('catalog progress excludes daily and generated Tents completions',
+      () async {
+    final storage = GameStorage();
+    final catalogPuzzle = tentsPuzzleCatalog.first;
+    final generatedPuzzle = const TentsGenerator().generate(
+      seed: 20260821,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    await storage.recordCompletion(
+      puzzleId: catalogPuzzle.id,
+      elapsedSeconds: 40,
+      source: GameMode.catalog,
+      difficulty: catalogPuzzle.difficulty,
+      boardSize: catalogPuzzle.size,
+      gameType: GameType.tents,
+    );
+    await storage.recordCompletion(
+      puzzleId: generatedPuzzle.id,
+      elapsedSeconds: 50,
+      source: GameMode.generated,
+      difficulty: generatedPuzzle.difficulty,
+      boardSize: generatedPuzzle.size,
+      gameType: GameType.tents,
+    );
+    await storage.recordCompletion(
+      puzzleId: 'daily-tents-2026-08-21',
+      elapsedSeconds: 60,
+      source: GameMode.daily,
+      difficulty: PuzzleDifficulty.easy,
+      boardSize: 6,
+      gameType: GameType.tents,
+    );
+
+    expect(
+      tentsCatalogCompletionIds(
+        results: await storage.loadResults(),
+        attempts: await storage.loadAttempts(),
+      ),
+      {catalogPuzzle.id},
+    );
+  });
+
   testWidgets('game fits a narrow phone and supports test completion',
       (tester) async {
     tester.view.physicalSize = const Size(360, 800);
@@ -242,6 +284,27 @@ void main() {
     await tester.tap(find.text('Werbung abschließen'));
     await tester.pumpAndSettle();
     expect(find.text('1 Tipps'), findsOneWidget);
+  });
+
+  testWidgets('first Tents hint places an actionable tent, not trivial grass',
+      (tester) async {
+    final puzzle = const TentsGenerator().generate(
+      seed: 20260822,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: TentsGameScreen(puzzle: puzzle),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Hinweis'));
+    await tester.pumpAndSettle();
+    expect(find.text('Kombinierter Schluss'), findsOneWidget);
+    await tester.tap(find.text('Hinweis anwenden'));
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.park_rounded), findsAtLeastNWidgets(1));
+    expect(find.byIcon(Icons.grass_rounded), findsNothing);
   });
 
   testWidgets('test solve counts for a daily Tents puzzle', (tester) async {

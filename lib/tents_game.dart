@@ -14,6 +14,7 @@ import 'core/presentation/puzzle_hub_components.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/xp_award_badge.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
+import 'core/statistics/puzzle_attempt.dart';
 import 'features/tents/domain/tents_generator.dart';
 import 'features/tents/domain/tents_catalog.dart';
 import 'features/tents/domain/tents_puzzle.dart';
@@ -130,6 +131,29 @@ class TentsGameStore {
       (await SharedPreferences.getInstance()).remove(_key);
 }
 
+Set<String> tentsCatalogCompletionIds({
+  required Map<String, PuzzleResult> results,
+  required Iterable<PuzzleAttempt> attempts,
+}) {
+  final catalogIds = tentsPuzzleCatalog.map((puzzle) => puzzle.id).toSet();
+  final completed = attempts
+      .where((attempt) =>
+          attempt.gameType == GameType.tents &&
+          attempt.mode == GameMode.catalog &&
+          catalogIds.contains(attempt.puzzleId))
+      .map((attempt) => attempt.puzzleId)
+      .toSet();
+  // Results predate the attempt log. Keep genuine legacy catalog progress,
+  // while excluding generated and daily Tents ids from the 72-puzzle total.
+  completed.addAll(results.values
+      .where((result) =>
+          result.gameType == GameType.tents &&
+          result.effectiveSource == GameMode.catalog &&
+          catalogIds.contains(result.puzzleId))
+      .map((result) => result.puzzleId));
+  return completed;
+}
+
 class TentsHubScreen extends StatefulWidget {
   const TentsHubScreen({this.onOpenDaily, this.onOpenStatistics, super.key});
   final void Function(BuildContext context)? onOpenDaily;
@@ -149,14 +173,16 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
 
   Future<void> _refresh() async {
     final saved = await TentsGameStore().load();
-    final results = await GameStorage().loadResults();
+    final storage = GameStorage();
+    final results = await storage.loadResults();
+    final attempts = await storage.loadAttempts();
     if (mounted) {
       setState(() {
         _saved = saved;
-        _completedIds = results.keys
-            .where((key) => key.startsWith('${GameType.tents.name}:'))
-            .map((key) => key.substring('${GameType.tents.name}:'.length))
-            .toSet();
+        _completedIds = tentsCatalogCompletionIds(
+          results: results,
+          attempts: attempts,
+        );
       });
     }
   }
@@ -655,6 +681,21 @@ class _TentsGameScreenState extends State<TentsGameScreen>
         );
       }
     }
+    // A missing solution tent is always actionable. Prefer it over generic
+    // grass that merely fills an already-complete line and may be far away
+    // from every tree.
+    for (final cell in widget.puzzle.solution) {
+      if (_state.markAt(cell.$1, cell.$2) != TentsCellMark.tent) {
+        return (
+          cell: cell,
+          mark: TentsCellMark.tent,
+          title: 'Kombinierter Schluss',
+          explanation: 'Betrachte B\u00e4ume, Randzahlen und ausgeschlossene '
+              'Nachbarfelder gemeinsam. Auf Feld ${cell.$1 + 1}/'
+              '${cell.$2 + 1} bleibt nur ein Zelt m\u00f6glich.',
+        );
+      }
+    }
     for (var index = 0; index < size; index++) {
       for (final isRow in [true, false]) {
         final cells = [
@@ -708,18 +749,6 @@ class _TentsGameScreenState extends State<TentsGameScreen>
             );
           }
         }
-      }
-    }
-    for (final cell in widget.puzzle.solution) {
-      if (_state.markAt(cell.$1, cell.$2) != TentsCellMark.tent) {
-        return (
-          cell: cell,
-          mark: TentsCellMark.tent,
-          title: 'Kombinierter Schluss',
-          explanation: 'Betrachte B\u00e4ume, Randzahlen und ausgeschlossene '
-              'Nachbarfelder gemeinsam. Auf Feld ${cell.$1 + 1}/'
-              '${cell.$2 + 1} bleibt nur ein Zelt m\u00f6glich.',
-        );
       }
     }
     return null;

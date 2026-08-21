@@ -117,8 +117,12 @@ class _HomeScreenState extends State<HomeScreen> {
   final GameStorage _storage = GameStorage();
   Map<String, PuzzleResult> _results = const {};
   PlayerProgress _progress = const PlayerProgress.empty();
+  SavedGame? _savedBinairoGame;
   SavedHashiGame? _savedHashiGame;
   SavedSlitherlinkGame? _savedSlitherlinkGame;
+  SavedFutoshikiGame? _savedFutoshikiGame;
+  SavedHitoriGame? _savedHitoriGame;
+  SavedTentsGame? _savedTentsGame;
   PlayerRank? _rank;
   bool _loading = true;
 
@@ -133,8 +137,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final progress = await _storage.loadPlayerProgress();
     final attempts = await _storage.loadAttempts();
     final existingEvents = await _storage.loadExperienceEvents();
+    final savedBinairoGame = await _storage.loadActiveGame();
     final savedHashiGame = await HashiGameStore().load();
     final savedSlitherlinkGame = await SlitherlinkGameStore().load();
+    final savedFutoshikiGame = await FutoshikiGameStore().load();
+    final savedHitoriGame = await HitoriGameStore().load();
+    final savedTentsGame = await TentsGameStore().load();
     const progressService = PlayerProgressService();
     final snapshot = ProgressSnapshot(
       results: results,
@@ -166,8 +174,12 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _results = results;
       _progress = progress;
+      _savedBinairoGame = savedBinairoGame;
       _savedHashiGame = savedHashiGame;
       _savedSlitherlinkGame = savedSlitherlinkGame;
+      _savedFutoshikiGame = savedFutoshikiGame;
+      _savedHitoriGame = savedHitoriGame;
+      _savedTentsGame = savedTentsGame;
       _rank = rank;
       _loading = false;
     });
@@ -217,6 +229,25 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 14),
                     ],
+                    if (_savedBinairoGame case final saved?) ...[
+                      _HomeAction(
+                        icon: Icons.play_circle_outline_rounded,
+                        title: strings.text('Bin\u00e4rpuzzle fortsetzen',
+                            'Continue Binary puzzle'),
+                        subtitle:
+                            '${saved.definition?.difficulty.label ?? ''} \u00b7 ${_shortTime(saved.elapsedSeconds)}',
+                        enabled: true,
+                        emphasized: true,
+                        onDismiss: () => _discardSavedGame(
+                          title: strings.text(
+                              'Offenes Bin\u00e4rpuzzle entfernen?',
+                              'Remove unfinished Binary puzzle?'),
+                          clear: _storage.clearActiveGame,
+                        ),
+                        onTap: () => _openSavedBinairo(saved),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     if (_savedHashiGame case final saved?) ...[
                       _HomeAction(
                         icon: Icons.play_circle_outline_rounded,
@@ -226,6 +257,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             '${saved.puzzle.sharedDifficulty.label} · ${saved.moves} ${strings.text('Züge', 'moves')} · ${_shortTime(saved.elapsedSeconds)}',
                         enabled: true,
                         emphasized: true,
+                        onDismiss: () => _discardSavedGame(
+                          title: strings.text('Offenes Hashi entfernen?',
+                              'Remove unfinished Hashi?'),
+                          clear: HashiGameStore().clear,
+                        ),
                         onTap: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute<void>(
@@ -250,12 +286,102 @@ class _HomeScreenState extends State<HomeScreen> {
                             '${saved.puzzle.rows} × ${saved.puzzle.columns} · ${saved.moves} ${strings.text('Züge', 'moves')} · ${_shortTime(saved.elapsedSeconds)}',
                         enabled: true,
                         emphasized: true,
+                        onDismiss: () => _discardSavedGame(
+                          title: strings.text('Offenes Slitherlink entfernen?',
+                              'Remove unfinished Slitherlink?'),
+                          clear: SlitherlinkGameStore().clear,
+                        ),
                         onTap: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute<void>(
                               builder: (_) => SlitherlinkGameScreen(
                                 puzzle: saved.puzzle,
                                 savedGame: saved,
+                              ),
+                            ),
+                          );
+                          await _refresh();
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (_savedFutoshikiGame case final saved?) ...[
+                      _HomeAction(
+                        icon: Icons.play_circle_outline_rounded,
+                        title: strings.text(
+                            'Futoshiki fortsetzen', 'Continue Futoshiki'),
+                        subtitle:
+                            '${saved.puzzle.difficulty.label} \u00b7 ${saved.moves} ${strings.text('Z\u00fcge', 'moves')} \u00b7 ${_shortTime(saved.elapsedSeconds)}',
+                        enabled: true,
+                        emphasized: true,
+                        onDismiss: () => _discardSavedGame(
+                          title: strings.text('Offenes Futoshiki entfernen?',
+                              'Remove unfinished Futoshiki?'),
+                          clear: FutoshikiGameStore().clear,
+                        ),
+                        onTap: () async {
+                          await Navigator.of(context)
+                              .push(MaterialPageRoute<void>(
+                            builder: (_) => FutoshikiGameScreen(
+                              puzzle: saved.puzzle,
+                              savedGame: saved,
+                              mode: saved.mode,
+                            ),
+                          ));
+                          await _refresh();
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (_savedHitoriGame case final saved?) ...[
+                      _HomeAction(
+                        icon: Icons.play_circle_outline_rounded,
+                        title: strings.text(
+                            'Hitori fortsetzen', 'Continue Hitori'),
+                        subtitle:
+                            '${saved.puzzle.difficulty.label} \u00b7 ${saved.moves} ${strings.text('Z\u00fcge', 'moves')} \u00b7 ${_shortTime(saved.elapsedSeconds)}',
+                        enabled: true,
+                        emphasized: true,
+                        onDismiss: () => _discardSavedGame(
+                          title: strings.text('Offenes Hitori entfernen?',
+                              'Remove unfinished Hitori?'),
+                          clear: HitoriGameStore().clear,
+                        ),
+                        onTap: () async {
+                          await Navigator.of(context)
+                              .push(MaterialPageRoute<void>(
+                            builder: (_) => HitoriGameScreen(
+                              puzzle: saved.puzzle,
+                              savedGame: saved,
+                              mode: saved.mode,
+                            ),
+                          ));
+                          await _refresh();
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (_savedTentsGame case final saved?) ...[
+                      _HomeAction(
+                        icon: Icons.play_circle_outline_rounded,
+                        title: strings.text('Zelte & B\u00e4ume fortsetzen',
+                            'Continue Tents & Trees'),
+                        subtitle:
+                            '${saved.puzzle.difficulty.label} \u00b7 ${saved.moves} ${strings.text('Z\u00fcge', 'moves')} \u00b7 ${_shortTime(saved.elapsedSeconds)}',
+                        enabled: true,
+                        emphasized: true,
+                        onDismiss: () => _discardSavedGame(
+                          title: strings.text('Offenes Lager entfernen?',
+                              'Remove unfinished camp?'),
+                          clear: TentsGameStore().clear,
+                        ),
+                        onTap: () async {
+                          await Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => TentsGameScreen(
+                                puzzle: saved.puzzle,
+                                savedGame: saved,
+                                mode: saved.mode,
                               ),
                             ),
                           );
@@ -558,6 +684,58 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _discardSavedGame({
+    required String title,
+    required Future<void> Function() clear,
+  }) async {
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: Text(title),
+        content: Text(dialog.strings.text(
+          'Der angefangene Spielstand wird entfernt. Bereits abgeschlossene R\u00e4tsel und Statistiken bleiben erhalten.',
+          'The unfinished game will be removed. Completed puzzles and statistics remain untouched.',
+        )),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialog, false),
+            child: Text(dialog.strings.text('Abbrechen', 'Cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialog, true),
+            child: Text(dialog.strings.text('Entfernen', 'Remove')),
+          ),
+        ],
+      ),
+    );
+    if (discard != true) return;
+    await clear();
+    await _refresh();
+  }
+
+  Future<void> _openSavedBinairo(SavedGame saved) async {
+    final definition = saved.definition ??
+        binaryPuzzleCatalog
+            .where((candidate) => candidate.id == saved.puzzleId)
+            .firstOrNull;
+    if (definition == null) {
+      await _storage.clearActiveGame();
+      await _refresh();
+      return;
+    }
+    if (!mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => BinaryPuzzleScreen(
+        definition: definition,
+        savedGame: saved,
+        titleOverride: saved.titleOverride,
+        storeDefinition: saved.isGenerated,
+        source: saved.source,
+      ),
+    ));
+    await _refresh();
   }
 
   static String _shortTime(int seconds) {
@@ -1660,6 +1838,7 @@ class _HomeAction extends StatelessWidget {
       this.enabled = false,
       this.accent,
       this.emphasized = false,
+      this.onDismiss,
       this.onTap});
   final IconData icon;
   final String title;
@@ -1667,6 +1846,7 @@ class _HomeAction extends StatelessWidget {
   final bool enabled;
   final Color? accent;
   final bool emphasized;
+  final VoidCallback? onDismiss;
   final VoidCallback? onTap;
 
   @override
@@ -1715,7 +1895,14 @@ class _HomeAction extends StatelessWidget {
                   Text(context.strings.known(subtitle),
                       style: Theme.of(context).textTheme.bodySmall),
                 ])),
-            if (enabled)
+            if (onDismiss != null)
+              IconButton(
+                tooltip: context.strings
+                    .text('Von der Startseite entfernen', 'Remove from home'),
+                onPressed: onDismiss,
+                icon: const Icon(Icons.close_rounded, size: 20),
+              )
+            else if (enabled)
               const Icon(Icons.arrow_forward_ios_rounded, size: 17)
             else
               Text(context.strings.text('BALD', 'SOON'),
@@ -4749,6 +4936,23 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final strings = context.strings;
     final results = widget.results;
     final progress = widget.progress;
+    int uniqueCatalogCompleted(GameType gameType, Set<String> validIds) {
+      final ids = _attempts
+          .where((attempt) =>
+              attempt.gameType == gameType &&
+              attempt.mode == GameMode.catalog &&
+              validIds.contains(attempt.puzzleId))
+          .map((attempt) => attempt.puzzleId)
+          .toSet();
+      ids.addAll(results.values
+          .where((result) =>
+              result.gameType == gameType &&
+              result.effectiveSource == GameMode.catalog &&
+              validIds.contains(result.puzzleId))
+          .map((result) => result.puzzleId));
+      return ids.length;
+    }
+
     final catalogIds = binaryPuzzleCatalog.map((puzzle) => puzzle.id).toSet();
     final catalogResults = <String, PuzzleResult>{
       for (final entry in results.entries)
@@ -4764,7 +4968,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             result.gameType == GameType.binairo &&
             result.effectiveSource == GameMode.daily)
         .toList(growable: false);
-    final catalogCompleted = catalogResults.length;
+    final catalogCompleted = uniqueCatalogCompleted(
+      GameType.binairo,
+      catalogIds,
+    );
     final catalogTotal = binaryPuzzleCatalog.length;
     final generatedCompleted = generatedResults.fold<int>(
       0,
@@ -4823,13 +5030,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     final hashiCompleted = results.values
         .where((result) => result.gameType == GameType.hashi)
         .fold<int>(0, (sum, result) => sum + result.completionCount);
-    final hashiCollectionCompleted = results.values
-        .where((result) =>
-            result.gameType == GameType.hashi &&
-            result.effectiveSource == GameMode.catalog)
-        .map((result) => result.puzzleId)
-        .toSet()
-        .length;
+    final hashiCollectionCompleted = uniqueCatalogCompleted(
+      GameType.hashi,
+      hashiPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
+    );
     final slitherlinkResults = results.values
         .where((result) => result.gameType == GameType.slitherlink)
         .toList(growable: false);
@@ -4837,11 +5041,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       0,
       (sum, result) => sum + result.completionCount,
     );
-    final slitherlinkCollectionCompleted = slitherlinkResults
-        .where((result) => result.effectiveSource == GameMode.catalog)
-        .map((result) => result.puzzleId)
-        .toSet()
-        .length;
+    final slitherlinkCollectionCompleted = uniqueCatalogCompleted(
+      GameType.slitherlink,
+      slitherlinkPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
+    );
     final futoshikiResults = results.values
         .where((result) => result.gameType == GameType.futoshiki)
         .toList(growable: false);
@@ -4849,11 +5052,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       0,
       (sum, result) => sum + result.completionCount,
     );
-    final futoshikiCollectionCompleted = futoshikiResults
-        .where((result) => result.effectiveSource == GameMode.catalog)
-        .map((result) => result.puzzleId)
-        .toSet()
-        .length;
+    final futoshikiCollectionCompleted = uniqueCatalogCompleted(
+      GameType.futoshiki,
+      futoshikiPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
+    );
     final hitoriResults = results.values
         .where((result) => result.gameType == GameType.hitori)
         .toList(growable: false);
@@ -4861,11 +5063,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       0,
       (sum, result) => sum + result.completionCount,
     );
-    final hitoriCollectionCompleted = hitoriResults
-        .where((result) => result.effectiveSource == GameMode.catalog)
-        .map((result) => result.puzzleId)
-        .toSet()
-        .length;
+    final hitoriCollectionCompleted = uniqueCatalogCompleted(
+      GameType.hitori,
+      hitoriPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
+    );
     final tentsResults = results.values
         .where((result) => result.gameType == GameType.tents)
         .toList(growable: false);
@@ -4873,11 +5074,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       0,
       (sum, result) => sum + result.completionCount,
     );
-    final tentsCollectionCompleted = tentsResults
-        .where((result) => result.effectiveSource == GameMode.catalog)
-        .map((result) => result.puzzleId)
-        .toSet()
-        .length;
+    final tentsCollectionCompleted = uniqueCatalogCompleted(
+      GameType.tents,
+      tentsPuzzleCatalog.map((puzzle) => puzzle.id).toSet(),
+    );
     final isBinairoDetail = widget.gameType == GameType.binairo;
     final isHashiDetail = widget.gameType == GameType.hashi;
     final isSlitherlinkDetail = widget.gameType == GameType.slitherlink;
@@ -5903,10 +6103,15 @@ class _ModePerformanceCard extends StatelessWidget {
       child: ExpansionTile(
         leading: Icon(icon),
         title: Text(context.strings.known(title)),
-        subtitle: Text(context.strings.text(
-          '${statistics.completedCount} abgeschlossen',
-          '${statistics.completedCount} completed',
-        )),
+        subtitle: Text(mode == GameMode.catalog
+            ? context.strings.text(
+                '${statistics.uniquePuzzleCount} verschiedene · ${statistics.completedCount} Abschl\u00fcsse',
+                '${statistics.uniquePuzzleCount} unique · ${statistics.completedCount} completions',
+              )
+            : context.strings.text(
+                '${statistics.completedCount} abgeschlossen',
+                '${statistics.completedCount} completed',
+              )),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
           Row(

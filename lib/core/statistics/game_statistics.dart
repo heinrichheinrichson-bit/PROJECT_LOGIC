@@ -17,6 +17,8 @@ class GameStatistics {
   final List<PuzzleAttempt> attempts;
 
   int get completedCount => attempts.length;
+  int get uniquePuzzleCount =>
+      attempts.map((attempt) => attempt.puzzleId).toSet().length;
   int get totalPlaySeconds =>
       attempts.fold(0, (total, attempt) => total + attempt.elapsedSeconds);
   int get solvedWithoutHints =>
