@@ -790,6 +790,13 @@
 - Der zweite Zugang unter `Dein Bereich` heißt eindeutiger `Fortschritt & Erfolge`.
 - Der vollständige Fortschrittsbereich mit Zielen, Erfolgen, XP-Verlauf und Kalender bleibt unverändert erhalten.
 - Paketversion auf 0.8.44+73 erhöht.
+## v0.8.49 - Google-Play-Releasevorbereitung
+
+- Die unsichere Debug-Signierung für Release-Builds entfernt.
+- Eine lokale, nicht versionierte Konfiguration für den dauerhaften Thinkheim-Upload-Schlüssel eingerichtet.
+- Release-Builds brechen nun mit einer eindeutigen Meldung ab, wenn die Signierung fehlt.
+- Paketversion auf 0.8.49+78 erhöht.
+
 ## v0.8.48 - Stabiler Sicherungsimport
 
 - Einen Flutter-Lebenszyklusfehler beim Einfügen und Wiederherstellen einer Sicherung behoben.
