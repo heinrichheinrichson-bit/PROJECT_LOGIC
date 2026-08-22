@@ -1,7 +1,7 @@
 name: project_logic_prototype
 description: Thinkheim — a quiet collection of classic logic puzzles.
 publish_to: "none"
-version: 0.8.47+76
+version: 0.8.48+77
 environment:
   sdk: ">=3.3.0 <4.0.0"
 

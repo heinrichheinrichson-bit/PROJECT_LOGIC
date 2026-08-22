@@ -790,3 +790,8 @@
 - Der zweite Zugang unter `Dein Bereich` heißt eindeutiger `Fortschritt & Erfolge`.
 - Der vollständige Fortschrittsbereich mit Zielen, Erfolgen, XP-Verlauf und Kalender bleibt unverändert erhalten.
 - Paketversion auf 0.8.44+73 erhöht.
+## v0.8.48 - Stabiler Sicherungsimport
+
+- Einen Flutter-Lebenszyklusfehler beim Einfügen und Wiederherstellen einer Sicherung behoben.
+- Der Eingabedialog gibt keine noch vom Framework verwendeten Steuerelemente mehr vorzeitig frei.
+- Paketversion auf 0.8.48+77 erhöht.

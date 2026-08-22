@@ -3833,7 +3833,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Future<void> _restoreBackup(BuildContext context) async {
-    final controller = TextEditingController();
+    var pastedBackup = '';
     final backup = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -3841,9 +3841,11 @@ class SettingsScreen extends StatelessWidget {
         title: Text(
             dialogContext.strings.text('Sicherung einfügen', 'Paste backup')),
         content: TextField(
-          controller: controller,
+          onChanged: (value) => pastedBackup = value,
           minLines: 5,
           maxLines: 10,
+          autocorrect: false,
+          enableSuggestions: false,
           decoration: InputDecoration(
             hintText: dialogContext.strings.text(
                 'Thinkheim-Sicherung hier einfügen',
@@ -3857,13 +3859,12 @@ class SettingsScreen extends StatelessWidget {
             child: Text(dialogContext.strings.text('Abbrechen', 'Cancel')),
           ),
           FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            onPressed: () => Navigator.of(dialogContext).pop(pastedBackup),
             child: Text(dialogContext.strings.text('Prüfen', 'Check')),
           ),
         ],
       ),
     );
-    controller.dispose();
     if (backup == null || backup.trim().isEmpty || !context.mounted) return;
 
     const service = DataBackupService();
