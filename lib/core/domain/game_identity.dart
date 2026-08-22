@@ -1,4 +1,4 @@
-/// Stable identifiers for every game supported by Project Logic.
+/// Stable identifiers for every game supported by Thinkheim.
 ///
 /// Values are persisted by name. Existing values therefore must not be renamed.
 enum GameType {

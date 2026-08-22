@@ -1,6 +1,6 @@
-# Project Logic Roadmap
+# Thinkheim Roadmap
 
-Project Logic grows as a shared puzzle platform. A new game is only added after
+Thinkheim grows as a shared puzzle platform. A new game is only added after
 the common systems needed by the existing games are stable.
 
 ## v0.9 – Platform foundation
@@ -46,3 +46,6 @@ polished games with substantial catalogs and reliable endless modes are the
 preferred scope. Store preparation includes Android App Bundle signing,
 current target API compliance, privacy and data declarations, store assets,
 closed testing, crash checks, and testing on multiple phone sizes.
+
+The concrete production checklist is maintained in
+`docs/PLAY_STORE_RELEASE_CHECKLIST.md`.

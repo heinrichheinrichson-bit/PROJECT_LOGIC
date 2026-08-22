@@ -12,12 +12,15 @@ void main() {
 
     await tester.pumpWidget(ProjectLogicApp(preferences: preferences));
     await tester.pumpAndSettle();
+    expect(find.text('Thinkheim'), findsOneWidget);
+    expect(find.text('Deine ruhige Welt zum Knobeln.'), findsOneWidget);
     expect(find.text('Deine Spiele'), findsOneWidget);
 
     await preferences.setLanguage(AppLanguagePreference.english);
     await tester.pumpAndSettle();
 
     expect(find.text('Your games'), findsOneWidget);
+    expect(find.text('A quiet place to think.'), findsOneWidget);
     expect(find.text('Your space'), findsOneWidget);
     expect(find.text('Monthly goals: 0 of 3'), findsOneWidget);
     expect(find.text('View progress'), findsOneWidget);

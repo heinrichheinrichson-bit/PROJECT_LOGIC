@@ -23,7 +23,7 @@ class BackupValidationException implements Exception {
   String toString() => message;
 }
 
-/// Creates a portable, versioned snapshot of all durable Project Logic data.
+/// Creates a portable, versioned snapshot of all durable Thinkheim data.
 ///
 /// The envelope is intentionally independent of Google Drive. The same payload
 /// can be copied manually today and uploaded by a cloud provider later.

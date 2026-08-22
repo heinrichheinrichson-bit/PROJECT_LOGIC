@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <!-- Project Logic stores progress, attempts and preferences here. -->
+    <!-- Thinkheim stores progress, attempts and preferences here. -->
     <include domain="sharedpref" path="." />
 </full-backup-content>

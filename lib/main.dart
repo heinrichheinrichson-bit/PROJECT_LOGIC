@@ -74,7 +74,7 @@ class ProjectLogicApp extends StatelessWidget {
         animation: preferences,
         builder: (context, _) => MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Project Logic',
+          title: 'Thinkheim',
           locale: preferences.languagePreference.locale,
           supportedLocales: AppLocalizations.supportedLocales,
           localeResolutionCallback: (locale, supportedLocales) =>
@@ -680,7 +680,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                   const SizedBox(height: 28),
                   Text(
-                    'Project Logic · Designstudie 1',
+                    'Thinkheim · Designstudie 1',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
@@ -1596,30 +1596,48 @@ class _HomeHeader extends StatelessWidget {
       children: [
         Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: colors.primaryContainer,
-                borderRadius: BorderRadius.circular(16),
+            Semantics(
+              image: true,
+              label: 'Thinkheim',
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  'assets/branding/thinkheim_mark.png',
+                  fit: BoxFit.cover,
+                ),
               ),
-              child: Icon(Icons.grid_view_rounded,
-                  color: colors.onPrimaryContainer),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('PROJECT LOGIC',
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.4)),
+                  const Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(text: 'Think'),
+                        TextSpan(
+                          text: 'heim',
+                          style: TextStyle(color: Color(0xFF63D2BC)),
+                        ),
+                      ],
+                    ),
+                    semanticsLabel: 'Thinkheim',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
                   const SizedBox(height: 2),
                   Text(strings.text(
-                    'Deine ruhige Rätselecke',
-                    'Your quiet puzzle corner',
+                    'Deine ruhige Welt zum Knobeln.',
+                    'A quiet place to think.',
                   )),
                 ],
               ),
@@ -3828,8 +3846,8 @@ class SettingsScreen extends StatelessWidget {
           maxLines: 10,
           decoration: InputDecoration(
             hintText: dialogContext.strings.text(
-                'Project-Logic-Sicherung hier einfügen',
-                'Paste Project Logic backup here'),
+                'Thinkheim-Sicherung hier einfügen',
+                'Paste Thinkheim backup here'),
             border: const OutlineInputBorder(),
           ),
         ),

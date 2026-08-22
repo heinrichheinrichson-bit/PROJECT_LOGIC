@@ -1,3 +1,12 @@
+## v0.8.46 – Thinkheim-Markenauftritt
+
+- Den sichtbaren App-Namen auf Android, Web und in der Flutter-App von Project Logic auf Thinkheim umgestellt.
+- Das finale Thinkheim-Logo ohne KI-Neuinterpretation für App-Kopf, Launcher-Icons, Web-Icons und Splashscreen aufbereitet.
+- Die zweisprachige Markenbotschaft „Deine ruhige Welt zum Knobeln.“ / „A quiet place to think.“ ergänzt.
+- Sicherungsdialoge, Metadaten, README und Web-App-Manifest an den neuen Namen angepasst; interne Speicherkennungen zur Wahrung vorhandener Testdaten unverändert gelassen.
+- Android-12-Splashscreen und klassische Android-Startansicht auf den Thinkheim-Markenauftritt abgestimmt.
+- Lokalisierungs-Regressionsprüfung erweitert und Paketversion auf 0.8.46+75 erhöht.
+
 ## v0.8.45 – Zuverlässige Erinnerungen
 
 - Tägliche Erinnerungen und Streak-Warnungen werden nach jeder Ausführung neu zur lokalen Uhrzeit geplant, damit Sommerzeitwechsel keine schleichende Verschiebung verursachen.

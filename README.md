@@ -1,6 +1,6 @@
-# Project Logic
+# Thinkheim
 
-Project Logic ist eine werbefreie Sammlung klassischer Logikspiele für Flutter.
+Thinkheim ist eine ruhige, werbefreie Sammlung klassischer Logikspiele für Flutter.
 Die App setzt auf vollständige Spiele ohne Energie, Timer-Zwang oder
 Fortschritts-Paywalls.
 
