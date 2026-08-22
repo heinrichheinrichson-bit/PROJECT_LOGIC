@@ -1,4 +1,4 @@
-package com.example.project_logic_prototype
+package com.thinkheim.app
 
 import android.Manifest
 import android.app.NotificationManager

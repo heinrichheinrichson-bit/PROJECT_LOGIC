@@ -1,3 +1,10 @@
+## v0.8.47 – Dauerhafte Android-Identität
+
+- Die endgültige Android-Paketkennung und den Namespace auf `com.thinkheim.app` umgestellt.
+- Native Start-, Erinnerungs- und Benachrichtigungskomponenten konsistent in den Thinkheim-Namespace übernommen.
+- Interne Speicher-, Sicherungs- und Plattformkanalnamen für Datenkompatibilität bewusst unverändert gelassen.
+- Paketversion auf 0.8.47+76 erhöht.
+
 ## v0.8.46 – Thinkheim-Markenauftritt
 
 - Den sichtbaren App-Namen auf Android, Web und in der Flutter-App von Project Logic auf Thinkheim umgestellt.

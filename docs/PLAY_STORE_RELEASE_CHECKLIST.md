@@ -16,8 +16,7 @@ until the final production choices are confirmed.
 
 ## Required before the first Play upload
 
-- choose a permanent Android application ID, for example `at.thinkheim.app` or
-  `com.thinkheim.app`; it cannot be changed after the first Play release
+- permanent Android application ID chosen and configured: `com.thinkheim.app`
 - create and securely archive the production upload keystore and passwords
 - replace debug signing with the production signing configuration
 - build and verify a signed release Android App Bundle (`.aab`)
@@ -34,6 +33,5 @@ until the final production choices are confirmed.
 
 ## Release gate
 
-Do not upload a production bundle while the package still uses
-`com.example.project_logic_prototype` or the Android release build still uses
+Do not upload a production bundle while the Android release build still uses
 the debug signing key.
