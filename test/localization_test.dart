@@ -19,7 +19,9 @@ void main() {
 
     expect(find.text('Your games'), findsOneWidget);
     expect(find.text('Your space'), findsOneWidget);
-    expect(find.text('Monthly goals'), findsOneWidget);
+    expect(find.text('Monthly goals: 0 of 3'), findsOneWidget);
+    expect(find.text('View progress'), findsOneWidget);
+    expect(find.text('Progress & achievements'), findsOneWidget);
     expect(
       find.text('Arrange zeros and ones through clear logic'),
       findsOneWidget,

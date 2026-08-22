@@ -756,3 +756,12 @@
 - Der gespeicherte Wiederauffüllstatus bleibt in lokalen Spielständen und portablen Sicherungen erhalten.
 - Regressionstests für Verbrauch, Wiederauffüllung, Tagesgrenzen, Persistenz und Kalenderanzeige erweitert.
 - Paketversion auf 0.8.43+72 erhöht.
+
+## v0.8.44 – Ruhigere Startseite
+
+- Level, XP und Monatsziele sind jetzt in einer gemeinsamen Fortschrittskarte gebündelt.
+- Die doppelte große Monatsziel-Karte oberhalb der Spiele wurde entfernt.
+- Die Levelkarte benennt ihr Ziel nun sichtbar als `Fortschritt ansehen`.
+- Der zweite Zugang unter `Dein Bereich` heißt eindeutiger `Fortschritt & Erfolge`.
+- Der vollständige Fortschrittsbereich mit Zielen, Erfolgen, XP-Verlauf und Kalender bleibt unverändert erhalten.
+- Paketversion auf 0.8.44+73 erhöht.

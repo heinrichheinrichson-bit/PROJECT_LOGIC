@@ -71,6 +71,9 @@ void main() {
     expect(find.textContaining('Level 1 ·'), findsOneWidget);
     expect(find.text('0 / 200 XP'), findsOneWidget);
     expect(find.text('Noch 200 XP bis Level 2'), findsOneWidget);
+    expect(find.text('Monatsziele: 0 von 3'), findsOneWidget);
+    expect(find.text('Fortschritt ansehen'), findsOneWidget);
+    expect(find.text('Fortschritt & Erfolge'), findsOneWidget);
 
     await tester.tap(find.textContaining('Level 1 ·'));
     await tester.pumpAndSettle();

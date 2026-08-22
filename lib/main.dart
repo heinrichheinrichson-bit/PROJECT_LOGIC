@@ -218,6 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     if (_rank case final rank?) ...[
                       _HomeLevelCard(
                         rank: rank,
+                        monthlyGoals: _monthlyMissions,
                         onTap: () async {
                           await Navigator.of(context).push(
                             MaterialPageRoute<void>(
@@ -394,27 +395,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 12),
                     ],
                     _StreakCard(progress: _progress),
-                    const SizedBox(height: 12),
-                    _HomeAction(
-                      icon: Icons.calendar_month_rounded,
-                      title: strings.text('Monatsziele', 'Monthly goals'),
-                      subtitle: strings.text(
-                        '${_monthlyMissions.where((goal) => goal.isCompleted).length} von ${_monthlyMissions.length} geschafft',
-                        '${_monthlyMissions.where((goal) => goal.isCompleted).length} of ${_monthlyMissions.length} complete',
-                      ),
-                      enabled: true,
-                      onTap: () async {
-                        await Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => PlayerProfileScreen(
-                              results: _results,
-                              progress: _progress,
-                            ),
-                          ),
-                        );
-                        await _refresh();
-                      },
-                    ),
                     const SizedBox(height: 28),
                     _HomeSectionHeader(
                       title: strings.text('Deine Spiele', 'Your games'),
@@ -657,7 +637,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 12),
                     _HomeAction(
                       icon: Icons.person_outline_rounded,
-                      title: strings.text('Dein Fortschritt', 'Your progress'),
+                      title: strings.text(
+                          'Fortschritt & Erfolge', 'Progress & achievements'),
                       subtitle: strings.text(
                         'Level, Ziele und Erfolge auf einen Blick',
                         'Levels, goals, and achievements at a glance',
@@ -1758,15 +1739,22 @@ class _StreakCard extends StatelessWidget {
 }
 
 class _HomeLevelCard extends StatelessWidget {
-  const _HomeLevelCard({required this.rank, required this.onTap});
+  const _HomeLevelCard({
+    required this.rank,
+    required this.monthlyGoals,
+    required this.onTap,
+  });
 
   final PlayerRank rank;
+  final List<ProgressGoal> monthlyGoals;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final remaining = rank.nextLevelXp - rank.currentXp;
+    final completedMonthlyGoals =
+        monthlyGoals.where((goal) => goal.isCompleted).length;
     return Semantics(
       button: true,
       label: 'Level ${rank.level}, ${context.strings.known(rank.title)}',
@@ -1840,6 +1828,43 @@ class _HomeLevelCard extends StatelessWidget {
                         ),
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: colors.onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(height: 7),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_month_rounded,
+                            size: 15,
+                            color: colors.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              context.strings.text(
+                                'Monatsziele: $completedMonthlyGoals von ${monthlyGoals.length}',
+                                'Monthly goals: $completedMonthlyGoals of ${monthlyGoals.length}',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
+                                    color: colors.onSurfaceVariant,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        context.strings
+                            .text('Fortschritt ansehen', 'View progress'),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: colors.primary,
+                              fontWeight: FontWeight.w800,
                             ),
                       ),
                     ],
