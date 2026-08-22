@@ -20,11 +20,16 @@ class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED ||
             intent.action == Intent.ACTION_TIME_CHANGED ||
-            intent.action == Intent.ACTION_TIMEZONE_CHANGED
+            intent.action == Intent.ACTION_TIMEZONE_CHANGED ||
+            intent.action == Intent.ACTION_MY_PACKAGE_REPLACED
         ) {
             ReminderScheduler.restore(context)
             return
         }
+        // Always plan tomorrow first. Even when today's notification is
+        // suppressed because the player has already solved a puzzle, the
+        // reminder chain must continue.
+        intent.action?.let { ReminderScheduler.scheduleNext(context, it) }
         val state = progressState(context)
         if (state.completedToday) return
         val settings = ReminderScheduler.preferences(context)

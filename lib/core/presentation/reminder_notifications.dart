@@ -23,4 +23,14 @@ abstract final class ReminderNotifications {
       return false;
     }
   }
+
+  /// Removes reminder notifications that may still be visible after the
+  /// player has completed today's first puzzle.
+  static Future<void> dismissForCompletedDay() async {
+    try {
+      await _channel.invokeMethod<void>('completedToday');
+    } on Object {
+      // Notifications are optional and must never block saving a completion.
+    }
+  }
 }

@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/domain/game_identity.dart';
+import 'core/presentation/reminder_notifications.dart';
 import 'core/statistics/puzzle_attempt.dart';
 import 'core/progress/experience_event.dart';
 import 'core/progress/experience_points_policy.dart';
@@ -801,6 +803,7 @@ class GameStorage {
       _playerProgressKey,
       jsonEncode(updatedProgress.toJson()),
     );
+    unawaited(ReminderNotifications.dismissForCompletedDay());
 
     final attempts = await loadAttempts();
     // Results aggregate best times for a puzzle. XP repeats also need the

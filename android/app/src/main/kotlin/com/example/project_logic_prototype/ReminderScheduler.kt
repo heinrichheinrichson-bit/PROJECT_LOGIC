@@ -1,9 +1,11 @@
 package com.example.project_logic_prototype
 
 import android.app.AlarmManager
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import java.util.Calendar
 
 object ReminderScheduler {
@@ -26,6 +28,10 @@ object ReminderScheduler {
             .apply()
         schedule(context, dailyAction, 4101, dailyEnabled, dailyMinutes)
         schedule(context, streakAction, 4102, streakEnabled, streakMinutes)
+        context.getSystemService(NotificationManager::class.java).apply {
+            if (!dailyEnabled) cancel(4301)
+            if (!streakEnabled) cancel(4302)
+        }
     }
 
     fun restore(context: Context) {
@@ -37,6 +43,26 @@ object ReminderScheduler {
             preferences.getBoolean("streakEnabled", false),
             preferences.getInt("streakMinutes", 21 * 60),
         )
+    }
+
+    fun scheduleNext(context: Context, action: String) {
+        val preferences = context.getSharedPreferences(preferencesName, Context.MODE_PRIVATE)
+        when (action) {
+            dailyAction -> schedule(
+                context,
+                dailyAction,
+                4101,
+                preferences.getBoolean("dailyEnabled", false),
+                preferences.getInt("dailyMinutes", 18 * 60),
+            )
+            streakAction -> schedule(
+                context,
+                streakAction,
+                4102,
+                preferences.getBoolean("streakEnabled", false),
+                preferences.getInt("streakMinutes", 21 * 60),
+            )
+        }
     }
 
     fun preferences(context: Context) =
@@ -66,11 +92,18 @@ object ReminderScheduler {
             set(Calendar.MILLISECOND, 0)
             if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_YEAR, 1)
         }
-        alarmManager.setInexactRepeating(
-            AlarmManager.RTC_WAKEUP,
-            first.timeInMillis,
-            AlarmManager.INTERVAL_DAY,
-            pending,
-        )
+        // A repeating 24-hour alarm drifts by one hour when daylight-saving
+        // time changes. Schedule one local-calendar occurrence instead; the
+        // receiver plans the following day after every delivery.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                first.timeInMillis,
+                pending,
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            alarmManager.set(AlarmManager.RTC_WAKEUP, first.timeInMillis, pending)
+        }
     }
 }

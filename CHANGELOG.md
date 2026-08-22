@@ -1,3 +1,12 @@
+## v0.8.45 – Zuverlässige Erinnerungen
+
+- Tägliche Erinnerungen und Streak-Warnungen werden nach jeder Ausführung neu zur lokalen Uhrzeit geplant, damit Sommerzeitwechsel keine schleichende Verschiebung verursachen.
+- Erinnerungen werden nach Neustart, App-Update sowie Änderungen von Uhrzeit oder Zeitzone zuverlässig wiederhergestellt.
+- Auch eine wegen bereits erfülltem Tagesziel unterdrückte Benachrichtigung plant den nächsten Tag weiter ein.
+- Nach dem ersten gelösten Rätsel des Tages verschwinden noch sichtbare Erinnerungen; beim Abschalten einer Erinnerungsart wird ihre vorhandene Benachrichtigung ebenfalls entfernt.
+- Berechtigungsstatus und Erläuterungen sind vollständig zweisprachig; Regressionstests für die Flutter-Plattformbrücke ergänzt.
+- Paketversion auf 0.8.45+74 erhöht.
+
 ## v0.8.42 – Monatsfortschritt und Rückblick
 
 - Der Fortschrittsbereich erklärt nun transparent, dass drei Monatsziele je 100 XP und der Komplettbonus weitere 150 XP bringen.

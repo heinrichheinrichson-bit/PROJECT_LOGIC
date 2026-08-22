@@ -4064,8 +4064,8 @@ class _ReminderSettingsCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             child: Text(
               strings.text(
-                'Liegen beide Zeiten höchstens 60 Minuten auseinander, erscheint bei einer laufenden Serie nur die Streak-Warnung.',
-                'If both times are no more than 60 minutes apart, only the streak warning appears while a streak is active.',
+                'Die Zeiten gelten lokal auf diesem Gerät. Nach Zeit- oder Zeitzonenwechseln werden sie automatisch neu geplant. Liegen beide Zeiten höchstens 60 Minuten auseinander, erscheint bei einer laufenden Serie nur die Streak-Warnung.',
+                'Times use this device\'s local time and are rescheduled automatically after time or time-zone changes. If both times are no more than 60 minutes apart, only the streak warning appears while a streak is active.',
               ),
             ),
           ),
@@ -4076,10 +4076,11 @@ class _ReminderSettingsCard extends StatelessWidget {
 }
 
 void _showPermissionMessage(BuildContext context) {
-  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-    content: Text(
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Text(context.strings.text(
       'Benachrichtigungen sind im System nicht erlaubt. Du kannst sie in den Android-App-Einstellungen freigeben.',
-    ),
+      'Notifications are not allowed by the system. You can enable them in Android app settings.',
+    )),
   ));
 }
 

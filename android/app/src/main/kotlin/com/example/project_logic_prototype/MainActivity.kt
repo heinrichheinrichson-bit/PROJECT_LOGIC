@@ -1,6 +1,7 @@
 package com.example.project_logic_prototype
 
 import android.Manifest
+import android.app.NotificationManager
 import android.media.AudioAttributes
 import android.media.SoundPool
 import android.os.Build
@@ -62,6 +63,14 @@ class MainActivity : FlutterActivity() {
             }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, remindersChannelName)
             .setMethodCallHandler { call, result ->
+                if (call.method == "completedToday") {
+                    getSystemService(NotificationManager::class.java).apply {
+                        cancel(4301)
+                        cancel(4302)
+                    }
+                    result.success(null)
+                    return@setMethodCallHandler
+                }
                 if (call.method != "configure") {
                     result.notImplemented()
                     return@setMethodCallHandler
