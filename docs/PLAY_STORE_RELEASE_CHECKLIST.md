@@ -1,37 +1,64 @@
-# Thinkheim – Google Play release checklist
+# Google Play Release Checklist – Thinkheim
 
-This checklist separates the tested app from the one-time production identity
-and store setup. It deliberately does not change the current test installation
-until the final production choices are confirmed.
+Stand: 22. August 2026, Version 0.8.50 (Build 79)
 
-## Completed in the app
+## Technisch erledigt
 
-- Thinkheim name, wordmark, launcher icon, splashscreen, and web metadata
-- German and English interface
-- six playable puzzle families with offline saves
-- daily puzzles, catalogs, random puzzles, hints, statistics, XP, achievements,
-  streaks, streak freeze, reminders, sound, and vibration
-- automated Flutter regression suite and static analysis
-- Android debug build for real-device testing
+- [x] finaler App-Name Thinkheim eingetragen
+- [x] Paketname und Namespace auf `com.thinkheim.app` gesetzt
+- [x] dauerhafter Release-Keystore eingerichtet
+- [x] Release-Signierung konfiguriert
+- [x] signierte APK erzeugt
+- [x] signiertes AAB erzeugt
+- [x] `targetSdk` 36 geprüft
+- [x] Entwickler-Lösefunktionen im Release ausgeblendet
+- [x] Premium-Simulation im Release ausgeblendet und deaktiviert
+- [x] Release-Manifest ohne Internet-Berechtigung geprüft
+- [x] statische Analyse erfolgreich
+- [x] 285 automatisierte Tests erfolgreich
+- [x] deutsche und englische Store-Texte vorbereitet
+- [x] Datenschutzentwurf auf Deutsch und Englisch vorbereitet
 
-## Required before the first Play upload
+## Angaben und Inhalte vorbereiten
 
-- permanent Android application ID chosen and configured: `com.thinkheim.app`
-- create and securely archive the production upload keystore and passwords
-- replace debug signing with the production signing configuration
-- build and verify a signed release Android App Bundle (`.aab`)
-- decide whether existing prototype test data needs an export/import migration
-  into the final production application ID
-- complete the Play Console app-content, data-safety, target-audience, content
-  rating, ads, and privacy-policy declarations
-- prepare store title, short and long descriptions, screenshots, feature
-  graphic, app icon, support contact, and privacy-policy URL in German and English
-- run internal/closed testing and test installation plus update from Play
-- smoke-test notifications, timezone changes, backup/restore, all six games,
-  purchases or paid streak repair once monetization is enabled, and common
-  phone/tablet sizes
+- [ ] Entwickler-/Anbietername festlegen
+- [ ] Support-E-Mail festlegen
+- [ ] Platzhalter im Datenschutzentwurf ersetzen
+- [ ] Datenschutzerklärung öffentlich per HTTPS bereitstellen
+- [ ] Store-Symbol mit 512 × 512 Pixeln finalisieren
+- [ ] Feature-Grafik mit 1024 × 500 Pixeln erstellen
+- [ ] Smartphone-Screenshots auf Deutsch und Englisch erstellen
+- [ ] Tablet-Screenshots erstellen
 
-## Release gate
+## Google Play Console
 
-Do not upload a production bundle while the Android release build still uses
-the debug signing key.
+- [ ] App mit Paketname `com.thinkheim.app` anlegen
+- [ ] Standard- und Übersetzungs-Store-Eintrag ausfüllen
+- [ ] App-Zugriff erklären: kein Konto erforderlich
+- [ ] Werbung wahrheitsgemäß als nicht enthalten angeben, solange kein Werbe-SDK eingebaut ist
+- [ ] Inhaltsfreigabe-Fragebogen ausfüllen
+- [ ] Zielgruppe und Inhalte festlegen
+- [ ] Datensicherheitsformular ausfüllen
+- [ ] Datenschutz-URL eintragen
+- [ ] AAB in den internen Testkanal hochladen
+- [ ] interne Tester hinzufügen
+
+## Interner Test
+
+- [ ] Installation über Google Play auf dem Samsung S22 testen
+- [ ] Update über Google Play testen, ohne Fortschritt zu verlieren
+- [ ] alle sechs Spiele starten und abschließen
+- [ ] Tagesrätsel, Kalender, Ziele, XP, Streak und Erfolge prüfen
+- [ ] Ton und Vibration getrennt prüfen
+- [ ] Erinnerungen sowie Neustart des Geräts prüfen
+- [ ] Import/Export der Sicherung prüfen
+- [ ] Tablet oder große Android-Bildschirmgröße prüfen
+- [ ] Pre-Launch-Bericht der Play Console prüfen
+- [ ] bestätigen, dass keine Entwicklerwerkzeuge sichtbar sind
+
+## Produktionsfreigabe
+
+- [ ] offene Fehler aus internem Test und Pre-Launch-Bericht beheben
+- [ ] bei jeder Codeänderung Versionscode erhöhen und neues AAB bauen
+- [ ] finalen Store-Eintrag und alle Rechtstexte gegenlesen
+- [ ] Produktionsfreigabe zunächst gestaffelt veröffentlichen
