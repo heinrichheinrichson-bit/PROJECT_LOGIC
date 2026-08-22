@@ -802,3 +802,10 @@
 - Einen Flutter-Lebenszyklusfehler beim Einfügen und Wiederherstellen einer Sicherung behoben.
 - Der Eingabedialog gibt keine noch vom Framework verwendeten Steuerelemente mehr vorzeitig frei.
 - Paketversion auf 0.8.48+77 erhöht.
+
+## v0.8.50 – Sicherer Produktionsmodus
+
+- Entwicklerwerkzeuge zum automatischen Lösen oder Erzeugen von Testzuständen bleiben ausschließlich in Debug-Builds verfügbar.
+- Die Premium-Simulation wird in Produktions-Builds vollständig aus den Einstellungen entfernt.
+- Gespeicherte Testwerte können Premium-Funktionen in einem Produktions-Build nicht aktivieren.
+- Paketversion auf 0.8.50+79 erhöht.

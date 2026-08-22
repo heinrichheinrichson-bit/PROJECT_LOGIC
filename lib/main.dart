@@ -3576,31 +3576,34 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     _ReminderSettingsCard(preferences: preferences),
-                    const SizedBox(height: 24),
-                    Text(
-                      strings.text(
-                          'Monetarisierung testen', 'Test monetization'),
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 10),
-                    Card(
-                      child: SwitchListTile(
-                        secondary: const Icon(Icons.workspace_premium_outlined),
-                        title: Text(strings.text(
-                            'Premium simulieren', 'Simulate Premium')),
-                        subtitle: Text(
-                          preferences.premiumSimulationEnabled
-                              ? strings.text(
-                                  'Werbefrei und Hinweise ohne Begrenzung',
-                                  'Ad-free with unlimited hints')
-                              : strings.text(
-                                  'Kostenlose Version mit drei Hinweisen pro Rätsel',
-                                  'Free version with three hints per puzzle'),
-                        ),
-                        value: preferences.premiumSimulationEnabled,
-                        onChanged: preferences.setPremiumSimulationEnabled,
+                    if (kDebugMode) ...[
+                      const SizedBox(height: 24),
+                      Text(
+                        strings.text(
+                            'Monetarisierung testen', 'Test monetization'),
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
-                    ),
+                      const SizedBox(height: 10),
+                      Card(
+                        child: SwitchListTile(
+                          secondary:
+                              const Icon(Icons.workspace_premium_outlined),
+                          title: Text(strings.text(
+                              'Premium simulieren', 'Simulate Premium')),
+                          subtitle: Text(
+                            preferences.premiumSimulationEnabled
+                                ? strings.text(
+                                    'Werbefrei und Hinweise ohne Begrenzung',
+                                    'Ad-free with unlimited hints')
+                                : strings.text(
+                                    'Kostenlose Version mit drei Hinweisen pro Rätsel',
+                                    'Free version with three hints per puzzle'),
+                          ),
+                          value: preferences.premiumSimulationEnabled,
+                          onChanged: preferences.setPremiumSimulationEnabled,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     Text(
                       strings.text(

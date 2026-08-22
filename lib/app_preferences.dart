@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -93,7 +94,7 @@ class AppPreferences extends ChangeNotifier {
       hapticsEnabled: preferences.getBool(_hapticsKey) ?? true,
       showRuleIssues: preferences.getBool(_showRuleIssuesKey) ?? true,
       premiumSimulationEnabled:
-          preferences.getBool(_premiumSimulationKey) ?? false,
+          kDebugMode && (preferences.getBool(_premiumSimulationKey) ?? false),
       dailyReminderEnabled:
           preferences.getBool(_dailyReminderEnabledKey) ?? false,
       dailyReminderMinutes:
@@ -154,6 +155,7 @@ class AppPreferences extends ChangeNotifier {
   }
 
   Future<void> setPremiumSimulationEnabled(bool value) async {
+    if (!kDebugMode) return;
     if (premiumSimulationEnabled == value) return;
     premiumSimulationEnabled = value;
     notifyListeners();
