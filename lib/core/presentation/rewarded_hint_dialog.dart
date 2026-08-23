@@ -1,8 +1,41 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../app_localizations.dart';
 
-Future<bool> showRewardedHintSimulation(BuildContext context) async {
+/// Requests one additional hint from the rewarded-ad flow.
+///
+/// Until a real rewarded-ad provider is connected, simulations are available
+/// in debug builds only. Release builds never grant a hint from this flow.
+Future<bool> requestRewardedHint(
+  BuildContext context, {
+  bool allowSimulation = kDebugMode,
+}) async {
+  if (!allowSimulation) {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(Icons.lightbulb_outline_rounded),
+        title: Text(
+          dialogContext.strings.text('Keine Tipps mehr', 'No hints left'),
+        ),
+        content: Text(
+          dialogContext.strings.text(
+            'Du hast deine kostenlosen Tipps verbraucht.',
+            'You have used all of your free hints.',
+          ),
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(dialogContext.strings.text('Schließen', 'Close')),
+          ),
+        ],
+      ),
+    );
+    return false;
+  }
+
   final simulateAd = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(

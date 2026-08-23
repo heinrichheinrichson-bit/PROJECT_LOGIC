@@ -926,7 +926,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
     final premium =
         PreferencesScope.maybeOf(context)?.premiumSimulationEnabled ?? false;
     if (!premium && _hintsRemaining <= 0) {
-      if (!await showRewardedHintSimulation(context) || !mounted) return;
+      if (!await requestRewardedHint(context) || !mounted) return;
       setState(() {
         _hintsRemaining++;
         _rewardedHints++;

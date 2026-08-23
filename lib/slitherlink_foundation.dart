@@ -1155,7 +1155,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
   Future<void> _hint() async {
     final premium = PreferencesScope.of(context).premiumSimulationEnabled;
     if (!premium && !_hintBudget.canUseHint) {
-      if (!await showRewardedHintSimulation(context) || !mounted) return;
+      if (!await requestRewardedHint(context) || !mounted) return;
       setState(() => _hintBudget = _hintBudget.earnRewardedHint());
       unawaited(_saveGame());
       ScaffoldMessenger.of(context).showSnackBar(

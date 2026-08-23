@@ -3004,7 +3004,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   }
 
   Future<void> _showHintRewardDialog() async {
-    if (!await showRewardedHintSimulation(context) || !mounted) return;
+    if (!await requestRewardedHint(context) || !mounted) return;
     setState(() => _hintBudget = _hintBudget.earnRewardedHint());
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

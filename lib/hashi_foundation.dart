@@ -1914,7 +1914,7 @@ class _HashiGameScreenState extends State<HashiGameScreen>
   }
 
   Future<void> _showHashiHintRewardDialog() async {
-    if (!await showRewardedHintSimulation(context) || !mounted) return;
+    if (!await requestRewardedHint(context) || !mounted) return;
     setState(() => _hintBudget = _hintBudget.earnRewardedHint());
     unawaited(_saveGame());
     ScaffoldMessenger.of(context).showSnackBar(
