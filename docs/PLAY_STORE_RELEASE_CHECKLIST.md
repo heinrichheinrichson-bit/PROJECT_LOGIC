@@ -26,7 +26,8 @@ Stand: 22. August 2026, Version 0.8.50 (Build 79)
 - [ ] Platzhalter im Datenschutzentwurf ersetzen
 - [ ] Datenschutzerklärung öffentlich per HTTPS bereitstellen
 - [ ] Store-Symbol mit 512 × 512 Pixeln finalisieren
-- [ ] Feature-Grafik mit 1024 × 500 Pixeln erstellen
+- [x] Feature-Grafik mit 1024 × 500 Pixeln erstellen (`docs/store_assets/thinkheim_feature_graphic_1024x500.png`)
+- [x] zweisprachige Support-/Datenschutzseite lokal vorbereiten (`docs/site/`)
 - [ ] Smartphone-Screenshots auf Deutsch und Englisch erstellen
 - [ ] Tablet-Screenshots erstellen
 
@@ -42,6 +43,7 @@ Stand: 22. August 2026, Version 0.8.50 (Build 79)
 - [ ] Datenschutz-URL eintragen
 - [ ] AAB in den internen Testkanal hochladen
 - [ ] interne Tester hinzufügen
+- [ ] geschlossenen Test mit mindestens 12 dauerhaft angemeldeten Testern über 14 Tage durchführen
 
 ## Interner Test
 
