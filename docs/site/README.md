@@ -1,12 +1,5 @@
 # Thinkheim Support- und Datenschutzseite
 
-Diese statische, zweisprachige Seite ist für die öffentliche Support- und Datenschutz-URL des Google-Play-Eintrags vorbereitet.
+Diese statische, zweisprachige Seite ist inhaltlich für die öffentliche Support- und Datenschutz-URL des Google-Play-Eintrags vorbereitet. Verantwortlicher, Anschrift und Kontaktadresse sind eingetragen.
 
-Vor der Veröffentlichung müssen in `privacy.html` und `support.html` ersetzt werden:
-
-- `[NAME ODER UNTERNEHMEN]` / `[NAME OR COMPANY]`
-- `[ANSCHRIFT, FALLS ERFORDERLICH]` / `[ADDRESS, IF REQUIRED]`
-- `[SUPPORT-/DATENSCHUTZ-E-MAIL]` / `[SUPPORT/PRIVACY EMAIL]`
-- `[SUPPORT-E-MAIL]` / `[SUPPORT EMAIL]`
-
-Danach können die Dateien unverändert auf einem HTTPS-fähigen statischen Webhost veröffentlicht werden. Für Google Play wird anschließend die öffentliche URL von `privacy.html` als Datenschutz-URL eingetragen.
+Die Dateien können auf einem HTTPS-fähigen statischen Webhost veröffentlicht werden. Für Google Play werden anschließend die öffentliche URL von `privacy.html` als Datenschutz-URL und die URL von `support.html` als Supportseite eingetragen.
