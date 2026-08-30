@@ -101,7 +101,7 @@ class FutoshikiGenerator {
     }
     return FutoshikiPuzzle(
       id: id ?? 'futoshiki-generated-${difficulty.name}-$seed',
-      title: title ?? '${difficulty.label} · Zufallsrätsel',
+      title: title ?? '${difficulty.label} · Erstelltes Rätsel',
       size: boardSize,
       givens: givens,
       inequalities: inequalities,

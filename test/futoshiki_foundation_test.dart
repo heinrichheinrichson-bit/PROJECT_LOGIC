@@ -272,7 +272,7 @@ void main() {
         saved!.candidates.values.any((values) => values.contains(1)), isTrue);
   });
 
-  testWidgets('another random puzzle keeps the exact 7x7 board size',
+  testWidgets('another created puzzle keeps the exact 7x7 board size',
       (tester) async {
     SharedPreferences.setMockInitialValues({
       'futoshiki_inequality_guide_seen_v1': true,
@@ -290,7 +290,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sofort lösen'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Noch eins'));
+    await tester.tap(find.text('Weiteres Rätsel erstellen'));
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(FilledButton, '7'), findsOneWidget);

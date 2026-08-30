@@ -650,6 +650,13 @@ class PlayerProgress {
 }
 
 class GameStorage {
+  static final StreamController<void> _catalogProgressController =
+      StreamController<void>.broadcast();
+
+  /// Notifies open catalog views after a catalog completion was persisted.
+  static Stream<void> get catalogProgressChanges =>
+      _catalogProgressController.stream;
+
   static const _activeGameKey = 'active_binary_game_v1';
   static const _resultsKey = 'binary_results_v1';
   static const _playerProgressKey = 'player_progress_v1';
@@ -853,6 +860,10 @@ class GameStorage {
       ),
     );
     await saveExperienceEvents(experienceEvents.values);
+
+    if (source == PuzzleSource.catalog) {
+      _catalogProgressController.add(null);
+    }
 
     if (source == PuzzleSource.daily && dailyPuzzleData != null) {
       final snapshots = await loadDailySnapshots();

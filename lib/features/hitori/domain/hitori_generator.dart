@@ -53,7 +53,7 @@ class HitoriGenerator {
       if (!valid) continue;
       final candidate = HitoriPuzzle(
         id: id ?? 'hitori-generated-${difficulty.name}-$seed',
-        title: title ?? '${difficulty.label} · Zufallsrätsel',
+        title: title ?? '${difficulty.label} · Erstelltes Rätsel',
         grid: grid,
         solution: shaded,
         difficulty: difficulty,

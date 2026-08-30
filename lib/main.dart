@@ -904,8 +904,8 @@ class _BinaryPuzzleHubScreenState extends State<BinaryPuzzleHubScreen> {
                   const SizedBox(height: 12),
                   _HomeAction(
                     icon: Icons.auto_awesome_rounded,
-                    title: 'Zufallsrätsel',
-                    subtitle: 'Erstelle ein neues Rätsel nach deinen Wünschen',
+                    title: 'Neues Rätsel erstellen',
+                    subtitle: 'Wähle Größe und Schwierigkeit',
                     enabled: true,
                     accent: AppTheme.gameColors['binairo'],
                     onTap: () async {
@@ -2132,11 +2132,20 @@ class PuzzleSelectionScreen extends StatefulWidget {
 class _PuzzleSelectionScreenState extends State<PuzzleSelectionScreen> {
   final GameStorage _storage = GameStorage();
   Map<String, PuzzleResult> _results = const {};
+  StreamSubscription<void>? _catalogProgressSubscription;
 
   @override
   void initState() {
     super.initState();
+    _catalogProgressSubscription =
+        GameStorage.catalogProgressChanges.listen((_) => _loadResults());
     _loadResults();
+  }
+
+  @override
+  void dispose() {
+    _catalogProgressSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadResults() async {
@@ -2373,7 +2382,7 @@ class _GeneratedPuzzleSetupScreenState
             storeDefinition: true,
             source: PuzzleSource.generated,
             titleOverride:
-                '${_difficulty.label} · Zufallsrätsel ${_size.label}',
+                '${_difficulty.label} · Erstelltes Rätsel ${_size.label}',
           ),
         ),
       );
@@ -2395,7 +2404,8 @@ class _GeneratedPuzzleSetupScreenState
     final colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-          title: Text(context.strings.text('Zufallsrätsel', 'Random puzzle'))),
+          title: Text(context.strings
+              .text('Neues Rätsel erstellen', 'Create a puzzle'))),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -2705,8 +2715,9 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                           FilledButton.icon(
                             onPressed: _startNextGeneratedPuzzle,
                             icon: const Icon(Icons.auto_awesome_rounded),
-                            label: Text(context.strings
-                                .text('Noch eins', 'Another one')),
+                            label: Text(context.strings.text(
+                                'Weiteres Rätsel erstellen',
+                                'Create another puzzle')),
                           )
                         else if (widget.source == PuzzleSource.catalog &&
                             _hasNextPuzzle)
@@ -3210,7 +3221,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                     _startNextGeneratedPuzzle();
                   },
                   icon: const Icon(Icons.auto_awesome_rounded),
-                  label: Text(context.strings.text('Noch eins', 'Another one')),
+                  label: Text(context.strings.text(
+                      'Weiteres Rätsel erstellen', 'Create another puzzle')),
                 )
               else if (widget.source == PuzzleSource.catalog)
                 if (_hasNextPuzzle)
@@ -3306,7 +3318,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
             definition: generated.definition,
             storeDefinition: true,
             source: PuzzleSource.generated,
-            titleOverride: '${difficulty.label} · Zufallsrätsel $size × $size',
+            titleOverride:
+                '${difficulty.label} · Erstelltes Rätsel $size × $size',
           ),
         ),
       );
@@ -4586,7 +4599,7 @@ String _xpEventTitle(
   if (attempt == null) return 'Rätsel abgeschlossen';
   final mode = switch (attempt.mode) {
     GameMode.catalog => 'Rätselsammlung',
-    GameMode.generated => 'Zufallsrätsel',
+    GameMode.generated => 'Erstellte Rätsel',
     GameMode.daily => 'Tagesrätsel',
     GameMode.event => 'Ereignisrätsel',
     GameMode.tutorial => 'Einführung',
@@ -5364,7 +5377,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     const SizedBox(height: 12),
                     _StatisticListCard(
                       icon: Icons.all_inclusive_rounded,
-                      title: 'Zufallsrätsel',
+                      title: 'Erstellte Rätsel',
                       subtitle: '$generatedCompleted abgeschlossen',
                     ),
                     const SizedBox(height: 12),
@@ -5417,8 +5430,8 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       ),
                     const SizedBox(height: 24),
                     Text(
-                      strings.text(
-                          'Zufallsrätsel nach Größe', 'Random puzzles by size'),
+                      strings.text('Erstellte Rätsel nach Größe',
+                          'Created puzzles by size'),
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 10),
@@ -5444,7 +5457,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     const SizedBox(height: 12),
                     _StatisticListCard(
                       icon: Icons.auto_awesome_outlined,
-                      title: 'Zufallsrätsel',
+                      title: 'Erstellte Rätsel',
                       subtitle:
                           '${hashiStatistics.completedForMode(GameMode.generated)} abgeschlossen',
                     ),
@@ -5508,7 +5521,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     const SizedBox(height: 12),
                     _StatisticListCard(
                       icon: Icons.auto_awesome_outlined,
-                      title: 'Zufallsrätsel',
+                      title: 'Erstellte Rätsel',
                       subtitle:
                           '${slitherlinkStatistics.completedForMode(GameMode.generated)} abgeschlossen',
                     ),
@@ -5565,7 +5578,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     const SizedBox(height: 12),
                     _StatisticListCard(
                       icon: Icons.auto_awesome_outlined,
-                      title: 'Zufallsrätsel',
+                      title: 'Erstellte Rätsel',
                       subtitle:
                           '${futoshikiStatistics.completedForMode(GameMode.generated)} abgeschlossen',
                     ),
@@ -5650,7 +5663,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     const SizedBox(height: 12),
                     _StatisticListCard(
                       icon: Icons.auto_awesome_outlined,
-                      title: 'Zufallsrätsel',
+                      title: 'Erstellte Rätsel',
                       subtitle:
                           '${hitoriStatistics.completedForMode(GameMode.generated)} abgeschlossen',
                     ),
@@ -5706,7 +5719,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     const SizedBox(height: 12),
                     _StatisticListCard(
                       icon: Icons.auto_awesome_outlined,
-                      title: 'Zufallsr\u00e4tsel',
+                      title: 'Erstellte R\u00e4tsel',
                       subtitle:
                           '${tentsStatistics.completedForMode(GameMode.generated)} abgeschlossen',
                     ),
@@ -6298,7 +6311,7 @@ class _ModePerformanceCard extends StatelessWidget {
         seconds == null ? '–' : _StatisticsScreenState._formatLongTime(seconds);
     final title = switch (mode) {
       GameMode.catalog => 'Sammlungsmodus',
-      GameMode.generated => 'Zufallsrätsel',
+      GameMode.generated => 'Erstellte Rätsel',
       GameMode.daily => 'Tagesmodus',
       GameMode.event => 'Ereignisrätsel',
       GameMode.tutorial => 'Einführung',
@@ -6498,7 +6511,7 @@ class _GameStatisticsOverviewCard extends StatelessWidget {
               Expanded(
                 child: _CompactStatistic(
                   value: '$endlessCompleted',
-                  label: 'Zufallsrätsel',
+                  label: 'Erstellte Rätsel',
                 ),
               ),
               Expanded(

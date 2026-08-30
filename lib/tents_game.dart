@@ -297,8 +297,8 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
           const SizedBox(height: 12),
           PuzzleHubAction(
             icon: Icons.auto_awesome_rounded,
-            title: 'Zufallsrätsel',
-            subtitle: 'Größe und Schwierigkeit auswählen',
+            title: 'Neues Rätsel erstellen',
+            subtitle: 'Wähle Größe und Schwierigkeit',
             accent: accent,
             onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
               builder: (_) => _TentsRandomScreen(onOpen: _open),
@@ -339,11 +339,50 @@ class _TentsHubScreenState extends State<TentsHubScreen> {
   }
 }
 
-class _TentsCollectionScreen extends StatelessWidget {
+class _TentsCollectionScreen extends StatefulWidget {
   const _TentsCollectionScreen(
       {required this.completedIds, required this.onOpen});
   final Set<String> completedIds;
   final Future<void> Function(TentsPuzzle puzzle) onOpen;
+
+  @override
+  State<_TentsCollectionScreen> createState() => _TentsCollectionScreenState();
+}
+
+class _TentsCollectionScreenState extends State<_TentsCollectionScreen> {
+  Set<String> _completedIds = const {};
+  StreamSubscription<void>? _catalogProgressSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _completedIds = widget.completedIds;
+    _catalogProgressSubscription =
+        GameStorage.catalogProgressChanges.listen((_) => _refresh());
+    unawaited(_refresh());
+  }
+
+  @override
+  void dispose() {
+    _catalogProgressSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    final storage = GameStorage();
+    final results = await storage.loadResults();
+    final attempts = await storage.loadAttempts();
+    if (!mounted) return;
+    setState(() => _completedIds = tentsCatalogCompletionIds(
+          results: results,
+          attempts: attempts,
+        ));
+  }
+
+  Future<void> _open(TentsPuzzle puzzle) async {
+    await widget.onOpen(puzzle);
+    await _refresh();
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -361,7 +400,7 @@ class _TentsCollectionScreen extends StatelessWidget {
                       context.strings.known(tentsChapterTitles[difficulty]!)),
                   subtitle: Text(
                     context.strings.known(
-                      '${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty && completedIds.contains(p.id)).length} von '
+                      '${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty && _completedIds.contains(p.id)).length} von '
                       '${tentsPuzzleCatalog.where((p) => p.difficulty == difficulty).length} gelöst',
                     ),
                   ),
@@ -369,13 +408,13 @@ class _TentsCollectionScreen extends StatelessWidget {
                     for (final puzzle in tentsPuzzleCatalog
                         .where((p) => p.difficulty == difficulty))
                       ListTile(
-                        leading: Icon(completedIds.contains(puzzle.id)
+                        leading: Icon(_completedIds.contains(puzzle.id)
                             ? Icons.check_circle_rounded
                             : Icons.radio_button_unchecked_rounded),
                         title: Text(context.strings.known(puzzle.title)),
                         subtitle: Text('${puzzle.size} × ${puzzle.size}'),
                         trailing: const Icon(Icons.play_arrow_rounded),
-                        onTap: () => onOpen(puzzle),
+                        onTap: () => _open(puzzle),
                       ),
                   ],
                 ),
@@ -398,8 +437,8 @@ class _TentsRandomScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-            title: Text(context.strings.text(
-                'Zelte-&-Bäume-Zufallsrätsel', 'Tents & Trees random puzzle'))),
+            title: Text(context.strings
+                .text('Neues Rätsel erstellen', 'Create a puzzle'))),
         body: ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -842,7 +881,8 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                       },
                       child: Text(widget.mode == GameMode.daily
                           ? dialog.strings.text('Zum Kalender', 'To calendar')
-                          : dialog.strings.text('Noch eins', 'Another one')))
+                          : dialog.strings.text('Weiteres Rätsel erstellen',
+                              'Create another puzzle')))
                 ]));
   }
 
@@ -1015,8 +1055,8 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                                         ? context.strings
                                             .text('Zum Kalender', 'To calendar')
                                         : context.strings.text(
-                                            'Noch ein Rätsel',
-                                            'Another puzzle'))))),
+                                            'Weiteres Rätsel erstellen',
+                                            'Create another puzzle'))))),
                       PuzzleGameRulesButton(
                           onPressed: () => Navigator.of(context).push(
                               MaterialPageRoute<void>(

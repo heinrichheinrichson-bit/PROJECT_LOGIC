@@ -412,7 +412,7 @@ class PlayerProgressService {
         _achievement(
           id: 'generator-ten',
           title: 'Freie Wahl',
-          description: 'Löse 10 generierte Rätsel.',
+          description: 'Löse 10 selbst erstellte Rätsel.',
           iconName: 'auto_awesome',
           current: snapshot.generatedCompleted,
           target: 10,
@@ -420,7 +420,7 @@ class PlayerProgressService {
         _achievement(
           id: 'generator-fifty',
           title: 'Immer etwas Neues',
-          description: 'Löse 50 frei erzeugte Rätsel.',
+          description: 'Löse 50 selbst erstellte Rätsel.',
           iconName: 'auto_awesome',
           current: snapshot.generatedCompleted,
           target: 50,
@@ -628,7 +628,7 @@ class PlayerProgressService {
       _mission(
         id: 'daily-${_dateKey(today)}-generator',
         title: 'Neue Herausforderung',
-        description: 'Löse heute ein frei erzeugtes Rätsel.',
+        description: 'Löse heute ein selbst erstelltes Rätsel.',
         iconName: 'auto_awesome',
         current: generatedToday,
         target: 1,
@@ -893,8 +893,8 @@ class PlayerProgressService {
         ),
         _longTermChain(
           key: 'generated',
-          title: 'Eigene Auswahl',
-          description: (target) => 'Löse $target frei erzeugte Rätsel.',
+          title: 'Rätsel selbst erstellen',
+          description: (target) => 'Löse $target selbst erstellte Rätsel.',
           iconName: 'auto_awesome',
           current: snapshot.generatedCompleted,
           targets: const [3, 10, 25, 50, 100, 250, 500, 1000],

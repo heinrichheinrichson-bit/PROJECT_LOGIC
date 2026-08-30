@@ -1,6 +1,6 @@
 String missionEventTitle(String id) {
   if (id.startsWith('longterm-catalog-')) return 'Sammlung erkunden';
-  if (id.startsWith('longterm-generated-')) return 'Eigene Auswahl';
+  if (id.startsWith('longterm-generated-')) return 'Rätsel selbst erstellen';
   if (id.startsWith('longterm-active-days-')) return 'Regelmäßig dabei';
   if (id.endsWith('-daily-complete')) return 'Alle Tagesziele geschafft';
   if (id.endsWith('-weekly-complete')) return 'Alle Wochenziele geschafft';

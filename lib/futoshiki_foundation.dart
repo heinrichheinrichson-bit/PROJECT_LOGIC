@@ -372,8 +372,8 @@ class _FutoshikiHubScreenState extends State<FutoshikiHubScreen> {
           const SizedBox(height: 12),
           PuzzleHubAction(
             icon: Icons.auto_awesome_rounded,
-            title: 'Zufallsrätsel',
-            subtitle: 'Größe und Schwierigkeit auswählen',
+            title: 'Neues Rätsel erstellen',
+            subtitle: 'Wähle Größe und Schwierigkeit',
             accent: accent,
             onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
               builder: (_) => _FutoshikiRandomScreen(onOpen: _open),
@@ -422,7 +422,7 @@ class _FutoshikiRandomScreen extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
             title: Text(context.strings
-                .text('Futoshiki-Zufallsrätsel', 'Futoshiki random puzzle'))),
+                .text('Neues Rätsel erstellen', 'Create a puzzle'))),
         body: ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -455,11 +455,20 @@ class FutoshikiCollectionScreen extends StatefulWidget {
 
 class _FutoshikiCollectionScreenState extends State<FutoshikiCollectionScreen> {
   Map<String, PuzzleResult> _results = const {};
+  StreamSubscription<void>? _catalogProgressSubscription;
 
   @override
   void initState() {
     super.initState();
+    _catalogProgressSubscription =
+        GameStorage.catalogProgressChanges.listen((_) => _refresh());
     unawaited(_refresh());
+  }
+
+  @override
+  void dispose() {
+    _catalogProgressSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _refresh() async {
@@ -1073,7 +1082,8 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
                   widget.mode == GameMode.daily
                       ? dialogContext.strings
                           .text('Zum Kalender', 'To calendar')
-                      : dialogContext.strings.text('Noch eins', 'Another one'),
+                      : dialogContext.strings.text(
+                          'Weiteres Rätsel erstellen', 'Create another puzzle'),
                 ),
               ),
             ),

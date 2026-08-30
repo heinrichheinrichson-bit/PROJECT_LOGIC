@@ -838,8 +838,8 @@ class _HashiHubScreenState extends State<HashiHubScreen> {
                 const SizedBox(height: 12),
                 PuzzleHubAction(
                   icon: Icons.auto_awesome_rounded,
-                  title: 'Zufallsrätsel',
-                  subtitle: 'Ein neues Brückennetz erzeugen lassen',
+                  title: 'Neues Rätsel erstellen',
+                  subtitle: 'Wähle Größe und Schwierigkeit',
                   accent: accent,
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
@@ -948,7 +948,7 @@ class _HashiRandomSetupScreenState extends State<HashiRandomSetupScreen> {
     return Scaffold(
       appBar: AppBar(
           title: Text(context.strings
-              .text('Hashi-Zufallsrätsel', 'Hashi random puzzle'))),
+              .text('Neues Rätsel erstellen', 'Create a puzzle'))),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -1064,11 +1064,20 @@ class _HashiCatalogScreenState extends State<HashiCatalogScreen> {
   final HashiProgressStore _progressStore = HashiProgressStore();
   Set<String> _completed = <String>{};
   int _difficultyFilter = 0;
+  StreamSubscription<void>? _catalogProgressSubscription;
 
   @override
   void initState() {
     super.initState();
+    _catalogProgressSubscription =
+        GameStorage.catalogProgressChanges.listen((_) => _refresh());
     _refresh();
+  }
+
+  @override
+  void dispose() {
+    _catalogProgressSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _refresh() async {
@@ -1650,8 +1659,8 @@ class _HashiGameScreenState extends State<HashiGameScreen>
                 Navigator.of(dialogContext).pop();
                 _startNextRandomPuzzle();
               },
-              child:
-                  Text(dialogContext.strings.text('Noch eins', 'Another one')),
+              child: Text(dialogContext.strings
+                  .text('Weiteres Rätsel erstellen', 'Create another puzzle')),
             )
           else if (_nextPuzzle != null)
             FilledButton(
@@ -1983,8 +1992,9 @@ class _HashiGameScreenState extends State<HashiGameScreen>
                         FilledButton.icon(
                           onPressed: _startNextRandomPuzzle,
                           icon: const Icon(Icons.auto_awesome_rounded),
-                          label: Text(
-                              context.strings.text('Noch eins', 'Another one')),
+                          label: Text(context.strings.text(
+                              'Weiteres Rätsel erstellen',
+                              'Create another puzzle')),
                         )
                       else if (_nextPuzzle != null)
                         FilledButton.icon(
@@ -2024,7 +2034,7 @@ class _HashiGameScreenState extends State<HashiGameScreen>
           : null,
       appBar: AppBar(
         title: Text(widget.mode == GameMode.generated
-            ? '${context.strings.known(widget.puzzle.sharedDifficulty.label)} · ${context.strings.known('Zufallsrätsel')}'
+            ? '${context.strings.known(widget.puzzle.sharedDifficulty.label)} · ${context.strings.known('Erstelltes Rätsel')}'
             : context.strings.known(widget.puzzle.title)),
         actions: [
           if (kDebugMode)

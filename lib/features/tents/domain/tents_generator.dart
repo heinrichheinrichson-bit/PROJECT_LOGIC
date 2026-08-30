@@ -46,7 +46,7 @@ class TentsGenerator {
       );
       final puzzle = TentsPuzzle(
         id: id ?? 'tents-generated-${difficulty.name}-$seed',
-        title: title ?? '${difficulty.label} \u00b7 Zufallsr\u00e4tsel',
+        title: title ?? '${difficulty.label} \u00b7 Erstelltes R\u00e4tsel',
         size: boardSize,
         trees: trees,
         rowCounts: rowCounts,

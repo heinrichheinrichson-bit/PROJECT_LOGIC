@@ -285,7 +285,6 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
               onTap: () async {
                 await Navigator.of(context).push(MaterialPageRoute<void>(
                   builder: (_) => _HitoriCollectionScreen(
-                    isSolved: _isSolved,
                     onOpen: (puzzle) => _open(puzzle, mode: GameMode.catalog),
                   ),
                 ));
@@ -295,8 +294,8 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
             const SizedBox(height: 12),
             PuzzleHubAction(
               icon: Icons.auto_awesome_rounded,
-              title: 'Zufallsrätsel',
-              subtitle: 'Größe und Schwierigkeit auswählen',
+              title: 'Neues Rätsel erstellen',
+              subtitle: 'Wähle Größe und Schwierigkeit',
               accent: accent,
               onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
                 builder: (_) => _HitoriRandomScreen(onOpen: _open),
@@ -328,10 +327,45 @@ class _HitoriHubScreenState extends State<HitoriHubScreen> {
   }
 }
 
-class _HitoriCollectionScreen extends StatelessWidget {
-  const _HitoriCollectionScreen({required this.isSolved, required this.onOpen});
-  final bool Function(HitoriPuzzle puzzle) isSolved;
+class _HitoriCollectionScreen extends StatefulWidget {
+  const _HitoriCollectionScreen({required this.onOpen});
   final Future<void> Function(HitoriPuzzle puzzle) onOpen;
+
+  @override
+  State<_HitoriCollectionScreen> createState() =>
+      _HitoriCollectionScreenState();
+}
+
+class _HitoriCollectionScreenState extends State<_HitoriCollectionScreen> {
+  Map<String, PuzzleResult> _results = const {};
+  StreamSubscription<void>? _catalogProgressSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _catalogProgressSubscription =
+        GameStorage.catalogProgressChanges.listen((_) => _refresh());
+    unawaited(_refresh());
+  }
+
+  @override
+  void dispose() {
+    _catalogProgressSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    final results = await GameStorage().loadResults();
+    if (mounted) setState(() => _results = results);
+  }
+
+  bool _isSolved(HitoriPuzzle puzzle) =>
+      _results.containsKey('${GameType.hitori.name}:${puzzle.id}');
+
+  Future<void> _open(HitoriPuzzle puzzle) async {
+    await widget.onOpen(puzzle);
+    await _refresh();
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -349,13 +383,13 @@ class _HitoriCollectionScreen extends StatelessWidget {
                   title: Text(context.strings.known(chapter.title)),
                   subtitle: Text(
                     '${context.strings.known(chapter.subtitle)}\n'
-                    '${context.strings.known('${chapter.puzzles.where(isSolved).length} von ${chapter.puzzles.length} gelöst')}',
+                    '${context.strings.known('${chapter.puzzles.where(_isSolved).length} von ${chapter.puzzles.length} gelöst')}',
                   ),
                   children: [
                     for (var index = 0; index < chapter.puzzles.length; index++)
                       ListTile(
                         leading: CircleAvatar(
-                          child: isSolved(chapter.puzzles[index])
+                          child: _isSolved(chapter.puzzles[index])
                               ? const Icon(Icons.check_rounded)
                               : Text('${index + 1}'),
                         ),
@@ -364,7 +398,7 @@ class _HitoriCollectionScreen extends StatelessWidget {
                         subtitle: Text(
                             '${chapter.puzzles[index].size} × ${chapter.puzzles[index].size}'),
                         trailing: const Icon(Icons.play_arrow_rounded),
-                        onTap: () => onOpen(chapter.puzzles[index]),
+                        onTap: () => _open(chapter.puzzles[index]),
                       ),
                   ],
                 ),
@@ -382,7 +416,7 @@ class _HitoriRandomScreen extends StatelessWidget {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
             title: Text(context.strings
-                .text('Hitori-Zufallsrätsel', 'Hitori random puzzle'))),
+                .text('Neues Rätsel erstellen', 'Create a puzzle'))),
         body: ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -432,7 +466,7 @@ class HitoriRulesScreen extends StatelessWidget {
                 number: '3',
                 title: 'Helle Fläche verbinden',
                 text:
-                    'Alle hell gebliebenen Felder müssen einen einzigen zusammenhängenden Bereich bilden.'),
+                    'Alle hellen Felder müssen eine einzige zusammenhängende Fläche bilden. Jedes helle Feld muss über oben, unten, links oder rechts mit den übrigen hellen Feldern verbunden sein. Diagonale Berührungen zählen nicht.'),
             const SizedBox(height: 24),
             Text(context.strings.text(
                 'Tippen: offen → schwärzen → als sicher markieren → offen',
@@ -881,7 +915,9 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
   }
 
   String get _nextActionLabel {
-    if (widget.mode == GameMode.generated) return 'Noch eins';
+    if (widget.mode == GameMode.generated) {
+      return 'Weiteres Rätsel erstellen';
+    }
     final next = _nextCatalogPuzzle;
     if (next == null) return 'Zur Sammlung';
     return next.difficulty == widget.puzzle.difficulty
@@ -1173,7 +1209,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
                           ? 'Zum Kalender'
                           : widget.mode == GameMode.catalog
                               ? _nextActionLabel
-                              : 'Noch ein Hitori',
+                              : 'Weiteres Rätsel erstellen',
                     )),
                   ),
                 ),

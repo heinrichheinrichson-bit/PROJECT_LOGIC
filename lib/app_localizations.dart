@@ -78,12 +78,15 @@ class AppLocalizations {
       'Monatsziel': 'Monthly goal',
       'Monats-Komplettbonus': 'Monthly completion bonus',
       'Sammlung erkunden': 'Explore the collection',
-      'Eigene Auswahl': 'Your own choice',
+      'Rätsel selbst erstellen': 'Create your own puzzles',
       'Regelmäßig dabei': 'A regular habit',
       'Erfolg freigeschaltet': 'Achievement unlocked',
       'Rätsel abgeschlossen': 'Puzzle completed',
       'Rätselsammlung': 'Puzzle collection',
-      'Zufallsrätsel': 'Random puzzle',
+      'Neues Rätsel erstellen': 'Create a puzzle',
+      'Erstelltes Rätsel': 'Created puzzle',
+      'Erstellte Rätsel': 'Created puzzles',
+      'Weiteres Rätsel erstellen': 'Create another puzzle',
       'Tagesrätsel': 'Daily puzzle',
       'Tagesrätsel & Kalender': 'Daily puzzle & calendar',
       'Rätsel fortsetzen': 'Continue puzzle',
@@ -91,7 +94,6 @@ class AppLocalizations {
       'Erste Herausforderung': 'First challenge',
       'Noch einmal spielen': 'Play again',
       'Nächstes ungelöstes Rätsel': 'Next unsolved puzzle',
-      'Noch eins': 'Another one',
       'Zur Sammlung': 'Back to collection',
       'Nächstes Rätsel': 'Next puzzle',
       'Nächstes Kapitel': 'Next chapter',
@@ -99,7 +101,7 @@ class AppLocalizations {
           'Play today or catch up on previous days',
       'Heute lösen oder verpasste Tage nachholen':
           'Solve today or catch up on missed days',
-      'Größe und Schwierigkeit auswählen': 'Choose size and difficulty',
+      'Wähle Größe und Schwierigkeit': 'Choose a size and difficulty',
       'Schwierigkeit auswählen und neu erzeugen':
           'Choose a difficulty and generate a new puzzle',
       'Direkt mit deiner Sammlung weitermachen':
@@ -116,6 +118,8 @@ class AppLocalizations {
       'Verbinde alle Inseln zu einem einzigen Netz – ohne Kreuzungen.':
           'Connect all islands into one network — without crossings.',
       'Ein neues Brückennetz erzeugen lassen': 'Generate a new bridge network',
+      'Alle hellen Felder müssen eine einzige zusammenhängende Fläche bilden. Jedes helle Feld muss über oben, unten, links oder rechts mit den übrigen hellen Feldern verbunden sein. Diagonale Berührungen zählen nicht.':
+          'All unshaded cells must form one connected area. Every unshaded cell must be connected to the others through cells directly above, below, left, or right. Diagonal contact does not count.',
       'Eine einzige Schleife': 'One single loop',
       'Verbinde die Punkte zu einer geschlossenen Schleife. Die Zahlen zeigen, wie viele Feldseiten zur Linie gehören.':
           'Connect the dots into one closed loop. Each number shows how many sides of its cell belong to the line.',
@@ -334,8 +338,8 @@ class AppLocalizations {
           'Spend a total of ten hours solving puzzles.',
       'Löse jedes Rätsel der Sammlung.':
           'Solve every puzzle in the collection.',
-      'Löse heute ein frei erzeugtes Rätsel.':
-          'Solve a generated puzzle today.',
+      'Löse heute ein selbst erstelltes Rätsel.':
+          'Solve a puzzle you created today.',
       'Löse heute ein Rätsel aus der Sammlung.':
           'Solve a collection puzzle today.',
       'Löse heute ein Rätsel ohne Hinweis.':
@@ -615,7 +619,7 @@ class AppLocalizations {
         .replaceAll('Mittel ·', 'Medium ·')
         .replaceAll('Schwer ·', 'Hard ·')
         .replaceAll('Sammlung erkunden', 'Explore the collection')
-        .replaceAll('Eigene Auswahl', 'Your own choice')
+        .replaceAll('Rätsel selbst erstellen', 'Create your own puzzles')
         .replaceAll('Regelmäßig dabei', 'A regular habit')
         .replaceAll(' · Vertraut', ' · Familiar')
         .replaceAll(' · Erfahren', ' · Experienced')
@@ -631,8 +635,8 @@ class AppLocalizations {
             (match) => 'Solve ${match[1]} puzzles without a hint.')
         .replaceAllMapped(RegExp(r'^Löse (\d+) Tagesrätsel\.$'),
             (match) => 'Solve ${match[1]} daily puzzles.')
-        .replaceAllMapped(RegExp(r'^Löse (\d+) frei erzeugte Rätsel\.$'),
-            (match) => 'Solve ${match[1]} generated puzzles.')
+        .replaceAllMapped(RegExp(r'^Löse (\d+) selbst erstellte Rätsel\.$'),
+            (match) => 'Solve ${match[1]} puzzles you created.')
         .replaceAllMapped(
             RegExp(r'^Löse (\d+) verschiedene Rätsel aus der Sammlung\.$'),
             (match) =>
@@ -731,7 +735,10 @@ class AppLocalizations {
         .replaceAllMapped(
             RegExp(r'^Bestzeit (.+)$'), (match) => 'Best time ${match[1]}')
         .replaceAll('Rätselsammlung', 'Puzzle collection')
-        .replaceAll('Zufallsrätsel', 'Random puzzle')
+        .replaceAll('Erstellte Rätsel', 'Created puzzles')
+        .replaceAll('Erstelltes Rätsel', 'Created puzzle')
+        .replaceAll('Neues Rätsel erstellen', 'Create a puzzle')
+        .replaceAll('Weiteres Rätsel erstellen', 'Create another puzzle')
         .replaceAll('Tagesrätsel', 'Daily puzzle');
   }
 

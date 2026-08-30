@@ -209,6 +209,68 @@ void main() {
     expect(emptyAgain.markAt(edge), SlitherEdgeMark.empty);
   });
 
+  test('hint prefers a useful exclusion that unlocks the next deduction', () {
+    const puzzle = SlitherlinkPuzzle(
+      id: 'useful-exclusion',
+      title: 'Useful exclusion',
+      rows: 1,
+      columns: 1,
+      clues: [
+        <int?>[3]
+      ],
+      solution: {'h:0:0', 'h:1:0', 'v:0:0'},
+    );
+
+    final hint = findSlitherlinkExclusionHint(
+      const SlitherlinkState(puzzle: puzzle),
+    );
+
+    expect(hint, isNotNull);
+    expect(hint!.edge.id, 'v:0:1');
+    expect(hint.unlocksImmediateStep, isTrue);
+    expect(puzzle.solution.contains(hint.edge.id), isFalse);
+  });
+
+  test('hint skips exclusions already obvious from zero or satisfied clues',
+      () {
+    const zeroPuzzle = SlitherlinkPuzzle(
+      id: 'zero',
+      title: 'Zero',
+      rows: 1,
+      columns: 1,
+      clues: [
+        <int?>[0]
+      ],
+      solution: {},
+    );
+    const satisfiedPuzzle = SlitherlinkPuzzle(
+      id: 'satisfied',
+      title: 'Satisfied',
+      rows: 1,
+      columns: 1,
+      clues: [
+        <int?>[1]
+      ],
+      solution: {'h:0:0'},
+    );
+
+    expect(
+      findSlitherlinkExclusionHint(
+        const SlitherlinkState(puzzle: zeroPuzzle),
+      ),
+      isNull,
+    );
+    expect(
+      findSlitherlinkExclusionHint(
+        const SlitherlinkState(
+          puzzle: satisfiedPuzzle,
+          marks: {'h:0:0': SlitherEdgeMark.line},
+        ),
+      ),
+      isNull,
+    );
+  });
+
   test('rule issues detect clue conflicts and branching lines', () {
     const puzzle = SlitherlinkPuzzle(
       id: 'rule-issue-regression',

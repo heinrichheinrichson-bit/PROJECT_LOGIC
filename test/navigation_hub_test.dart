@@ -55,7 +55,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Rätselsammlung'), findsOneWidget);
-    expect(find.text('Zufallsrätsel'), findsOneWidget);
+    expect(find.text('Neues Rätsel erstellen'), findsOneWidget);
     expect(find.text('Tagesrätsel & Kalender'), findsOneWidget);
     expect(find.text('Binärpuzzle-Statistik'), findsOneWidget);
   });
@@ -115,16 +115,16 @@ void main() {
     expect(find.text('Rätselsammlung'), findsOneWidget);
     expect(find.text('Erste Herausforderung'), findsOneWidget);
     expect(find.text('Hashi-Statistik'), findsOneWidget);
-    expect(find.text('Zufallsrätsel'), findsOneWidget);
+    expect(find.text('Neues Rätsel erstellen'), findsOneWidget);
     expect(find.text('Tagesrätsel & Kalender'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Zufallsrätsel'));
-    await tester.tap(find.text('Zufallsrätsel'));
+    await tester.ensureVisible(find.text('Neues Rätsel erstellen'));
+    await tester.tap(find.text('Neues Rätsel erstellen'));
     await tester.pumpAndSettle();
-    expect(find.text('Hashi-Zufallsrätsel'), findsOneWidget);
+    expect(find.text('Neues Rätsel erstellen'), findsOneWidget);
     expect(find.text('Rätsel erstellen'), findsOneWidget);
 
-    Navigator.of(tester.element(find.text('Hashi-Zufallsrätsel'))).pop();
+    Navigator.of(tester.element(find.text('Neues Rätsel erstellen'))).pop();
     await tester.pumpAndSettle();
 
     await tester.ensureVisible(find.text('Hashi-Statistik'));
@@ -243,7 +243,7 @@ void main() {
     await tester.ensureVisible(find.text('Zelte & B\u00e4ume'));
     await tester.tap(find.text('Zelte & B\u00e4ume'));
     await tester.pumpAndSettle();
-    expect(find.text('Zufallsr\u00e4tsel'), findsOneWidget);
+    expect(find.text('Neues R\u00e4tsel erstellen'), findsOneWidget);
     expect(find.text('Tagesr\u00e4tsel & Kalender'), findsOneWidget);
     expect(find.text('Zelte-&-B\u00e4ume-Statistik'), findsOneWidget);
     await tester.scrollUntilVisible(

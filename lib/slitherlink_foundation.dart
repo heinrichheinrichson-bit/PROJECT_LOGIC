@@ -218,6 +218,105 @@ class SlitherlinkState {
   }
 }
 
+class SlitherlinkExclusionHint {
+  const SlitherlinkExclusionHint({
+    required this.edge,
+    required this.title,
+    required this.explanation,
+    required this.unlocksImmediateStep,
+  });
+
+  final SlitherEdge edge;
+  final String title;
+  final String explanation;
+  final bool unlocksImmediateStep;
+}
+
+/// Chooses a correct exclusion that is not already forced by a zero or an
+/// already satisfied clue. Exclusions that unlock a direct clue deduction are
+/// preferred over merely informative ones.
+SlitherlinkExclusionHint? findSlitherlinkExclusionHint(
+  SlitherlinkState state,
+) {
+  SlitherlinkExclusionHint? best;
+  var bestScore = -1;
+  for (final edge in _allEdges(state.puzzle)) {
+    if (state.markAt(edge) != SlitherEdgeMark.empty ||
+        state.puzzle.solution.contains(edge.id)) {
+      continue;
+    }
+
+    final adjacent = _slitherCluesBeside(state.puzzle, edge).toList();
+    if (adjacent.isEmpty) continue;
+    var obvious = false;
+    var hasClue = false;
+    var unlockedLines = 0;
+    var closeness = 0;
+    String? usefulCoordinate;
+    for (final cell in adjacent) {
+      final clue = state.puzzle.clues[cell.$1][cell.$2];
+      if (clue == null) continue;
+      hasClue = true;
+      final cellEdges = _slitherCellEdges(cell.$1, cell.$2);
+      final lines = cellEdges
+          .where((candidate) => state.markAt(candidate) == SlitherEdgeMark.line)
+          .length;
+      final empty = cellEdges
+          .where(
+              (candidate) => state.markAt(candidate) == SlitherEdgeMark.empty)
+          .length;
+      if (clue == 0 || lines == clue) {
+        obvious = true;
+        break;
+      }
+      final remainingAfterExclusion = empty - 1;
+      if (remainingAfterExclusion > 0 &&
+          lines + remainingAfterExclusion == clue) {
+        unlockedLines += remainingAfterExclusion;
+        usefulCoordinate = 'Zeile ${cell.$1 + 1}, Spalte ${cell.$2 + 1}';
+      }
+      closeness = math.max(closeness, 4 - (lines + empty - clue));
+    }
+    if (obvious || !hasClue) continue;
+
+    final unlocksImmediateStep = unlockedLines > 0;
+    final score = (unlocksImmediateStep ? 100 + unlockedLines : 0) + closeness;
+    if (score <= bestScore) continue;
+    bestScore = score;
+    best = SlitherlinkExclusionHint(
+      edge: edge,
+      title: unlocksImmediateStep
+          ? 'Ausschluss öffnet den nächsten Schritt'
+          : 'Hilfreicher Ausschluss',
+      explanation: unlocksImmediateStep
+          ? 'Diese Kante gehört nicht zur Schleife. Wenn du sie ausschließt, sind bei $usefulCoordinate die übrigen benötigten Linien eindeutig.'
+          : 'Diese Kante gehört nicht zur Schleife. Ihr Ausschluss grenzt eine noch offene Zahl ein, ohne den nächsten Zug vorwegzunehmen.',
+      unlocksImmediateStep: unlocksImmediateStep,
+    );
+  }
+  return best;
+}
+
+List<SlitherEdge> _slitherCellEdges(int row, int column) => [
+      SlitherEdge.horizontal(row, column),
+      SlitherEdge.horizontal(row + 1, column),
+      SlitherEdge.vertical(row, column),
+      SlitherEdge.vertical(row, column + 1),
+    ];
+
+Iterable<(int, int)> _slitherCluesBeside(
+  SlitherlinkPuzzle puzzle,
+  SlitherEdge edge,
+) sync* {
+  if (edge.horizontal) {
+    if (edge.row > 0) yield (edge.row - 1, edge.column);
+    if (edge.row < puzzle.rows) yield (edge.row, edge.column);
+  } else {
+    if (edge.column > 0) yield (edge.row, edge.column - 1);
+    if (edge.column < puzzle.columns) yield (edge.row, edge.column);
+  }
+}
+
 class SlitherlinkSolver {
   const SlitherlinkSolver();
 
@@ -396,7 +495,7 @@ class SlitherlinkGenerator {
       candidate[position.$1][position.$2] = null;
       final puzzle = SlitherlinkPuzzle(
         id: 'slither-generated-$seed',
-        title: 'Zufallsrätsel',
+        title: 'Erstelltes Rätsel',
         rows: size,
         columns: size,
         clues: candidate,
@@ -410,7 +509,7 @@ class SlitherlinkGenerator {
     }
     return SlitherlinkPuzzle(
       id: 'slither-generated-$seed',
-      title: 'Zufallsrätsel',
+      title: 'Erstelltes Rätsel',
       rows: size,
       columns: size,
       clues: clues,
@@ -626,8 +725,8 @@ class SlitherlinkHubScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   PuzzleHubAction(
                     icon: Icons.auto_awesome_rounded,
-                    title: 'Zufallsrätsel',
-                    subtitle: 'Schwierigkeit auswählen und neu erzeugen',
+                    title: 'Neues Rätsel erstellen',
+                    subtitle: 'Wähle Größe und Schwierigkeit',
                     accent: accent,
                     onTap: () =>
                         Navigator.of(context).push(MaterialPageRoute<void>(
@@ -743,8 +842,8 @@ class _SlitherlinkRandomScreen extends StatelessWidget {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(context.strings.text(
-            'Das Zufallsrätsel konnte nicht erstellt werden.',
-            'The random puzzle could not be created.')),
+            'Das Rätsel konnte nicht erstellt werden.',
+            'The puzzle could not be created.')),
       ));
     }
   }
@@ -752,8 +851,8 @@ class _SlitherlinkRandomScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-            title: Text(context.strings.text(
-                'Slitherlink-Zufallsrätsel', 'Slitherlink random puzzle'))),
+            title: Text(context.strings
+                .text('Neues Rätsel erstellen', 'Create a puzzle'))),
         body: ListView(
           padding: const EdgeInsets.all(20),
           children: [
@@ -849,11 +948,20 @@ class _SlitherCollectionChapter extends StatefulWidget {
 
 class _SlitherCollectionChapterState extends State<_SlitherCollectionChapter> {
   Map<String, PuzzleResult> _results = const {};
+  StreamSubscription<void>? _catalogProgressSubscription;
 
   @override
   void initState() {
     super.initState();
+    _catalogProgressSubscription =
+        GameStorage.catalogProgressChanges.listen((_) => _refresh());
     _refresh();
+  }
+
+  @override
+  void dispose() {
+    _catalogProgressSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _refresh() async {
@@ -1166,29 +1274,15 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
       );
       return;
     }
-    final logical = _findLogicalHint();
-    final edge = logical?.edge ??
-        _allEdges(widget.puzzle).where((candidate) {
-          final expected = widget.puzzle.solution.contains(candidate.id)
-              ? SlitherEdgeMark.line
-              : SlitherEdgeMark.blocked;
-          return _state.markAt(candidate) != expected;
-        }).firstOrNull;
-    if (edge == null) return;
-    final expected = logical?.mark ??
-        (widget.puzzle.solution.contains(edge.id)
-            ? SlitherEdgeMark.line
-            : SlitherEdgeMark.blocked);
+    final hint = findSlitherlinkExclusionHint(_state);
+    if (hint == null) return;
+    final edge = hint.edge;
     final apply = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         icon: const Icon(Icons.lightbulb_outline_rounded),
-        title: Text(context.strings
-            .known(logical?.title ?? 'Sicherer nächster Schritt')),
-        content: Text(
-          context.strings.known(logical?.explanation ??
-              'Aus der aktuellen Stellung lässt sich hier ein sicherer Schritt ableiten.'),
-        ),
+        title: Text(context.strings.known(hint.title)),
+        content: Text(context.strings.known(hint.explanation)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -1206,7 +1300,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
     setState(() {
       _history.add(_state);
       final updated = Map<String, SlitherEdgeMark>.from(_state.marks)
-        ..[edge.id] = expected;
+        ..[edge.id] = SlitherEdgeMark.blocked;
       _state = SlitherlinkState(puzzle: widget.puzzle, marks: updated);
       _redo.clear();
       _moves++;
@@ -1216,52 +1310,6 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
     });
     unawaited(_saveGame());
     if (_state.isSolved) _showCompletion();
-  }
-
-  ({
-    SlitherEdge edge,
-    SlitherEdgeMark mark,
-    String title,
-    String explanation,
-  })? _findLogicalHint() {
-    for (var row = 0; row < widget.puzzle.rows; row++) {
-      for (var column = 0; column < widget.puzzle.columns; column++) {
-        final clue = widget.puzzle.clues[row][column];
-        if (clue == null) continue;
-        final edges = [
-          SlitherEdge.horizontal(row, column),
-          SlitherEdge.horizontal(row + 1, column),
-          SlitherEdge.vertical(row, column),
-          SlitherEdge.vertical(row, column + 1),
-        ];
-        final lines = edges
-            .where((edge) => _state.markAt(edge) == SlitherEdgeMark.line)
-            .length;
-        final empty = edges
-            .where((edge) => _state.markAt(edge) == SlitherEdgeMark.empty)
-            .toList(growable: false);
-        if (empty.isEmpty) continue;
-        if (lines == clue) {
-          return (
-            edge: empty.first,
-            mark: SlitherEdgeMark.blocked,
-            title: 'Zahl bereits erfüllt',
-            explanation:
-                'Das Feld in Zeile ${row + 1}, Spalte ${column + 1} hat bereits $clue Linien. Die übrigen Seiten können ausgeschlossen werden.',
-          );
-        }
-        if (lines + empty.length == clue) {
-          return (
-            edge: empty.first,
-            mark: SlitherEdgeMark.line,
-            title: 'Alle freien Seiten werden gebraucht',
-            explanation:
-                'Beim Feld in Zeile ${row + 1}, Spalte ${column + 1} müssen alle noch freien Seiten zur Schleife gehören.',
-          );
-        }
-      }
-    }
-    return null;
   }
 
   Future<void> _restart() async {
@@ -1376,8 +1424,8 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                 Navigator.of(dialogContext).pop();
                 _startNextRandomPuzzle();
               },
-              child:
-                  Text(dialogContext.strings.text('Noch eins', 'Another one')),
+              child: Text(dialogContext.strings
+                  .text('Weiteres Rätsel erstellen', 'Create another puzzle')),
             )
           else if (_nextCollectionPuzzle != null)
             FilledButton(
@@ -1565,8 +1613,9 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
                           FilledButton.icon(
                             onPressed: _startNextRandomPuzzle,
                             icon: const Icon(Icons.auto_awesome_rounded),
-                            label: Text(context.strings
-                                .text('Noch eins', 'Another one')),
+                            label: Text(context.strings.text(
+                                'Weiteres Rätsel erstellen',
+                                'Create another puzzle')),
                           )
                         else if (_nextCollectionPuzzle != null)
                           FilledButton.icon(

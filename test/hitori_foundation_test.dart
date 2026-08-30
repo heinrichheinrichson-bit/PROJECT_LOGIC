@@ -7,6 +7,7 @@ import 'package:project_logic_prototype/features/hitori/domain/hitori_puzzle.dar
 import 'package:project_logic_prototype/features/hitori/domain/hitori_solver.dart';
 import 'package:project_logic_prototype/hitori_foundation.dart';
 import 'package:project_logic_prototype/game_storage.dart';
+import 'package:project_logic_prototype/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -129,7 +130,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Hitori gelöst!'), findsOneWidget);
     expect(find.text('Testabschluss · keine Statistik'), findsOneWidget);
-    expect(find.text('Noch eins'), findsOneWidget);
+    expect(find.text('Weiteres Rätsel erstellen'), findsWidgets);
   });
 
   for (final viewport in const [
@@ -181,6 +182,45 @@ void main() {
     expect(find.text('Doppelte entdecken'), findsOneWidget);
   });
 
+  testWidgets('open Hitori collection reacts immediately to new progress',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: HitoriHubScreen()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rätselsammlung'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('0 von 24 gelöst'), findsNWidgets(3));
+
+    final puzzle = hitoriPuzzleCatalog.first;
+    await GameStorage().recordCompletion(
+      puzzleId: puzzle.id,
+      elapsedSeconds: 35,
+      source: GameMode.catalog,
+      difficulty: puzzle.difficulty,
+      boardSize: puzzle.size,
+      gameType: GameType.hitori,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('1 von 24 gelöst'), findsOneWidget);
+  });
+
+  testWidgets('Hitori rule three explains orthogonal connectivity in English',
+      (tester) async {
+    await tester.pumpWidget(const MaterialApp(
+      locale: Locale('en'),
+      supportedLocales: [Locale('de'), Locale('en')],
+      localizationsDelegates: [AppLocalizationsDelegate()],
+      home: HitoriRulesScreen(),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+          'All unshaded cells must form one connected area. Every unshaded cell must be connected to the others through cells directly above, below, left, or right. Diagonal contact does not count.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('completed Hitori can be viewed, restarted, and played again',
       (tester) async {
     SharedPreferences.setMockInitialValues({
@@ -201,7 +241,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Brett ansehen'));
     await tester.pumpAndSettle();
-    expect(find.text('Noch ein Hitori'), findsOneWidget);
+    expect(find.text('Weiteres Rätsel erstellen'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.restart_alt_rounded));
     await tester.pumpAndSettle();
