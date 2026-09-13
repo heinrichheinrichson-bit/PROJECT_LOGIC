@@ -5,7 +5,7 @@
 - Alle sechs Spielarten zeigen das vollständig gelöste Brett kurz mit einer dezenten Funkenanimation, bevor der Erfolgsdialog erscheint.
 - Erfolgssound und Animation beginnen gemeinsam; während der kurzen Abschlussphase sind weitere Eingaben gesperrt.
 - Regressionstests für Feldauswahl, Tipp im Notizmodus und verzögerten Erfolgsdialog ergänzt.
-- Paketversion auf 0.8.52+81 erhöht.
+- Paketversion auf 0.8.52+82 erhöht.
 
 ## v0.8.47 – Dauerhafte Android-Identität
 
