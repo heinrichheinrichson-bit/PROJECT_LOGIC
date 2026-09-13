@@ -11,6 +11,7 @@ import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
+import 'core/presentation/puzzle_completion_celebration.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/xp_award_badge.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
@@ -811,7 +812,7 @@ class _TentsGameScreenState extends State<TentsGameScreen>
   Future<void> _finish({required bool test}) async {
     if (_completed) return;
     setState(() => _completed = true);
-    PuzzleInteractionFeedback.success(context);
+    final celebration = showPuzzleCompletionCelebration(context);
     await TentsGameStore().clear();
     final countsForTesting = test && widget.mode == GameMode.daily;
     int? earnedXp;
@@ -841,6 +842,7 @@ class _TentsGameScreenState extends State<TentsGameScreen>
                 }
               : null);
     }
+    await celebration;
     if (!mounted) return;
     await showDialog<void>(
         context: context,

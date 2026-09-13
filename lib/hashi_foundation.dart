@@ -12,6 +12,7 @@ import 'core/domain/game_identity.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
+import 'core/presentation/puzzle_completion_celebration.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
 import 'core/presentation/xp_award_badge.dart';
@@ -1500,7 +1501,7 @@ class _HashiGameScreenState extends State<HashiGameScreen>
   Future<void> _showCompletionIfSolved() async {
     if (!_game.isSolved || _completionShown) return;
     _completionShown = true;
-    PuzzleInteractionFeedback.success(context);
+    final celebration = showPuzzleCompletionCelebration(context);
     int? previousBestSeconds;
     String? collectionProgress;
     if (!_developerCompletion && widget.mode == GameMode.catalog) {
@@ -1563,6 +1564,7 @@ class _HashiGameScreenState extends State<HashiGameScreen>
       );
       await _saveStore.clear();
     }
+    await celebration;
     if (!mounted) return;
     final isNewRecord =
         previousBestSeconds == null || _elapsedSeconds < previousBestSeconds;

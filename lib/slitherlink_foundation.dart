@@ -13,6 +13,7 @@ import 'core/domain/game_identity.dart';
 import 'core/monetization/hint_economy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
+import 'core/presentation/puzzle_completion_celebration.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/xp_award_badge.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
@@ -1331,7 +1332,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
   Future<void> _showCompletion() async {
     if (_completionShown) return;
     _completionShown = true;
-    PuzzleInteractionFeedback.success(context);
+    final celebration = showPuzzleCompletionCelebration(context);
     final countsForTesting =
         _developerCompletion && _gameMode == GameMode.daily;
     int? earnedXp;
@@ -1358,6 +1359,7 @@ class _SlitherlinkGameScreenState extends State<SlitherlinkGameScreen>
       );
       await _saveStore.clear();
     }
+    await celebration;
     if (!mounted) return;
     await showDialog<void>(
       context: context,

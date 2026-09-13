@@ -1,3 +1,12 @@
+## v0.8.52 – Ruhiger Spieleabschluss und präzisere Futoshiki-Eingabe
+
+- Futoshiki behält nach einer Zahleneingabe das bewusst gewählte Feld bei, statt automatisch zu einem anderen freien Feld zu springen.
+- Futoshiki-Tipps tragen auch bei zuvor aktivem Notizmodus zuverlässig eine echte Lösungszahl ein.
+- Alle sechs Spielarten zeigen das vollständig gelöste Brett kurz mit einer dezenten Funkenanimation, bevor der Erfolgsdialog erscheint.
+- Erfolgssound und Animation beginnen gemeinsam; während der kurzen Abschlussphase sind weitere Eingaben gesperrt.
+- Regressionstests für Feldauswahl, Tipp im Notizmodus und verzögerten Erfolgsdialog ergänzt.
+- Paketversion auf 0.8.52+81 erhöht.
+
 ## v0.8.47 – Dauerhafte Android-Identität
 
 - Die endgültige Android-Paketkennung und den Namespace auf `com.thinkheim.app` umgestellt.

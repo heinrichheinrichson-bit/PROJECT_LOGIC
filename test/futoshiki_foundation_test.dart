@@ -272,6 +272,99 @@ void main() {
         saved!.candidates.values.any((values) => values.contains(1)), isTrue);
   });
 
+  testWidgets('number entry keeps the deliberately selected cell',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'futoshiki_inequality_guide_seen_v1': true,
+    });
+    final puzzle = const FutoshikiGenerator().generate(
+      seed: 77124,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: FutoshikiGameScreen(puzzle: puzzle)),
+    );
+    await tester.pumpAndSettle();
+
+    final before = tester.widget<FutoshikiBoard>(find.byType(FutoshikiBoard));
+    final selected = before.selected!;
+    final value = puzzle.solution[selected.$1][selected.$2];
+    final numberButton = find.widgetWithText(FilledButton, '$value').first;
+    await tester.ensureVisible(numberButton);
+    await tester.pumpAndSettle();
+    await tester.tap(numberButton);
+    await tester.pump();
+
+    final after = tester.widget<FutoshikiBoard>(find.byType(FutoshikiBoard));
+    expect(after.selected, selected);
+  });
+
+  testWidgets('hint applies a number even when note mode is active',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'futoshiki_inequality_guide_seen_v1': true,
+    });
+    final puzzle = const FutoshikiGenerator().generate(
+      seed: 77125,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    final target = <(int, int)>[
+      for (var row = 0; row < puzzle.size; row++)
+        for (var column = 0; column < puzzle.size; column++)
+          if (puzzle.givens[row][column] == null) (row, column),
+    ].first;
+    await tester.pumpWidget(
+      MaterialApp(home: FutoshikiGameScreen(puzzle: puzzle)),
+    );
+    await tester.pumpAndSettle();
+
+    final notesButton = find.text('Notizen');
+    await tester.ensureVisible(notesButton);
+    await tester.pumpAndSettle();
+    await tester.tap(notesButton);
+    await tester.pump();
+    final hintButton = find.byTooltip('Hinweis');
+    await tester.ensureVisible(hintButton);
+    await tester.pumpAndSettle();
+    await tester.tap(hintButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hinweis anwenden'));
+    await tester.pumpAndSettle();
+
+    final saved = await FutoshikiGameStore().load();
+    expect(saved, isNotNull);
+    expect(saved!.values[target.$1][target.$2],
+        puzzle.solution[target.$1][target.$2]);
+    expect(saved.candidates['${target.$1}:${target.$2}'], isNull);
+    expect(find.text('Zahl'), findsOneWidget);
+  });
+
+  testWidgets('completion keeps solved board visible before dialog',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'futoshiki_inequality_guide_seen_v1': true,
+    });
+    final puzzle = const FutoshikiGenerator().generate(
+      seed: 77126,
+      difficulty: PuzzleDifficulty.easy,
+    );
+    await tester.pumpWidget(
+      MaterialApp(home: FutoshikiGameScreen(puzzle: puzzle)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.bug_report_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sofort lösen'));
+    await tester.pump();
+
+    expect(find.text('Ungleichungen gelöst!'), findsNothing);
+    expect(find.byType(FutoshikiBoard), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1000));
+    expect(find.text('Ungleichungen gelöst!'), findsNothing);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Ungleichungen gelöst!'), findsOneWidget);
+  });
+
   testWidgets('another created puzzle keeps the exact 7x7 board size',
       (tester) async {
     SharedPreferences.setMockInitialValues({

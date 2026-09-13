@@ -11,6 +11,7 @@ import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
+import 'core/presentation/puzzle_completion_celebration.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/xp_award_badge.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
@@ -694,7 +695,6 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
   bool _showConflicts = true;
   bool _completionShown = false;
   bool _candidateMode = false;
-  bool _autoAdvance = true;
   Map<String, Set<int>> _candidates = {};
   final _saveStore = FutoshikiGameStore();
 
@@ -788,19 +788,6 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
     };
   }
 
-  (int, int)? _nextEditableEmpty((int, int) current) {
-    final size = widget.puzzle.size;
-    for (var offset = 1; offset <= size * size; offset++) {
-      final index = (current.$1 * size + current.$2 + offset) % (size * size);
-      final row = index ~/ size;
-      final column = index % size;
-      if (!_state.isGiven(row, column) && _state.values[row][column] == null) {
-        return (row, column);
-      }
-    }
-    return null;
-  }
-
   Future<void> _showFirstRunGuide() async {
     final preferences = await SharedPreferences.getInstance();
     if (preferences.getBool(_guideSeenKey) ?? false) return;
@@ -882,9 +869,6 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
       _history.add(_snapshot());
       _state = next;
       _candidates.remove(key);
-      if (_autoAdvance && value != null) {
-        _selected = _nextEditableEmpty(selected) ?? selected;
-      }
       _redo.clear();
       _moves++;
     });
@@ -987,7 +971,10 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
       ),
     );
     if (apply == null || !mounted) return;
-    setState(() => _selected = target);
+    setState(() {
+      _selected = target;
+      if (apply == true) _candidateMode = false;
+    });
     if (apply == true) {
       _setValue(widget.puzzle.solution[target.$1][target.$2]);
     }
@@ -1002,7 +989,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
   Future<void> _showCompletion({bool testCompletion = false}) async {
     if (_completionShown) return;
     setState(() => _completionShown = true);
-    PuzzleInteractionFeedback.success(context);
+    final celebration = showPuzzleCompletionCelebration(context);
     final countsForTesting = testCompletion && widget.mode == GameMode.daily;
     int? earnedXp;
     if (!testCompletion || countsForTesting) {
@@ -1036,6 +1023,7 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
       );
     }
     await _saveStore.clear();
+    await celebration;
     if (!mounted) return;
     await showDialog<void>(
       context: context,
@@ -1219,19 +1207,6 @@ class _FutoshikiGameScreenState extends State<FutoshikiGameScreen>
                 value: _showConflicts,
                 onChanged: (value) {
                   setState(() => _showConflicts = value);
-                  Navigator.pop(context);
-                },
-              ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(context.strings
-                    .text('Automatisch weiter', 'Advance automatically')),
-                subtitle: Text(context.strings.text(
-                    'Wählt nach einer Zahl das nächste freie Feld aus.',
-                    'Selects the next empty cell after entering a number.')),
-                value: _autoAdvance,
-                onChanged: (value) {
-                  setState(() => _autoAdvance = value);
                   Navigator.pop(context);
                 },
               ),

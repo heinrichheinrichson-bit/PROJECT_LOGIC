@@ -11,6 +11,7 @@ import 'app_theme.dart';
 import 'core/domain/game_identity.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/puzzle_hub_components.dart';
+import 'core/presentation/puzzle_completion_celebration.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/xp_award_badge.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
@@ -816,7 +817,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
   Future<void> _complete({bool testCompletion = false}) async {
     if (_completionShown) return;
     setState(() => _completionShown = true);
-    PuzzleInteractionFeedback.success(context);
+    final celebration = showPuzzleCompletionCelebration(context);
     final countsForTesting = testCompletion && widget.mode == GameMode.daily;
     int? earnedXp;
     if (!testCompletion || countsForTesting) {
@@ -842,6 +843,7 @@ class _HitoriGameScreenState extends State<HitoriGameScreen>
       );
     }
     await _store.clear();
+    await celebration;
     if (!mounted) return;
     await showDialog<void>(
       context: context,

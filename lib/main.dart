@@ -16,6 +16,7 @@ import 'core/presentation/confirm_restart_dialog.dart';
 import 'core/presentation/mission_event_presentation.dart';
 import 'core/presentation/personal_records_section.dart';
 import 'core/presentation/puzzle_hub_components.dart';
+import 'core/presentation/puzzle_completion_celebration.dart';
 import 'core/presentation/puzzle_interaction_feedback.dart';
 import 'core/presentation/reminder_notifications.dart';
 import 'core/presentation/rewarded_hint_dialog.dart';
@@ -3061,6 +3062,9 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
     int? earnedXp;
     String? collectionProgress;
     final firstCompletion = !_completionRecorded;
+    final celebration = firstCompletion
+        ? showPuzzleCompletionCelebration(context)
+        : Future<void>.value();
     if (!_completionRecorded) {
       _completionRecorded = true;
       final countsForTesting =
@@ -3125,9 +3129,10 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       }
     }
 
+    await celebration;
+    if (!mounted) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (firstCompletion) PuzzleInteractionFeedback.success(context);
       final isNewRecord =
           previousBestSeconds == null || elapsedSeconds < previousBestSeconds;
       showDialog<void>(
