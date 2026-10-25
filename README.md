@@ -1,6 +1,7 @@
 # Thinkheim
 
-Thinkheim ist eine ruhige, werbefreie Sammlung klassischer Logikspiele für Flutter.
+Thinkheim ist eine ruhige Sammlung klassischer Logikspiele für Flutter.
+Ab Version 0.8.53 sind freiwillige AdMob-Anzeigen für zusätzliche Tipps möglich.
 Die App setzt auf vollständige Spiele ohne Energie, Timer-Zwang oder
 Fortschritts-Paywalls.
 

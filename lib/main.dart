@@ -10,6 +10,8 @@ import 'app_preferences.dart';
 import 'app_data_migration.dart';
 import 'app_theme.dart';
 import 'core/monetization/hint_economy.dart';
+import 'core/monetization/rewarded_hint_ads.dart';
+import 'core/presentation/ad_privacy_settings.dart';
 import 'core/progress/experience_event.dart';
 import 'core/progress/experience_points_policy.dart';
 import 'core/presentation/confirm_restart_dialog.dart';
@@ -53,6 +55,7 @@ Future<void> main() async {
   await const AppDataMigrationService().migrate();
   final preferences = await AppPreferences.load();
   runApp(ProjectLogicApp(preferences: preferences));
+  unawaited(RewardedHintAds.refreshPrivacyAtLaunch());
   unawaited(ReminderNotifications.configure(
     dailyEnabled: preferences.dailyReminderEnabled,
     dailyMinutes: preferences.dailyReminderMinutes,
@@ -3594,6 +3597,7 @@ class SettingsScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     _ReminderSettingsCard(preferences: preferences),
+                    const AdPrivacySettings(),
                     if (kDebugMode) ...[
                       const SizedBox(height: 24),
                       Text(

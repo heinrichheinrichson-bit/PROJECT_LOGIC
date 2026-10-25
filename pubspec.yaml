@@ -1,7 +1,7 @@
 name: project_logic_prototype
 description: Thinkheim — a quiet collection of classic logic puzzles.
 publish_to: "none"
-version: 0.8.52+82
+version: 0.8.53+83
 environment:
   sdk: ">=3.3.0 <4.0.0"
 
@@ -10,6 +10,7 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  google_mobile_ads: ^9.2.0
   shared_preferences: ^2.3.2
 
 dev_dependencies:

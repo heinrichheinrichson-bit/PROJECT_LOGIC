@@ -1,3 +1,5 @@
+import 'package:project_logic_prototype/core/presentation/rewarded_hint_dialog.dart';
+import 'support/confirmed_hint_ad_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/slitherlink_foundation.dart';
@@ -451,7 +453,8 @@ void main() {
     expect(find.text('Hinweis anwenden'), findsNothing);
   });
 
-  testWidgets('empty Slitherlink hint budget offers a simulated rewarded tip',
+  testWidgets(
+      'empty Slitherlink hint budget grants one hint only after a confirmed ad reward',
       (tester) async {
     final preferences = await AppPreferences.load();
     const saved = SavedSlitherlinkGame(
@@ -465,8 +468,10 @@ void main() {
     await tester.pumpWidget(
       PreferencesScope(
         preferences: preferences,
-        child: const MaterialApp(
-          home: SlitherlinkGameScreen(
+        child: MaterialApp(
+          builder: (context, child) => HintAdScope(
+              provider: const ConfirmedHintAdProvider(), child: child!),
+          home: const SlitherlinkGameScreen(
             puzzle: slitherlinkTutorialPuzzle,
             savedGame: saved,
           ),
@@ -476,10 +481,8 @@ void main() {
 
     await tester.tap(find.byTooltip('Hinweis'));
     await tester.pumpAndSettle();
-    expect(find.text('Keine Tipps mehr'), findsOneWidget);
-    await tester.tap(find.text('Werbung simulieren'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Werbung abschließen'));
+    expect(find.text('Ein zusätzlicher Tipp'), findsOneWidget);
+    await tester.tap(find.text('Werbung ansehen'));
     await tester.pumpAndSettle();
     expect(find.text('1 Tipps'), findsOneWidget);
   });

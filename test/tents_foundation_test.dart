@@ -1,3 +1,5 @@
+import 'package:project_logic_prototype/core/presentation/rewarded_hint_dialog.dart';
+import 'support/confirmed_hint_ad_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/core/domain/game_identity.dart';
@@ -257,13 +259,16 @@ void main() {
     expect(find.textContaining('Testabschluss'), findsOneWidget);
   });
 
-  testWidgets('empty hint budget offers a simulated rewarded hint',
+  testWidgets(
+      'empty hint budget grants one hint only after a confirmed ad reward',
       (tester) async {
     final puzzle = const TentsGenerator().generate(
       seed: 20260802,
       difficulty: PuzzleDifficulty.easy,
     );
     await tester.pumpWidget(MaterialApp(
+      builder: (context, child) =>
+          HintAdScope(provider: const ConfirmedHintAdProvider(), child: child!),
       home: TentsGameScreen(
         puzzle: puzzle,
         savedGame: SavedTentsGame(
@@ -278,10 +283,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Hinweis'));
     await tester.pumpAndSettle();
-    expect(find.text('Keine Tipps mehr'), findsOneWidget);
-    await tester.tap(find.text('Werbung simulieren'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Werbung abschließen'));
+    expect(find.text('Ein zusätzlicher Tipp'), findsOneWidget);
+    await tester.tap(find.text('Werbung ansehen'));
     await tester.pumpAndSettle();
     expect(find.text('1 Tipps'), findsOneWidget);
   });

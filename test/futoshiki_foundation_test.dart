@@ -1,3 +1,5 @@
+import 'package:project_logic_prototype/core/presentation/rewarded_hint_dialog.dart';
+import 'support/confirmed_hint_ad_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_logic_prototype/core/domain/game_identity.dart';
@@ -113,7 +115,8 @@ void main() {
     expect(find.text('Testabschluss · keine Statistik'), findsOneWidget);
   });
 
-  testWidgets('empty Futoshiki hint budget offers a simulated rewarded tip',
+  testWidgets(
+      'empty Futoshiki hint budget grants one hint only after a confirmed ad reward',
       (tester) async {
     SharedPreferences.setMockInitialValues({
       'futoshiki_inequality_guide_seen_v1': true,
@@ -123,6 +126,8 @@ void main() {
       difficulty: PuzzleDifficulty.easy,
     );
     await tester.pumpWidget(MaterialApp(
+      builder: (context, child) =>
+          HintAdScope(provider: const ConfirmedHintAdProvider(), child: child!),
       home: FutoshikiGameScreen(
         puzzle: puzzle,
         savedGame: SavedFutoshikiGame(
@@ -139,10 +144,8 @@ void main() {
 
     await tester.tap(find.byTooltip('Hinweis'));
     await tester.pumpAndSettle();
-    expect(find.text('Keine Tipps mehr'), findsOneWidget);
-    await tester.tap(find.text('Werbung simulieren'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Werbung abschließen'));
+    expect(find.text('Ein zusätzlicher Tipp'), findsOneWidget);
+    await tester.tap(find.text('Werbung ansehen'));
     await tester.pumpAndSettle();
     expect(find.text('1 Tipps'), findsOneWidget);
   });

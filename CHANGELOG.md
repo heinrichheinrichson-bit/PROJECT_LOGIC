@@ -1,3 +1,14 @@
+## v0.8.53 – Freiwillige AdMob-Anzeigen für zusätzliche Tipps
+
+- Die lokale Werbesimulation durch Google Mobile Ads / AdMob Rewarded ersetzt.
+- Ein zusätzlicher Tipp wird ausschließlich nach der Prämienbestätigung vergeben.
+- Abbruch, fehlende Anzeigen, Einwilligungsfehler und Ladezeitüberschreitung geben keinen Tipp frei.
+- Altersgruppe vor der ersten Werbenutzung; keine Anzeigenanfragen unter 16 Jahren.
+- Google-UMP-Einwilligung und erneute Datenschutzauswahl in den Einstellungen.
+- Nicht personalisierte Anzeigen, Inhaltsfreigabe G; keine Banner oder automatischen Unterbrechungen.
+- Debug-/Profil-Builds verwenden Google-Testanzeigen; Release standardmäßig den echten Thinkheim-Anzeigenblock.
+- Version auf 0.8.53+83 erhöht. Datenschutzseite entsprechend ergänzt.
+
 ## v0.8.52 – Ruhiger Spieleabschluss und präzisere Futoshiki-Eingabe
 
 - Futoshiki behält nach einer Zahleneingabe das bewusst gewählte Feld bei, statt automatisch zu einem anderen freien Feld zu springen.
