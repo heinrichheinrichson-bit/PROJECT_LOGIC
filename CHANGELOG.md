@@ -1,3 +1,8 @@
+## v0.8.55 – Android-Startabsturz beheben
+
+- Den per Reflection benötigten Konstruktor von WorkManagers Room-Datenbank im Release-Build erhalten. Ohne ihn brach Androids Initialisierung vor dem Start von Flutter ab.
+- Der Tippablauf bleibt unverändert: Nach drei kostenlosen Tipps erscheint das Werbeangebot erst beim Anfordern eines weiteren Tipps.
+
 ## v0.8.54 – Binairo-Tipps beim Fortsetzen erhalten
 
 - Verbrauchte und durch Werbung verdiente Tipps werden im Binairo-Spielstand gespeichert und beim Fortsetzen wiederhergestellt.

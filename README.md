@@ -47,6 +47,12 @@ Eine Version wird erst veröffentlicht, wenn:
 2. alle automatisierten Tests bestehen,
 3. die betroffenen Funktionen manuell geprüft wurden.
 
+Android-Releases zusätzlich nach dem Minifizieren auf einem Emulator starten:
+`tool/check_android_release.ps1 -Apk <release.apk> -Serial <emulator-id> -OutputDirectory <test-output>`.
+Der Check prüft den reflektiv benötigten Room-Konstruktor, installiert auf einem
+Emulator, prüft Prozess und Vordergrundaktivität und speichert Protokoll und
+Screenshot. Den Screenshot auf die tatsächlich gerenderte Startseite prüfen.
+
 Danach folgen Commit, Tag und Push auf den Branch `master`.
 
 ## Dokumentation

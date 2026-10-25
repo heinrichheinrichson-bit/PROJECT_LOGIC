@@ -45,6 +45,7 @@ android {
 
     buildTypes {
         release {
+            proguardFiles("proguard-rules.pro")
             signingConfig = signingConfigs.findByName("release")
                 ?: error(
                     "Release signing is not configured. " +
