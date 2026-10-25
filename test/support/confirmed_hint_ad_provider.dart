@@ -6,8 +6,6 @@ class ConfirmedHintAdProvider implements HintAdProvider {
   @override
   bool get isSupported => true;
   @override
-  bool get requiresAgeCheck => false;
-  @override
   Future<HintAdResult> show({required bool Function() mayShow}) async =>
       mayShow() ? HintAdResult.earned : HintAdResult.cancelled;
 }

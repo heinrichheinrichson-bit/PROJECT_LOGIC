@@ -15,7 +15,6 @@ enum HintAdResult {
 
 abstract interface class HintAdProvider {
   bool get isSupported;
-  bool get requiresAgeCheck;
   Future<HintAdResult> show({required bool Function() mayShow});
 }
 
@@ -37,14 +36,11 @@ abstract interface class HintAdDriver {
 class RewardedHintController implements HintAdProvider {
   RewardedHintController(this.driver,
       {this.isSupported = true,
-      this.requiresAgeCheck = true,
       this.loadTimeout = const Duration(seconds: 25)});
   final HintAdDriver driver;
   final Duration loadTimeout;
   @override
   final bool isSupported;
-  @override
-  final bool requiresAgeCheck;
   bool _busy = false;
 
   @override
@@ -109,7 +105,16 @@ class RewardedHintAds {
   static const testAdUnitId = 'ca-app-pub-3940256099942544/5224354917';
   static const useTestAds =
       !kReleaseMode || bool.fromEnvironment('ADMOB_TEST_ADS');
-  static const agePreferenceKey = 'ad_age_group_v1';
+  // Legacy selections must not leave users locked out after this update.
+  static const legacyAgePreferenceKey = 'ad_age_group_v1';
+  static const _hasRequestedAdsKey = 'has_requested_rewarded_ads_v1';
+  // Apply the strictest treatment to everyone rather than collecting ages.
+  static RequestConfiguration get requestConfiguration => RequestConfiguration(
+        maxAdContentRating: MaxAdContentRating.g,
+        ageRestrictedTreatment: AgeRestrictedTreatment.child,
+      );
+  static ConsentRequestParameters get consentParameters =>
+      ConsentRequestParameters(tagForUnderAgeOfConsent: true);
   static bool get supported =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
   static final privacyOptionsRequired = ValueNotifier<bool>(false);
@@ -117,13 +122,15 @@ class RewardedHintAds {
   static final HintAdProvider provider =
       RewardedHintController(_driver, isSupported: supported);
 
-  /// Refresh UMP on every launch for eligible users, without loading an ad.
+  /// Remove obsolete age selections; refresh UMP only after a previous ad opt-in.
   static Future<void> refreshPrivacyAtLaunch() async {
     if (!supported) return;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final group = prefs.getString(agePreferenceKey);
-      if (group == '16-17' || group == '18+') await _driver.updateConsent();
+      await prefs.remove(legacyAgePreferenceKey);
+      if (prefs.getBool(_hasRequestedAdsKey) == true) {
+        await _driver.updateConsent();
+      }
     } catch (error) {
       debugPrint('Ad privacy update unavailable: $error');
     }
@@ -160,7 +167,7 @@ class _GoogleHintAdDriver implements HintAdDriver {
   Future<bool> _updateConsent() async {
     final done = Completer<bool>();
     ConsentInformation.instance
-        .requestConsentInfoUpdate(ConsentRequestParameters(), () {
+        .requestConsentInfoUpdate(RewardedHintAds.consentParameters, () {
       if (!done.isCompleted) done.complete(true);
     }, (_) {
       if (!done.isCompleted) done.complete(false);
@@ -173,6 +180,8 @@ class _GoogleHintAdDriver implements HintAdDriver {
   @override
   Future<bool> prepareConsent() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(RewardedHintAds._hasRequestedAdsKey, true);
       final updated = await updateConsent();
       if (!updated) {
         _consentUpdate = null;
@@ -194,8 +203,8 @@ class _GoogleHintAdDriver implements HintAdDriver {
   @override
   Future<void> initialize() async {
     if (_initialized) return;
-    await MobileAds.instance.updateRequestConfiguration(
-        RequestConfiguration(maxAdContentRating: MaxAdContentRating.g));
+    await MobileAds.instance
+        .updateRequestConfiguration(RewardedHintAds.requestConfiguration);
     await MobileAds.instance.initialize();
     _initialized = true;
   }

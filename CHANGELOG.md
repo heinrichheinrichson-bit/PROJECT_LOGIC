@@ -1,3 +1,10 @@
+## v0.8.56 – Werbetipps ohne eigene Altersabfrage
+
+- Die eigene Altersabfrage und lokale Alterssperre entfernt; alte Altersangaben werden beim Start gelöscht, Spielstände bleiben erhalten.
+- Für alle Anzeigen Googles strengste Altersbehandlung und Inhaltsfreigabe G anwenden; keine Personalisierung. UMP erhält die dazu passende Unter-Einwilligungsalter-Behandlung.
+- Nach dem vierten Tippwunsch erscheint direkt die freiwillige Werbeauswahl. Nur eine bestätigte Prämie gibt einen zusätzlichen Tipp frei.
+- Ohne vorherigen Werbe-Opt-in erfolgt beim Start keine UMP-Netzwerkabfrage.
+
 ## v0.8.55 – Android-Startabsturz beheben
 
 - Den per Reflection benötigten Konstruktor von WorkManagers Room-Datenbank im Release-Build erhalten. Ohne ihn brach Androids Initialisierung vor dem Start von Flutter ab.

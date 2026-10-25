@@ -9,8 +9,6 @@ import 'package:project_logic_prototype/core/presentation/rewarded_hint_dialog.d
 class FakeProvider implements HintAdProvider {
   @override
   bool isSupported = true;
-  @override
-  bool requiresAgeCheck = false;
   int calls = 0;
   HintAdResult result = HintAdResult.earned;
   Completer<HintAdResult>? pending;
@@ -91,21 +89,23 @@ void main() {
       expect(rewarded, isFalse);
     });
   }
-  testWidgets('under-16 users never contact ad provider', (tester) async {
-    final provider = FakeProvider()..requiresAgeCheck = true;
+  testWidgets('legacy under-16 choice no longer blocks voluntary ad opt-in',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      RewardedHintAds.legacyAgePreferenceKey: 'under16',
+    });
+    final provider = FakeProvider();
     bool? rewarded;
     await mount(tester, provider, (value) {
       rewarded = value;
     });
-    expect(find.text('Your age group'), findsOneWidget);
-    await tester.tap(find.text('Under 16'));
-    await tester.pumpAndSettle();
+    expect(find.text('Your age group'), findsNothing);
+    expect(find.text('Watch ad'), findsOneWidget);
     expect(provider.calls, 0);
-    await tester.tap(find.text('Close'));
+    await tester.tap(find.text('Watch ad'));
     await tester.pumpAndSettle();
-    expect(rewarded, isFalse);
-    final prefs = await SharedPreferences.getInstance();
-    expect(prefs.getString(RewardedHintAds.agePreferenceKey), 'under16');
+    expect(provider.calls, 1);
+    expect(rewarded, isTrue);
   });
   testWidgets('duplicate taps and cancellation during loading grant no hint',
       (tester) async {

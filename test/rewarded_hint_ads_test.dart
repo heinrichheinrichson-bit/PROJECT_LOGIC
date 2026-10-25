@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:project_logic_prototype/core/monetization/rewarded_hint_ads.dart';
 
 class FakeAd implements HintAd {
@@ -44,6 +46,28 @@ class FakeDriver implements HintAdDriver {
 Future<void> nextTurn() => Future<void>.delayed(Duration.zero);
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  test('all users receive strict age treatment without collecting an age', () {
+    final config = RewardedHintAds.requestConfiguration;
+    expect(config.ageRestrictedTreatment, AgeRestrictedTreatment.child);
+    expect(config.maxAdContentRating, MaxAdContentRating.g);
+    expect(RewardedHintAds.consentParameters.tagForUnderAgeOfConsent, isTrue);
+  });
+
+  test('startup removes only obsolete age selection and preserves game data',
+      () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    SharedPreferences.setMockInitialValues({
+      RewardedHintAds.legacyAgePreferenceKey: 'under16',
+      'game_data_to_preserve': 'saved puzzle',
+    });
+    await RewardedHintAds.refreshPrivacyAtLaunch();
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.containsKey(RewardedHintAds.legacyAgePreferenceKey), isFalse);
+    expect(prefs.getString('game_data_to_preserve'), 'saved puzzle');
+  });
+
   test('dismissal without reward never unlocks a hint', () async {
     final driver = FakeDriver();
     final ad = FakeAd();

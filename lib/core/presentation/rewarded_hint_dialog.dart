@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../app_localizations.dart';
 import '../monetization/rewarded_hint_ads.dart';
 
@@ -33,63 +32,11 @@ Future<bool> requestRewardedHint(BuildContext context,
                 ]));
     return false;
   }
-  if (ads.requiresAgeCheck && !await _checkAdAge(context)) return false;
   if (!context.mounted) return false;
   return await showDialog<bool>(
           context: context,
           builder: (_) => _RewardedHintDialog(provider: ads)) ??
       false;
-}
-
-Future<bool> _checkAdAge(BuildContext context) async {
-  final prefs = await SharedPreferences.getInstance();
-  var group = prefs.getString(RewardedHintAds.agePreferenceKey);
-  if (!context.mounted) return false;
-  if (group == null) {
-    group = await showDialog<String>(
-        context: context,
-        builder: (context) => SimpleDialog(
-                title: Text(context.strings
-                    .text('Deine Altersgruppe', 'Your age group')),
-                children: [
-                  Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-                      child: Text(context.strings.text(
-                          'Wähle deine Altersgruppe für die Datenschutzeinstellungen. Die Angabe wird lokal gespeichert.',
-                          'Choose your age group for the privacy settings. Your answer is stored locally.'))),
-                  for (final option in ['under16', '16-17', '18+'])
-                    SimpleDialogOption(
-                        onPressed: () => Navigator.pop(context, option),
-                        child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: Text(switch (option) {
-                              'under16' => context.strings
-                                  .text('Unter 16 Jahre', 'Under 16'),
-                              '16-17' =>
-                                context.strings.text('16–17 Jahre', '16–17'),
-                              _ => context.strings
-                                  .text('18 Jahre und älter', '18 or older'),
-                            }))),
-                ]));
-    if (group == null) return false;
-    await prefs.setString(RewardedHintAds.agePreferenceKey, group);
-  }
-  if (group == '16-17' || group == '18+') return true;
-  if (!context.mounted) return false;
-  await showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-              title: Text(context.strings
-                  .text('Zusätzliche Tipps', 'Additional hints')),
-              content: Text(context.strings.text(
-                  'Für deine Altersgruppe laden wir keine Werbung. Du kannst alle Rätsel weiterhin mit den kostenlosen Tipps spielen.',
-                  'We do not load ads for your age group. You can continue playing all puzzles with the free hints.')),
-              actions: [
-                TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(context.strings.text('Schließen', 'Close')))
-              ]));
-  return false;
 }
 
 class _RewardedHintDialog extends StatefulWidget {
@@ -130,8 +77,8 @@ class _RewardedHintDialogState extends State<_RewardedHintDialog> {
             Text(strings.text('Ein zusätzlicher Tipp', 'One additional hint')),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(strings.text(
-              'Sieh dir freiwillig eine Werbung vollständig an und erhalte einen zusätzlichen Tipp für dieses Rätsel.',
-              'Choose to watch an ad to completion and receive one additional hint for this puzzle.')),
+              'Sieh dir freiwillig eine Werbung vollständig an und erhalte einen zusätzlichen Tipp für dieses Rätsel. Die Werbung ist nicht personalisiert.',
+              'Choose to watch an ad to completion and receive one additional hint for this puzzle. Ads are not personalized.')),
           if (_loading) ...[
             const SizedBox(height: 16),
             const LinearProgressIndicator(),
