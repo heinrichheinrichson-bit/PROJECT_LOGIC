@@ -1,3 +1,11 @@
+## v0.8.54 – Binairo-Tipps beim Fortsetzen erhalten
+
+- Verbrauchte und durch Werbung verdiente Tipps werden im Binairo-Spielstand gespeichert und beim Fortsetzen wiederhergestellt.
+- Nach den drei kostenlosen Tipps zeigt der Tipp-Button ausdrücklich „Tipp mit Werbung“.
+- Ein Tippverbrauch wird auch bei „Nur markieren“ sofort gespeichert; bestätigte Werbetipps bleiben ebenfalls beim Verlassen erhalten.
+- Mehrfaches Antippen während eines offenen Tipp- oder Werbedialogs startet keinen zweiten Ablauf.
+- Regressionstest für drei verbrauchte Tipps, Fortsetzen, Werbeangebot, Abbruch, bestätigte Prämie und erneutes Fortsetzen.
+
 ## v0.8.53 – Freiwillige AdMob-Anzeigen für zusätzliche Tipps
 
 - Die lokale Werbesimulation durch Google Mobile Ads / AdMob Rewarded ersetzt.

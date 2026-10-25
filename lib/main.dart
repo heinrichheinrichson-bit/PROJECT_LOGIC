@@ -2566,6 +2566,7 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   HintBudget _hintBudget = const HintBudget();
   int _hintsUsed = 0;
   bool _checkingExistingGame = false;
+  bool _hintFlowActive = false;
 
   @override
   void initState() {
@@ -2577,6 +2578,11 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
     if (savedGame != null && savedGame.puzzleId == widget.definition.id) {
       puzzle.restoreEditableValues(savedGame.values);
       elapsedSeconds = savedGame.elapsedSeconds;
+      _hintsUsed = savedGame.hintsUsed;
+      _hintBudget = HintBudget(
+        usedHints: savedGame.budgetHintsUsed,
+        rewardedHints: savedGame.rewardedHints,
+      );
     } else {
       _checkingExistingGame = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -2849,9 +2855,12 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
                       progress: puzzle.progress,
                       hintLabel: premium
                           ? 'Premium'
-                          : context.strings.isEnglish
-                              ? '${_hintBudget.remainingHints} hints'
-                              : '${_hintBudget.remainingHints} Tipps',
+                          : !_hintBudget.canUseHint
+                              ? context.strings
+                                  .text('Tipp mit Werbung', 'Hint with ad')
+                              : context.strings.isEnglish
+                                  ? '${_hintBudget.remainingHints} hints'
+                                  : '${_hintBudget.remainingHints} ${_hintBudget.remainingHints == 1 ? 'Tipp' : 'Tipps'}',
                       onHint: puzzle.isSolved ? null : _showHint,
                     ),
                     const SizedBox(height: 12),
@@ -2919,6 +2928,21 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   }
 
   Future<void> _showHint() async {
+    if (_hintFlowActive) return;
+    _hintFlowActive = true;
+    try {
+      await _runHintFlow();
+    } finally {
+      _hintFlowActive = false;
+    }
+  }
+
+  Future<void> _runHintFlow() async {
+    final preferences = PreferencesScope.of(context);
+    if (!preferences.premiumSimulationEnabled && !_hintBudget.canUseHint) {
+      await _showHintRewardDialog();
+      return;
+    }
     final hint = findBinaryHint(puzzle);
     if (hint == null) {
       await showDialog<void>(
@@ -2943,16 +2967,12 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
       return;
     }
 
-    final preferences = PreferencesScope.of(context);
-    if (!preferences.premiumSimulationEnabled && !_hintBudget.canUseHint) {
-      await _showHintRewardDialog();
-      return;
-    }
-
     if (!preferences.premiumSimulationEnabled) {
       setState(() => _hintBudget = _hintBudget.useHint());
     }
     _hintsUsed++;
+    await _saveGame();
+    if (!mounted) return;
 
     setState(() {
       _selectedCell = hint.position;
@@ -3021,6 +3041,8 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
   Future<void> _showHintRewardDialog() async {
     if (!await requestRewardedHint(context) || !mounted) return;
     setState(() => _hintBudget = _hintBudget.earnRewardedHint());
+    await _saveGame();
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
           content: Text(context.strings.text(
@@ -3402,6 +3424,9 @@ class _BinaryPuzzleScreenState extends State<BinaryPuzzleScreen>
         puzzleId: widget.definition.id,
         elapsedSeconds: elapsedSeconds,
         values: puzzle.exportEditableValues(),
+        hintsUsed: _hintsUsed,
+        budgetHintsUsed: _hintBudget.usedHints,
+        rewardedHints: _hintBudget.rewardedHints,
         savedAt: DateTime.now(),
         definition: widget.storeDefinition ? widget.definition : null,
         titleOverride: widget.titleOverride,
@@ -3445,13 +3470,16 @@ class _GameInfoBar extends StatelessWidget {
                 const Spacer(),
                 Text(context.strings
                     .text('$filled/$total Felder', '$filled/$total cells')),
-                const SizedBox(width: 10),
-                PuzzleGameStatusChip(
-                  icon: Icons.lightbulb_outline_rounded,
-                  label: hintLabel,
-                  onTap: onHint,
-                ),
               ],
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: PuzzleGameStatusChip(
+                icon: Icons.lightbulb_outline_rounded,
+                label: hintLabel,
+                onTap: onHint,
+              ),
             ),
             const SizedBox(height: 10),
             LinearProgressIndicator(value: progress),

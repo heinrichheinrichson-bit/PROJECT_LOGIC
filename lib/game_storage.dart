@@ -23,6 +23,9 @@ class SavedGame {
     this.definition,
     this.titleOverride,
     this.source = PuzzleSource.catalog,
+    this.hintsUsed = 0,
+    this.rewardedHints = 0,
+    this.budgetHintsUsed = 0,
   });
 
   final String puzzleId;
@@ -35,6 +38,9 @@ class SavedGame {
   final BinaryPuzzleDefinition? definition;
   final String? titleOverride;
   final PuzzleSource source;
+  final int hintsUsed;
+  final int rewardedHints;
+  final int budgetHintsUsed;
 
   bool get isGenerated => definition != null;
 
@@ -47,6 +53,9 @@ class SavedGame {
         if (definition != null) 'definition': _definitionToJson(definition!),
         if (titleOverride != null) 'titleOverride': titleOverride,
         'source': source.name,
+        'hintsUsed': hintsUsed,
+        'rewardedHints': rewardedHints,
+        'budgetHintsUsed': budgetHintsUsed,
       };
 
   factory SavedGame.fromJson(Map<String, Object?> json) {
@@ -98,6 +107,9 @@ class SavedGame {
     }
 
     return SavedGame(
+      hintsUsed: _readInt(json, 'hintsUsed', fallback: 0),
+      rewardedHints: _readInt(json, 'rewardedHints', fallback: 0),
+      budgetHintsUsed: _readInt(json, 'budgetHintsUsed', fallback: 0),
       puzzleId: puzzleId,
       elapsedSeconds: elapsedSeconds,
       values: values,
